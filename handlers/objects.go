@@ -15,6 +15,7 @@ import (
 )
 
 func lookupFields(doc *bson.Document) (map[string]string, error) {
+	// Lookup field definitions and parse into a map of fieldName, fieldType
 	fields := make(map[string]string)
 	fieldsVal, err := doc.LookupErr("fields")
 	if err != nil {
@@ -35,6 +36,7 @@ func lookupFields(doc *bson.Document) (map[string]string, error) {
 func createFieldDocument(fields map[string]interface{}, types map[string]string) (*bson.Document, error) {
 	resourceElements := make([]*bson.Element, 0)
 
+	// Iterate types and parse fields into document
 	for key, ftype := range types {
 		value, ok := fields[key]
 		if !ok {
@@ -84,12 +86,18 @@ func createFieldDocument(fields map[string]interface{}, types map[string]string)
 }
 
 func parseDocumentToMap(doc *bson.Document, types map[string]string) (map[string]interface{}, error) {
+	// Create field map for this document
 	fields := make(map[string]interface{})
+
+	// Lookup ID and set field
 	idValue, err := doc.LookupErr("_id")
 	if err != nil {
 		return nil, fmt.Errorf("error looking up field '_id', '%s'", err.Error())
 	}
 	fields["id"] = idValue.ObjectID().Hex()
+
+	// Iterate types and parse fields
+	// NOTE: this will ignore any fields that are not in the resource definition
 	for key, ftype := range types {
 		switch ftype {
 		case "int":
@@ -184,12 +192,14 @@ func AddObject(c *gin.Context) {
 
 	c.BindJSON(&fieldValues)
 
+	// Get field definitions for this resource
 	fieldDefinitions, err := getFieldDefinitions(resourcePathName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Create document for this resource based on the field definitions
 	objectDocument, err := createFieldDocument(fieldValues, fieldDefinitions)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -220,17 +230,20 @@ func ListObjects(c *gin.Context) {
 	collection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
 	response := make([]map[string]interface{}, 0)
 
+	// Find the resource definition for this object
 	fieldDefinitions, err := getFieldDefinitions(resourcePathName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Find all objects for this resource
 	cursor, err := collection.Find(
 		context.Background(),
 		bson.NewDocument(),
 	)
 
+	// Create response from documents
 	doc := bson.NewDocument()
 	for cursor.Next(context.Background()) {
 		doc.Reset()
@@ -247,11 +260,50 @@ func ListObjects(c *gin.Context) {
 
 		response = append(response, fields)
 	}
-	c.JSON(http.StatusOK, gin.H{resourcePathName: response})
+	c.JSON(http.StatusOK, gin.H{"items": response})
 }
 
+// GetObject returns a single object with the resourceID for this resource
 func GetObject(c *gin.Context) {
-	//resourcePathName := c.Param("resourcePathName")
-	//resourceID := c.Param("resourceID")
-	c.JSON(http.StatusNoContent, gin.H{})
+	resourcePathName := c.Param("resourcePathName")
+	resourceID := c.Param("resourceID")
+	collection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
+
+	// Find the resource definition for this object
+	fieldDefinitions, err := getFieldDefinitions(resourcePathName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(resourceID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Find object based on ID
+	documentResult := collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		nil,
+	)
+
+	if documentResult == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no documents for resource"})
+	}
+
+	// Decode result into document
+	doc := bson.Document{}
+	documentResult.Decode(&doc)
+	// Lookup  definitions for this resource
+	object, err := parseDocumentToMap(&doc, fieldDefinitions)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, object)
 }
