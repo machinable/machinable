@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"net/http"
 
 	"bitbucket.org/nsjostrom/machinable/database"
@@ -12,43 +10,6 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
-
-// supportedTypes is the list of supported resource field types, this will include any other
-// resource definitions that have been created ("foreign key")
-var supportedTypes = []string{"int", "float", "date", "bool", "string"}
-
-func supportedType(a string) bool {
-	for _, b := range supportedTypes {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
-func validateResourceDefinition(def *models.ResourceDefinition) error {
-	if def.Name == "" {
-		return errors.New("resource name cannot be empty")
-	} else if def.PathName == "" {
-		return errors.New("resource path_name cannot be empty")
-	} else if len(def.Fields) == 0 {
-		return errors.New("resource fields cannot be empty")
-	}
-
-	return nil
-}
-
-func processFields(fields map[string]string) ([]*bson.Element, error) {
-	fieldElements := make([]*bson.Element, 0)
-	for key, value := range fields {
-		if !supportedType(value) {
-			return nil, fmt.Errorf("'%s' is not a supported field type", value)
-		}
-		fieldElements = append(fieldElements, bson.EC.String(key, value))
-	}
-
-	return fieldElements, nil
-}
 
 // AddResourceDefinition creates a new resource definition in the users' collection
 func AddResourceDefinition(c *gin.Context) {
@@ -94,7 +55,7 @@ func AddResourceDefinition(c *gin.Context) {
 
 // ListResourceDefinitions returns the list of all resource definitions
 func ListResourceDefinitions(c *gin.Context) {
-	definitions := make([]models.ResourceDefinition, 0)
+	definitions := make([]*models.ResourceDefinition, 0)
 
 	collection := database.Connect().Collection(database.ResourceDefinitions)
 
@@ -116,19 +77,19 @@ func ListResourceDefinitions(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		def := models.ResourceDefinition{
-			Fields: make(map[string]string),
-		}
-		def.ID = doc.Lookup("_id").ObjectID().Hex()
-		def.Name = doc.Lookup("name").StringValue()
-		def.PathName = doc.Lookup("path_name").StringValue()
-		fields := doc.Lookup("fields").MutableDocument()
-		fieldKeys, _ := fields.Keys(false)
-		for _, key := range fieldKeys {
-			def.Fields[key.String()] = fields.Lookup(key.String()).StringValue()
-		}
-
+		def, _ := parseDefinition(doc)
 		definitions = append(definitions, def)
 	}
-	c.JSON(http.StatusCreated, gin.H{"resources": definitions})
+	c.JSON(http.StatusCreated, gin.H{"items": definitions})
+}
+
+// GetResourceDefinition returns a single resource definition
+func GetResourceDefinition(c *gin.Context) {
+	resourceID := c.Param("resourceDefinitionID")
+	def, err := getDefinitionByID(resourceID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, def)
 }

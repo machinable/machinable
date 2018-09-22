@@ -22,6 +22,7 @@ func main() {
 	resources := router.Group("/resources")
 	resources.POST("/", handlers.AddResourceDefinition)
 	resources.GET("/", handlers.ListResourceDefinitions)
+	resources.GET("/:resourceDefinitionID", handlers.GetResourceDefinition)
 
 	api := router.Group("/api")
 	api.POST("/:resourcePathName", handlers.AddObject)

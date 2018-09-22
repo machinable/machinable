@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/mongodb/mongo-go-driver/mongo"
 )
@@ -16,9 +17,18 @@ const (
 	ResourceFormat = "resource.%s"
 )
 
+func getEnv(key, fallback string) string {
+	if value, ok := os.LookupEnv(key); ok {
+		return value
+	}
+	return fallback
+}
+
 // Connect returns a *mongo.Database connection
 func Connect() *mongo.Database {
-	client, err := mongo.Connect(context.Background(), "mongodb://localhost:27017", nil)
+	host := getEnv("MONGO_HOST", "localhost")
+	port := getEnv("MONGO_PORT", "27017")
+	client, err := mongo.Connect(context.Background(), fmt.Sprintf("mongodb://%s:%s", host, port), nil)
 	if err != nil {
 		fmt.Println(err)
 		panic("failed to connect database")

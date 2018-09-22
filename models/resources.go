@@ -7,13 +7,3 @@ type ResourceDefinition struct {
 	PathName string            `json:"path_name"` // PathName is the name that will appear in the URL path
 	Fields   map[string]string `json:"fields"`    // Fields is a map of name, type for each field of this resource
 }
-
-/*
-Supported Types:
-int
-float
-date
-bool
-string
-
-*/
