@@ -52,30 +52,31 @@ func processFields(fields map[string]string) ([]*bson.Element, error) {
 
 // AddResourceDefinition creates a new resource definition in the users' collection
 func AddResourceDefinition(c *gin.Context) {
+	// Marshal JSON into ResourceDefinition
 	var resourceDefinition models.ResourceDefinition
-
 	c.BindJSON(&resourceDefinition)
 
-	//db := database.Connect()
-
+	// Validate the definition
 	if err := validateResourceDefinition(&resourceDefinition); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Process the resource fields into bson
 	fieldElements, err := processFields(resourceDefinition.Fields)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Create document
 	resourceElements := make([]*bson.Element, 0)
 	resourceElements = append(resourceElements, bson.EC.String("name", resourceDefinition.Name))
 	resourceElements = append(resourceElements, bson.EC.String("path_name", resourceDefinition.PathName))
 	resourceElements = append(resourceElements, bson.EC.SubDocumentFromElements("fields", fieldElements...))
 
+	// Get a connection and insert the new document
 	collection := database.Connect().Collection(database.ResourceDefinitions)
-
 	result, err := collection.InsertOne(
 		context.Background(),
 		bson.NewDocument(resourceElements...),
@@ -86,6 +87,48 @@ func AddResourceDefinition(c *gin.Context) {
 		return
 	}
 
+	// Set the inserted ID for the response
 	resourceDefinition.ID = result.InsertedID.(objectid.ObjectID).Hex()
 	c.JSON(http.StatusCreated, resourceDefinition)
+}
+
+// ListResourceDefinitions returns the list of all resource definitions
+func ListResourceDefinitions(c *gin.Context) {
+	definitions := make([]models.ResourceDefinition, 0)
+
+	collection := database.Connect().Collection(database.ResourceDefinitions)
+
+	cursor, err := collection.Find(
+		context.Background(),
+		bson.NewDocument(),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	doc := bson.NewDocument()
+	for cursor.Next(context.Background()) {
+		doc.Reset()
+		err := cursor.Decode(doc)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		def := models.ResourceDefinition{
+			Fields: make(map[string]string),
+		}
+		def.ID = doc.Lookup("_id").ObjectID().Hex()
+		def.Name = doc.Lookup("name").StringValue()
+		def.PathName = doc.Lookup("path_name").StringValue()
+		fields := doc.Lookup("fields").MutableDocument()
+		fieldKeys, _ := fields.Keys(false)
+		for _, key := range fieldKeys {
+			def.Fields[key.String()] = fields.Lookup(key.String()).StringValue()
+		}
+
+		definitions = append(definitions, def)
+	}
+	c.JSON(http.StatusCreated, gin.H{"resources": definitions})
 }

@@ -21,11 +21,15 @@ func main() {
 
 	resources := router.Group("/resources")
 	resources.POST("/", handlers.AddResourceDefinition)
+	resources.GET("/", handlers.ListResourceDefinitions)
 
 	api := router.Group("/api")
-	api.POST("/:resourcePathName", notImplemented)
-	api.GET("/:resourcePathName", notImplemented)
-	api.GET("/:resourcePathName/:resourceID", notImplemented)
+	api.POST("/:resourcePathName", handlers.AddObject)
+	api.GET("/:resourcePathName", handlers.ListObjects)
+	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
+
+	api.POST("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
+	api.GET("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
 
 	router.Run(":5001")
 }
