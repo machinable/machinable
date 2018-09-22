@@ -26,3 +26,8 @@ func Connect() *mongo.Database {
 
 	return client.Database(DatabaseName)
 }
+
+// Collection returns a *mongo.Collection connection
+func Collection(col string) *mongo.Collection {
+	return Connect().Collection(col)
+}
