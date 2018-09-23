@@ -70,7 +70,10 @@ func getDefinition(resourcePathName string) (*models.ResourceDefinition, error) 
 
 	// Decode result into document
 	doc := bson.Document{}
-	documentResult.Decode(&doc)
+	err := documentResult.Decode(&doc)
+	if err != nil {
+		return nil, errors.New("no documents for resource")
+	}
 	// Lookup field definitions for this resource
 	resourceDefinition, err := parseDefinition(&doc)
 	if err != nil {
@@ -103,7 +106,10 @@ func getDefinitionByID(resourceID string) (*models.ResourceDefinition, error) {
 
 	// Decode result into document
 	doc := bson.Document{}
-	documentResult.Decode(&doc)
+	err = documentResult.Decode(&doc)
+	if err != nil {
+		return nil, errors.New("no documents for resource")
+	}
 	// Lookup field definitions for this resource
 	resourceDefinition, err := parseDefinition(&doc)
 	if err != nil {
@@ -140,6 +146,56 @@ func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
 	return &def, nil
 }
 
+// Int64 attempts to cast the interface to a int64
+func Int64(unk interface{}) (int64, error) {
+	switch unk.(type) {
+	case int64:
+		return unk.(int64), nil
+	case int32:
+		val := unk.(int32)
+		return int64(val), nil
+	case int:
+		val := unk.(int)
+		return int64(val), nil
+	case uint:
+		val := unk.(uint)
+		return int64(val), nil
+	case float64:
+		val := unk.(float64)
+		return int64(val), nil
+	case float32:
+		val := unk.(float32)
+		return int64(val), nil
+	default:
+		return -1, errors.New("unknown value is of incompatible type, int64")
+	}
+}
+
+// Float64 attempts to cast the interface to a float64
+func Float64(unk interface{}) (float64, error) {
+	switch unk.(type) {
+	case float64:
+		return unk.(float64), nil
+	case int64:
+		val := unk.(int32)
+		return float64(val), nil
+	case int32:
+		val := unk.(int32)
+		return float64(val), nil
+	case int:
+		val := unk.(int)
+		return float64(val), nil
+	case uint:
+		val := unk.(uint)
+		return float64(val), nil
+	case float32:
+		val := unk.(float32)
+		return float64(val), nil
+	default:
+		return -1, errors.New("unknown value is of incompatible type, float64")
+	}
+}
+
 // createFieldDocument creates a *bson.Document of the object fields based on their defined type
 func createFieldDocument(fields map[string]interface{}, types map[string]string) (*bson.Document, error) {
 	resourceElements := make([]*bson.Element, 0)
@@ -152,14 +208,14 @@ func createFieldDocument(fields map[string]interface{}, types map[string]string)
 		}
 		switch ftype {
 		case "int":
-			valueAssert, ok := value.(int64)
-			if !ok {
-				return nil, fmt.Errorf("invalid type on '%s'", key)
+			valueAssert, err := Int64(value)
+			if err != nil {
+				return nil, fmt.Errorf("invalid type on '%s': %s", key, err.Error())
 			}
 			resourceElements = append(resourceElements, bson.EC.Int64(key, valueAssert))
 		case "float":
-			valueAssert, ok := value.(float64)
-			if !ok {
+			valueAssert, err := Float64(value)
+			if err != nil {
 				return nil, fmt.Errorf("invalid type on '%s'", key)
 			}
 			resourceElements = append(resourceElements, bson.EC.Double(key, valueAssert))

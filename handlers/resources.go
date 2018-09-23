@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"bitbucket.org/nsjostrom/machinable/database"
@@ -80,7 +81,7 @@ func ListResourceDefinitions(c *gin.Context) {
 		def, _ := parseDefinition(doc)
 		definitions = append(definitions, def)
 	}
-	c.JSON(http.StatusCreated, gin.H{"items": definitions})
+	c.JSON(http.StatusOK, gin.H{"items": definitions})
 }
 
 // GetResourceDefinition returns a single resource definition
@@ -92,4 +93,46 @@ func GetResourceDefinition(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, def)
+}
+
+// DeleteResourceDefinition deletes the definition and drops the resource collection
+func DeleteResourceDefinition(c *gin.Context) {
+	resourceID := c.Param("resourceDefinitionID")
+
+	// Get definition for resource name
+	def, err := getDefinitionByID(resourceID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	resourcePathName := def.PathName
+
+	// Get the object id
+	objectID, err := objectid.FromHex(resourceID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	collection := database.Collection(database.ResourceDefinitions)
+
+	// Delete the definition
+	_, err = collection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	resourceCollection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
+	resourceCollection.Drop(nil, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }

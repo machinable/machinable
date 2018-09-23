@@ -60,7 +60,7 @@ func ListObjects(c *gin.Context) {
 	// Find the resource definition for this object
 	resourceDefinition, err := getDefinition(resourcePathName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "resource does not exist"})
 		return
 	}
 
@@ -99,14 +99,14 @@ func GetObject(c *gin.Context) {
 	// Find the resource definition for this object
 	resourceDefinition, err := getDefinition(resourcePathName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "resource does not exist"})
 		return
 	}
 
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(resourceID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid identifier '%s': %s", resourceID, err.Error())})
 		return
 	}
 
@@ -125,7 +125,11 @@ func GetObject(c *gin.Context) {
 
 	// Decode result into document
 	doc := bson.Document{}
-	documentResult.Decode(&doc)
+	err = documentResult.Decode(&doc)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("object does not exist, '%s'", resourceID)})
+		return
+	}
 	// Lookup  definitions for this resource
 	object, err := parseDocumentToMap(&doc, resourceDefinition.Fields)
 	if err != nil {

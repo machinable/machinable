@@ -23,6 +23,7 @@ func main() {
 	resources.POST("/", handlers.AddResourceDefinition)
 	resources.GET("/", handlers.ListResourceDefinitions)
 	resources.GET("/:resourceDefinitionID", handlers.GetResourceDefinition)
+	resources.DELETE("/:resourceDefinitionID", handlers.DeleteResourceDefinition)
 
 	api := router.Group("/api")
 	api.POST("/:resourcePathName", handlers.AddObject)
