@@ -24,6 +24,11 @@ func AddResourceDefinition(c *gin.Context) {
 		return
 	}
 
+	if exists := definitionExists(&resourceDefinition); exists == true {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "resource already exists"})
+		return
+	}
+
 	// Process the resource fields into bson
 	fieldElements, err := processFields(resourceDefinition.Fields)
 	if err != nil {

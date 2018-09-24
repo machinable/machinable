@@ -12,9 +12,6 @@ func notImplemented(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{})
 }
 
-func migrate() {
-}
-
 func main() {
 	router := gin.Default()
 	router.Use(middleware.OpenCORSMiddleware())
@@ -29,6 +26,7 @@ func main() {
 	api.POST("/:resourcePathName", handlers.AddObject)
 	api.GET("/:resourcePathName", handlers.ListObjects)
 	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
+	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
 
 	api.POST("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
 	api.GET("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)

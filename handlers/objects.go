@@ -138,3 +138,31 @@ func GetObject(c *gin.Context) {
 
 	c.JSON(http.StatusOK, object)
 }
+
+// DeleteObject deletes the object from the collection
+func DeleteObject(c *gin.Context) {
+	resourcePathName := c.Param("resourcePathName")
+	resourceID := c.Param("resourceID")
+	collection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
+
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(resourceID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid identifier '%s': %s", resourceID, err.Error())})
+		return
+	}
+
+	// Delete the object
+	_, err = collection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
+}

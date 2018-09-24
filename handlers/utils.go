@@ -14,10 +14,21 @@ import (
 // supportedTypes is the list of supported resource field types, this will include any other
 // resource definitions that have been created ("foreign key")
 var supportedTypes = []string{"int", "float", "date", "bool", "string"}
+var reservedFieldKeys = []string{"id", "_id", "ID"}
 
 // supportedType returns true if the string is a supported type, false otherwise.
 func supportedType(a string) bool {
 	for _, b := range supportedTypes {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+// reservedField returns true if the string is a reserved field key
+func reservedField(a string) bool {
+	for _, b := range reservedFieldKeys {
 		if b == a {
 			return true
 		}
@@ -45,10 +56,42 @@ func processFields(fields map[string]string) ([]*bson.Element, error) {
 		if !supportedType(value) {
 			return nil, fmt.Errorf("'%s' is not a supported field type", value)
 		}
+		if reservedField(key) {
+			return nil, fmt.Errorf("'%s' is a reserved field name", key)
+		}
 		fieldElements = append(fieldElements, bson.EC.String(key, value))
 	}
 
 	return fieldElements, nil
+}
+
+// definitionExists returns true if a definition already exists with path_name or name
+func definitionExists(definition *models.ResourceDefinition) bool {
+	collection := database.Collection(database.ResourceDefinitions)
+	// Find the resource definition for this object
+	documentResult := collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ArrayFromElements("$or",
+				bson.VC.DocumentFromElements(
+					bson.EC.String("path_name", definition.PathName),
+				),
+				bson.VC.DocumentFromElements(
+					bson.EC.String("name", definition.Name),
+				),
+			),
+		),
+		nil,
+	)
+
+	// Decode result into document
+	doc := bson.Document{}
+	err := documentResult.Decode(&doc)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 // getDefinition returns the *model.ResourceDefinition for a resource definition path name
