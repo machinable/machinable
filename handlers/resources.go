@@ -30,7 +30,7 @@ func AddResourceDefinition(c *gin.Context) {
 	}
 
 	// Process the resource fields into bson
-	fieldElements, err := processFields(resourceDefinition.Fields)
+	propertyElements, err := processProperties(resourceDefinition.Properties)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -38,9 +38,9 @@ func AddResourceDefinition(c *gin.Context) {
 
 	// Create document
 	resourceElements := make([]*bson.Element, 0)
-	resourceElements = append(resourceElements, bson.EC.String("name", resourceDefinition.Name))
+	resourceElements = append(resourceElements, bson.EC.String("title", resourceDefinition.Title))
 	resourceElements = append(resourceElements, bson.EC.String("path_name", resourceDefinition.PathName))
-	resourceElements = append(resourceElements, bson.EC.SubDocumentFromElements("fields", fieldElements...))
+	resourceElements = append(resourceElements, bson.EC.SubDocumentFromElements("properties", propertyElements...))
 
 	// Get a connection and insert the new document
 	collection := database.Connect().Collection(database.ResourceDefinitions)

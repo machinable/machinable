@@ -10,11 +10,17 @@ import (
 
 const (
 	// DatabaseName is the name of the application database
-	DatabaseName = "flowdb"
+	DatabaseName = "machinable"
 	// ResourceDefinitions is the collection for storing resource definitions
 	ResourceDefinitions = "definitions"
 	// ResourceFormat is the string format for a resource, this should include an account specifier as well
 	ResourceFormat = "resource.%s"
+	// Collections is the collection of user collections
+	Collections = "collections"
+	// CollectionFormat is the string format for a user's created collection
+	CollectionFormat = "collections.%s"
+	// Tests is a collection for testing things
+	Tests = "tests"
 )
 
 func getEnv(key, fallback string) string {

@@ -27,7 +27,7 @@ func AddObject(c *gin.Context) {
 	}
 
 	// Create document for this resource based on the field definitions
-	objectDocument, err := createFieldDocument(fieldValues, resourceDefinition.Fields)
+	objectDocument, err := createPropertyDocument(fieldValues, resourceDefinition.Properties)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -79,7 +79,7 @@ func ListObjects(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		fields, err := parseDocumentToMap(doc, resourceDefinition.Fields)
+		fields, err := parseDocumentToMap(doc, resourceDefinition.Properties)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -131,7 +131,7 @@ func GetObject(c *gin.Context) {
 		return
 	}
 	// Lookup  definitions for this resource
-	object, err := parseDocumentToMap(&doc, resourceDefinition.Fields)
+	object, err := parseDocumentToMap(&doc, resourceDefinition.Properties)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

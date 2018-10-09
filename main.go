@@ -16,6 +16,17 @@ func main() {
 	router := gin.Default()
 	router.Use(middleware.OpenCORSMiddleware())
 
+	tests := router.Group("/tests")
+	tests.POST("/", handlers.AddTest)
+	tests.GET("/", handlers.GetTests)
+	tests.DELETE("/", handlers.DeleteTests)
+
+	collections := router.Group("/collections")
+	collections.GET("/", handlers.GetCollections)
+	collections.POST("/", handlers.AddCollection)
+	collections.GET("/:collectionName", notImplemented)
+	collections.GET("/:collectionName/*collectionKeys", notImplemented)
+
 	resources := router.Group("/resources")
 	resources.POST("/", handlers.AddResourceDefinition)
 	resources.GET("/", handlers.ListResourceDefinitions)
@@ -28,8 +39,8 @@ func main() {
 	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
 	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
 
-	api.POST("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
-	api.GET("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
+	//api.POST("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
+	//api.GET("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
 
 	router.Run(":5001")
 }
