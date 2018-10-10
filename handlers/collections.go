@@ -12,6 +12,10 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
+type errorItem struct {
+	ID objectid.ObjectID `bson:"_id"`
+}
+
 func getOrCreateCollection(name string) error {
 	collection := database.Collection(database.Collections)
 
