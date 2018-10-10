@@ -16,16 +16,16 @@ func main() {
 	router := gin.Default()
 	router.Use(middleware.OpenCORSMiddleware())
 
-	tests := router.Group("/tests")
-	tests.POST("/", handlers.AddTest)
-	tests.GET("/", handlers.GetTests)
-	tests.DELETE("/", handlers.DeleteTests)
-
 	collections := router.Group("/collections")
 	collections.GET("/", handlers.GetCollections)
 	collections.POST("/", handlers.AddCollection)
-	collections.GET("/:collectionName", notImplemented)
-	collections.GET("/:collectionName/*collectionKeys", notImplemented)
+	collections.POST("/:collectionName", handlers.AddObjectToCollection)
+	collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
+	collections.GET("/:collectionName/:objectID", notImplemented)
+	collections.DELETE("/:collectionName/:objectID", notImplemented)
+
+	// TODO JSON Tree with any layer accessible via HTTP URL Path
+	//collections.GET("/:collectionName/*collectionKeys", notImplemented)
 
 	resources := router.Group("/resources")
 	resources.POST("/", handlers.AddResourceDefinition)
@@ -39,8 +39,15 @@ func main() {
 	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
 	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
 
-	//api.POST("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
-	//api.GET("/:resourcePathName/:resourceID/:childResourcePathName", notImplemented)
+	// TODO
+	users := router.Group("/users")
+	users.GET("/", notImplemented)          // get list of users for this project
+	users.POST("/", notImplemented)         // create a new user of this project
+	users.POST("/sessions", notImplemented) // create a new session for a user
+
+	tokens := router.Group("/tokens")
+	tokens.GET("/", notImplemented)  // get list of api tokens for this project
+	tokens.POST("/", notImplemented) // create a new api token for this project
 
 	router.Run(":5001")
 }
