@@ -22,7 +22,7 @@ func AddObject(c *gin.Context) {
 	// Get field definitions for this resource
 	resourceDefinition, err := getDefinition(resourcePathName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusNotFound, gin.H{"error": "resource does not exist"})
 		return
 	}
 

@@ -12,10 +12,23 @@ func notImplemented(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{})
 }
 
+func health(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "Us? We're fine... how are you?"})
+}
+
+func version(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"version": "0.0.0"})
+}
+
 func main() {
 	router := gin.Default()
 	router.Use(middleware.OpenCORSMiddleware())
 
+	meta := router.Group("/meta")
+	meta.GET("/health", health)
+	meta.GET("/version", version)
+
+	router.Use(middleware.SubDomainMiddleware())
 	collections := router.Group("/collections")
 	collections.GET("/", handlers.GetCollections)
 	collections.POST("/", handlers.AddCollection)
