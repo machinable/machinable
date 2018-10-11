@@ -1,12 +1,42 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"strings"
 
 	"bitbucket.org/nsjostrom/machinable/handlers"
 	"bitbucket.org/nsjostrom/machinable/middleware"
 	"github.com/gin-gonic/gin"
 )
+
+// HostSwitch is used to switch routers based on sub domain
+type HostSwitch map[string]http.Handler
+
+// Implement the ServeHTTP method on our new type
+func (hs HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Check if a http.Handler is registered for the given host.
+	// If yes, use it to handle the request.
+
+	hostParts := strings.Split(r.Host, ".")
+
+	// {sub}.{domain}.{tld}
+	if len(hostParts) != 3 {
+		http.Error(w, "Project Not Found", 404)
+		return
+	}
+
+	subDomain := hostParts[0]
+	log.Println("sub domain: " + subDomain)
+
+	handler, ok := hs[subDomain]
+
+	if ok {
+		handler.ServeHTTP(w, r)
+	} else {
+		hs["*"].ServeHTTP(w, r)
+	}
+}
 
 func notImplemented(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{})
@@ -21,14 +51,31 @@ func version(c *gin.Context) {
 }
 
 func main() {
-	router := gin.Default()
-	router.Use(middleware.OpenCORSMiddleware())
+	appRoutes := registerAppRoutes()
+	projectRoutes := registerProjectRoutes()
 
+	//router.Run(":5001")
+	hostSwitch := make(HostSwitch)
+	hostSwitch["manage"] = appRoutes
+	hostSwitch["*"] = projectRoutes
+
+	log.Fatal(http.ListenAndServe(":5001", hostSwitch))
+}
+
+func registerAppRoutes() *gin.Engine {
+	router := gin.Default()
 	meta := router.Group("/meta")
 	meta.GET("/health", health)
 	meta.GET("/version", version)
 
+	return router
+}
+
+func registerProjectRoutes() *gin.Engine {
+	router := gin.Default()
+	router.Use(middleware.OpenCORSMiddleware())
 	router.Use(middleware.SubDomainMiddleware())
+
 	collections := router.Group("/collections")
 	collections.GET("/", handlers.GetCollections)
 	collections.POST("/", handlers.AddCollection)
@@ -62,5 +109,5 @@ func main() {
 	tokens.GET("/", notImplemented)  // get list of api tokens for this project
 	tokens.POST("/", notImplemented) // create a new api token for this project
 
-	router.Run(":5001")
+	return router
 }
