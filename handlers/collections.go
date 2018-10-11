@@ -163,7 +163,7 @@ func GetObjectsFromCollection(c *gin.Context) {
 	for cursor.Next(context.Background()) {
 		//doc.Reset()
 		doc := make(map[string]interface{})
-		err := cursor.Decode(doc)
+		err := cursor.Decode(&doc)
 		if err != nil {
 			var errid string
 			item := &errorItem{}
