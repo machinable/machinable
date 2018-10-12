@@ -54,7 +54,7 @@ func main() {
 	appRoutes := registerAppRoutes()
 	projectRoutes := registerProjectRoutes()
 
-	//router.Run(":5001")
+	// switch routers based on subdomain
 	hostSwitch := make(HostSwitch)
 	hostSwitch["manage"] = appRoutes
 	hostSwitch["*"] = projectRoutes

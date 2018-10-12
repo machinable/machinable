@@ -12,7 +12,8 @@ import (
 
 // supportedTypes is the list of supported resource field types, this will include any other
 // resource definitions that have been created ("foreign key")
-var supportedTypes = []string{"integer", "number", "boolean", "string"}
+var supportedTypes = []string{"integer", "number", "boolean", "string", "array"}
+var supportedArrayItemTypes = []string{"integer", "number", "boolean", "string"}
 var supportedFormats = []string{"date-time", "email", "hostname", "ipv4", "ipv6"}
 var reservedFieldKeys = []string{"id", "_id", "ID"}
 
@@ -288,6 +289,92 @@ func Float64(unk interface{}) (float64, error) {
 	}
 }
 
+// createECType creates a bson.Value from the interface based on the `propType`
+func createECType(propType, value interface{}) (*bson.Value, error) {
+	switch propType {
+	case "integer":
+		valueAssert, err := Int64(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for type '%s': %s", propType, err.Error())
+		}
+		return bson.VC.Int64(valueAssert), nil
+	case "number":
+		valueAssert, err := Float64(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for type '%s'", propType)
+		}
+		return bson.VC.Double(valueAssert), nil
+	case "boolean":
+		valueAssert, ok := value.(bool)
+		if !ok {
+			return nil, fmt.Errorf("invalid value for type '%s'", propType)
+		}
+		return bson.VC.Boolean(valueAssert), nil
+	case "string":
+		// TODO: check based on `format` definition
+		valueAssert, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid value for type '%s'", propType)
+		}
+		return bson.VC.String(valueAssert), nil
+	default:
+		return nil, fmt.Errorf("unsupported value for type '%s'", propType)
+	}
+}
+
+// createPropertyBSONElement creates a bson.Element for the interface based on the property definition
+func createPropertyBSONElement(property *models.Property, key string, value interface{}) (*bson.Element, error) {
+	switch property.Type {
+	case "integer":
+		valueAssert, err := Int64(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid type on '%s': %s", key, err.Error())
+		}
+		return bson.EC.Int64(key, valueAssert), nil
+	case "number":
+		valueAssert, err := Float64(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+		return bson.EC.Double(key, valueAssert), nil
+	case "boolean":
+		valueAssert, ok := value.(bool)
+		if !ok {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+		return bson.EC.Boolean(key, valueAssert), nil
+	case "string":
+		// TODO: validate value based on `format` definition
+		valueAssert, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+		return bson.EC.String(key, valueAssert), nil
+	case "array":
+		valueAssert, ok := value.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+
+		bsonArray := bson.NewArray()
+
+		// populate bson array with correct type, based on property definition
+		for _, arrValue := range valueAssert {
+			bcValue, err := createECType(property.Items.Type, arrValue)
+			if err != nil {
+				return nil, fmt.Errorf("invalid type on array items for '%s', %s required", key, property.Items.Type)
+			}
+			bsonArray.Append(bcValue)
+		}
+
+		return bson.EC.Array(key, bsonArray), nil
+	// case "object":
+	// TODO: createPropertyDocument on object
+	default:
+		return nil, fmt.Errorf("unsupported type '%s'", property.Type)
+	}
+}
+
 // createPropertyDocument creates a *bson.Document of the object fields based on their defined type
 func createPropertyDocument(fields map[string]interface{}, types map[string]models.Property) (*bson.Document, error) {
 	resourceElements := make([]*bson.Element, 0)
@@ -298,55 +385,19 @@ func createPropertyDocument(fields map[string]interface{}, types map[string]mode
 		if !ok {
 			return nil, fmt.Errorf("resource field not found in body '%s'", key)
 		}
-		switch property.Type {
-		case "integer":
-			valueAssert, err := Int64(value)
-			if err != nil {
-				return nil, fmt.Errorf("invalid type on '%s': %s", key, err.Error())
-			}
-			resourceElements = append(resourceElements, bson.EC.Int64(key, valueAssert))
-		case "number":
-			valueAssert, err := Float64(value)
-			if err != nil {
-				return nil, fmt.Errorf("invalid type on '%s'", key)
-			}
-			resourceElements = append(resourceElements, bson.EC.Double(key, valueAssert))
-		// case "date":
-		// 	rfc3339, ok := value.(string)
-		// 	if !ok {
-		// 		return nil, fmt.Errorf("invalid type on '%s'", key)
-		// 	}
-		// 	valueAssert, err := time.Parse(time.RFC3339, rfc3339)
-		// 	if err != nil {
-		// 		return nil, fmt.Errorf("invalid type on '%s', cannot parse date", key)
-		// 	}
-		// 	resourceElements = append(resourceElements, bson.EC.Time(key, valueAssert))
-		case "boolean":
-			valueAssert, ok := value.(bool)
-			if !ok {
-				return nil, fmt.Errorf("invalid type on '%s'", key)
-			}
-			resourceElements = append(resourceElements, bson.EC.Boolean(key, valueAssert))
-		case "string":
-			// TODO: check based on `format` definition
-			valueAssert, ok := value.(string)
-			if !ok {
-				return nil, fmt.Errorf("invalid type on '%s'", key)
-			}
-			resourceElements = append(resourceElements, bson.EC.String(key, valueAssert))
-		// case "array":
-		// 	valueAssert, ok := value.([]interface{})
-		// 	if !ok {
-		// 		return nil, fmt.Errorf("invalid type on '%s'", key)
-		// 	}
-		// 	resourceElements = append(resourceElements, bson.EC.Array(key, bson.Array(valueAssert)))
-		// case "object":
-		// TODO: createPropertyDocument on object
-		default:
-			return nil, fmt.Errorf("unsupported type '%s'", property.Type)
+
+		// create element from property
+		element, err := createPropertyBSONElement(&property, key, value)
+
+		if err != nil {
+			return nil, err
 		}
+
+		// append to list of elements
+		resourceElements = append(resourceElements, element)
 	}
 
+	// create new document from elements
 	return bson.NewDocument(resourceElements...), nil
 }
 
@@ -365,59 +416,37 @@ func parseDocumentToMap(doc *bson.Document, types map[string]models.Property) (m
 	// Iterate types and parse fields
 	// NOTE: this will ignore any fields that are not in the resource definition
 	for key, property := range types {
-		switch property.Type {
-		case "integer":
-			value, err := doc.LookupErr(key)
-			if err != nil {
-				return nil, fmt.Errorf("error looking up field '%s', '%s'", key, err.Error())
-			}
-			typedValue, ok := value.Int64OK()
+
+		// get value from doc
+		value, err := doc.LookupErr(key)
+		if err != nil {
+			return nil, fmt.Errorf("error looking up field '%s', '%s'", key, err.Error())
+		}
+
+		if property.Type == "array" {
+			// if this is an array we need to get the interface for each element
+			arrValue, ok := value.MutableArrayOK()
 			if !ok {
-				return nil, fmt.Errorf("invalid type on '%s'", key)
+				return nil, errors.New("could not parse array")
 			}
-			fields[key] = typedValue
-		case "number":
-			value, err := doc.LookupErr(key)
+
+			// use iterator of array
+			itr, err := arrValue.Iterator()
 			if err != nil {
-				return nil, fmt.Errorf("error looking up field '%s', '%s'", key, err.Error())
+				return nil, errors.New("could not parse array iterator")
 			}
-			typedValue, ok := value.DoubleOK()
-			if !ok {
-				return nil, fmt.Errorf("invalid type on '%s'", key)
+
+			// create array of interfaces, this will end up marshalling the proper type in the JSON response
+			interfaceArr := make([]interface{}, 0)
+			for itr.Next() {
+				val := itr.Value()
+				interfaceArr = append(interfaceArr, val.Interface())
 			}
+			fields[key] = interfaceArr
+		} else {
+			// otherwise we an just get the interface for the primitive and set it in the map
+			typedValue := value.Interface()
 			fields[key] = typedValue
-		// case "date":
-		// 	value, err := doc.LookupErr(key)
-		// 	if err != nil {
-		// 		return nil, fmt.Errorf("error looking up field '%s', '%s'", key, err.Error())
-		// 	}
-		// 	typedValue, ok := value.TimeOK()
-		// 	if !ok {
-		// 		return nil, fmt.Errorf("invalid type on '%s'", key)
-		// 	}
-		// 	fields[key] = typedValue
-		case "boolean":
-			value, err := doc.LookupErr(key)
-			if err != nil {
-				return nil, fmt.Errorf("error looking up field '%s', '%s'", key, err.Error())
-			}
-			typedValue, ok := value.BooleanOK()
-			if !ok {
-				return nil, fmt.Errorf("invalid type on '%s'", key)
-			}
-			fields[key] = typedValue
-		case "string":
-			value, err := doc.LookupErr(key)
-			if err != nil {
-				return nil, fmt.Errorf("error looking up field '%s', '%s'", key, err.Error())
-			}
-			typedValue, ok := value.StringValueOK()
-			if !ok {
-				return nil, fmt.Errorf("invalid type on '%s'", key)
-			}
-			fields[key] = typedValue
-		default:
-			return nil, fmt.Errorf("unsupported type '%s'", property.Type)
 		}
 	}
 	return fields, nil
