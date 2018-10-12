@@ -79,7 +79,10 @@ func ListObjects(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		fields, err := parseDocumentToMap(doc, resourceDefinition.Properties)
+		// The document is techically "known" because we have a resource definition, but because
+		// we save the data as the types based on the definition, the interface values will marshal
+		// to JSON just fine.
+		fields, err := parseUnknownDocumentToMap(doc, 0)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -97,7 +100,7 @@ func GetObject(c *gin.Context) {
 	collection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
 
 	// Find the resource definition for this object
-	resourceDefinition, err := getDefinition(resourcePathName)
+	_, err := getDefinition(resourcePathName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "resource does not exist"})
 		return
@@ -124,14 +127,14 @@ func GetObject(c *gin.Context) {
 	}
 
 	// Decode result into document
-	doc := bson.Document{}
-	err = documentResult.Decode(&doc)
+	doc := bson.NewDocument()
+	err = documentResult.Decode(doc)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("object does not exist, '%s'", resourceID)})
 		return
 	}
 	// Lookup  definitions for this resource
-	object, err := parseDocumentToMap(&doc, resourceDefinition.Properties)
+	object, err := parseUnknownDocumentToMap(doc, 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}

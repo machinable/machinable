@@ -126,9 +126,6 @@ func AddObjectToCollection(c *gin.Context) {
 		bdoc,
 	)
 
-	// TODO
-	// Load result id and try to decode. If an error occurs, delete the document and return the error message with a 400 status code
-
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -165,24 +162,7 @@ func GetObjectsFromCollection(c *gin.Context) {
 		doc.Reset()
 		//doc := make(map[string]interface{})
 		err := cursor.Decode(doc)
-		if err != nil {
-			// var errid string
-			// item := &errorItem{}
-			// anotherErr := cursor.Decode(item)
-			// if anotherErr == nil {
-			// 	errid = item.ID.Hex()
-			// }
-			// documents = append(documents, map[string]interface{}{
-			// 	"id":    errid,
-			// 	"error": err.Error(),
-			// })
-		} else {
-			// get stringified version of the ID
-			// objectID, ok := doc["_id"].(objectid.ObjectID)
-			// if ok {
-			// 	doc["id"] = objectID.Hex()
-			// 	delete(doc, "_id")
-			// }
+		if err == nil {
 			document, err := parseUnknownDocumentToMap(doc, 0)
 			if err != nil {
 

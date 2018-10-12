@@ -19,7 +19,7 @@ const (
 
 // supportedTypes is the list of supported resource field types, this will include any other
 // resource definitions that have been created ("foreign key")
-var supportedTypes = []string{"integer", "number", "boolean", "string", "array"}
+var supportedTypes = []string{"integer", "number", "boolean", "string", "array", "object"}
 var supportedArrayItemTypes = []string{"integer", "number", "boolean", "string"}
 var supportedFormats = []string{"date-time", "email", "hostname", "ipv4", "ipv6"}
 var reservedFieldKeys = []string{"id", DocumentIDKey, "ID"}
@@ -58,8 +58,14 @@ func validateResourceDefinition(def *models.ResourceDefinition) error {
 }
 
 // processProperties processes a map[string]string to a slice of *bson.Element for storing in mongo
-func processProperties(properties map[string]models.Property) ([]*bson.Element, error) {
+func processProperties(properties map[string]models.Property, layer int) ([]*bson.Element, error) {
 	propertyElements := make([]*bson.Element, 0)
+
+	// this object goes deeper than supported
+	if layer > MaxRecursion {
+		return propertyElements, nil
+	}
+
 	for key, prop := range properties {
 		if !supportedType(prop.Type) {
 			return nil, fmt.Errorf("'%s' is not a supported property type", prop.Type)
@@ -75,6 +81,17 @@ func processProperties(properties map[string]models.Property) ([]*bson.Element, 
 			}
 		}
 
+		properties := make([]*bson.Element, 0)
+
+		if prop.Properties != nil {
+			// Process the resource fields into bson
+			var err error
+			properties, err = processProperties(prop.Properties, layer+1)
+			if err != nil {
+				return nil, errors.New("could not process property's properties")
+			}
+		}
+
 		// TODO: `object` type, call processProperties on `properties`
 
 		propertyElements = append(
@@ -86,6 +103,7 @@ func processProperties(properties map[string]models.Property) ([]*bson.Element, 
 				bson.EC.SubDocument("items", bson.NewDocument(
 					bson.EC.String("type", itemsType),
 				)),
+				bson.EC.SubDocumentFromElements("properties", properties...),
 			)))
 	}
 
@@ -202,6 +220,7 @@ func getMutableDocument(key string, doc *bson.Document) (*bson.Document, error) 
 	return doc, nil
 }
 
+// TODO: limit recursion?
 func propertyDocumentToModel(doc *bson.Document) (*models.Property, error) {
 	prop := models.Property{}
 	prop.Description = doc.Lookup("description").StringValue()
@@ -212,23 +231,26 @@ func propertyDocumentToModel(doc *bson.Document) (*models.Property, error) {
 		prop.Items = &models.Items{Type: items.Lookup("type").StringValue()}
 	}
 
+	if prop.Type == "object" {
+		propertiesDoc, err := getMutableDocument("properties", doc)
+		if err != nil {
+			return nil, err
+		}
+
+		// RECURSION
+		properties, err := parseDefinitionProperties(propertiesDoc)
+		if err != nil {
+			return nil, err
+		}
+
+		prop.Properties = properties
+	}
+
 	return &prop, nil
 }
 
-// parseDefinition parses the *bson.Document of the resource definition to a *models.ResourceDefinition struct
-func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
-	def := models.ResourceDefinition{
-		Properties: make(map[string]models.Property),
-	}
-	def.ID = doc.Lookup(DocumentIDKey).ObjectID().Hex()
-	def.Title = doc.Lookup("title").StringValue()
-	def.PathName = doc.Lookup("path_name").StringValue()
+func parseDefinitionProperties(propertiesDoc *bson.Document) (map[string]models.Property, error) {
 	properties := make(map[string]models.Property)
-	propertiesDoc, err := getMutableDocument("properties", doc)
-	if err != nil {
-		return nil, err
-	}
-
 	propertiesKeys, _ := propertiesDoc.Keys(false)
 	for _, key := range propertiesKeys {
 		propDoc, err := getMutableDocument(key.String(), propertiesDoc)
@@ -241,6 +263,29 @@ func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
 		}
 		properties[key.String()] = *property
 	}
+
+	return properties, nil
+}
+
+// parseDefinition parses the *bson.Document of the resource definition to a *models.ResourceDefinition struct
+func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
+	def := models.ResourceDefinition{
+		Properties: make(map[string]models.Property),
+	}
+	def.ID = doc.Lookup(DocumentIDKey).ObjectID().Hex()
+	def.Title = doc.Lookup("title").StringValue()
+	def.PathName = doc.Lookup("path_name").StringValue()
+
+	propertiesDoc, err := getMutableDocument("properties", doc)
+	if err != nil {
+		return nil, err
+	}
+
+	properties, err := parseDefinitionProperties(propertiesDoc)
+	if err != nil {
+		return nil, err
+	}
+
 	def.Properties = properties
 
 	return &def, nil
@@ -296,8 +341,8 @@ func Float64(unk interface{}) (float64, error) {
 	}
 }
 
-// createECType creates a bson.Value from the interface based on the `propType`
-func createECType(propType, value interface{}) (*bson.Value, error) {
+// createVCType creates a bson.Value from the interface based on the `propType`
+func createVCType(propType, value interface{}) (*bson.Value, error) {
 	switch propType {
 	case "integer":
 		valueAssert, err := Int64(value)
@@ -367,7 +412,7 @@ func createPropertyBSONElement(property *models.Property, key string, value inte
 
 		// populate bson array with correct type, based on property definition
 		for _, arrValue := range valueAssert {
-			bcValue, err := createECType(property.Items.Type, arrValue)
+			bcValue, err := createVCType(property.Items.Type, arrValue)
 			if err != nil {
 				return nil, fmt.Errorf("invalid type on array items for '%s', %s required", key, property.Items.Type)
 			}
@@ -375,8 +420,20 @@ func createPropertyBSONElement(property *models.Property, key string, value inte
 		}
 
 		return bson.EC.Array(key, bsonArray), nil
-	// case "object":
-	// TODO: createPropertyDocument on object
+	case "object":
+		// TODO: createPropertyDocument on object
+		propertyProperties := property.Properties
+		valueAssert, ok := value.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+
+		propDoc, err := createPropertyDocument(valueAssert, propertyProperties)
+		if err != nil {
+			return nil, fmt.Errorf("invalid type on object items for '%s'", key)
+		}
+
+		return bson.EC.SubDocument(key, propDoc), err
 	default:
 		return nil, fmt.Errorf("unsupported type '%s'", property.Type)
 	}
@@ -408,57 +465,7 @@ func createPropertyDocument(fields map[string]interface{}, types map[string]mode
 	return bson.NewDocument(resourceElements...), nil
 }
 
-// parseDocumentToMap parses the object *bson.Document to a map for JSON marshalling
-func parseDocumentToMap(doc *bson.Document, types map[string]models.Property) (map[string]interface{}, error) {
-	// Create field map for this document
-	fields := make(map[string]interface{})
-
-	// Lookup ID and set field
-	idValue, err := doc.LookupErr(DocumentIDKey)
-	if err != nil {
-		return nil, fmt.Errorf("error looking up field '_id', '%s'", err.Error())
-	}
-	fields["id"] = idValue.ObjectID().Hex()
-
-	// Iterate types and parse fields
-	// NOTE: this will ignore any fields that are not in the resource definition
-	for key, property := range types {
-
-		// get value from doc
-		value, err := doc.LookupErr(key)
-		if err != nil {
-			return nil, fmt.Errorf("error looking up field '%s', '%s'", key, err.Error())
-		}
-
-		if property.Type == "array" {
-			// if this is an array we need to get the interface for each element
-			arrValue, ok := value.MutableArrayOK()
-			if !ok {
-				return nil, errors.New("could not parse array")
-			}
-
-			// use iterator of array
-			itr, err := arrValue.Iterator()
-			if err != nil {
-				return nil, errors.New("could not parse array iterator")
-			}
-
-			// create array of interfaces, this will end up marshalling the proper type in the JSON response
-			interfaceArr := make([]interface{}, 0)
-			for itr.Next() {
-				val := itr.Value()
-				interfaceArr = append(interfaceArr, val.Interface())
-			}
-			fields[key] = interfaceArr
-		} else {
-			// otherwise we an just get the interface for the primitive and set it in the map
-			typedValue := value.Interface()
-			fields[key] = typedValue
-		}
-	}
-	return fields, nil
-}
-
+// parseUnknownDocumentToMap parses the bson.Array to a []interface{}, recursively
 func parseUnknownArrayToInterfaces(arrValue *bson.Array, layer int) ([]interface{}, error) {
 	interfaceArr := make([]interface{}, 0)
 
@@ -500,6 +507,7 @@ func parseUnknownArrayToInterfaces(arrValue *bson.Array, layer int) ([]interface
 	return interfaceArr, nil
 }
 
+// parseUnknownDocumentToMap parses the bson.Document to a map[string]interface{}, recursively
 func parseUnknownDocumentToMap(doc *bson.Document, layer int) (map[string]interface{}, error) {
 	keyVals := make(map[string]interface{})
 
