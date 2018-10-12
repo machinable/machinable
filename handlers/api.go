@@ -27,7 +27,7 @@ func AddObject(c *gin.Context) {
 	}
 
 	// Create document for this resource based on the field definitions
-	objectDocument, err := createPropertyDocument(fieldValues, resourceDefinition.Properties)
+	objectDocument, err := createPropertyDocument(fieldValues, resourceDefinition.Properties, 0)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

@@ -30,7 +30,7 @@ func AddResourceDefinition(c *gin.Context) {
 	}
 
 	// Process the resource fields into bson
-	propertyElements, err := processProperties(resourceDefinition.Properties)
+	propertyElements, err := processProperties(resourceDefinition.Properties, 0)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

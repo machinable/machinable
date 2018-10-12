@@ -375,7 +375,7 @@ func createVCType(propType, value interface{}) (*bson.Value, error) {
 }
 
 // createPropertyBSONElement creates a bson.Element for the interface based on the property definition
-func createPropertyBSONElement(property *models.Property, key string, value interface{}) (*bson.Element, error) {
+func createPropertyBSONElement(property *models.Property, key string, value interface{}, layer int) (*bson.Element, error) {
 	switch property.Type {
 	case "integer":
 		valueAssert, err := Int64(value)
@@ -428,7 +428,7 @@ func createPropertyBSONElement(property *models.Property, key string, value inte
 			return nil, fmt.Errorf("invalid type on '%s'", key)
 		}
 
-		propDoc, err := createPropertyDocument(valueAssert, propertyProperties)
+		propDoc, err := createPropertyDocument(valueAssert, propertyProperties, layer+1)
 		if err != nil {
 			return nil, fmt.Errorf("invalid type on object items for '%s'", key)
 		}
@@ -440,8 +440,13 @@ func createPropertyBSONElement(property *models.Property, key string, value inte
 }
 
 // createPropertyDocument creates a *bson.Document of the object fields based on their defined type
-func createPropertyDocument(fields map[string]interface{}, types map[string]models.Property) (*bson.Document, error) {
+func createPropertyDocument(fields map[string]interface{}, types map[string]models.Property, layer int) (*bson.Document, error) {
 	resourceElements := make([]*bson.Element, 0)
+
+	// this object goes deeper than supported
+	if layer > MaxRecursion {
+		return bson.NewDocument(resourceElements...), nil
+	}
 
 	// Iterate types and parse fields into document
 	for key, property := range types {
@@ -451,7 +456,7 @@ func createPropertyDocument(fields map[string]interface{}, types map[string]mode
 		}
 
 		// create element from property
-		element, err := createPropertyBSONElement(&property, key, value)
+		element, err := createPropertyBSONElement(&property, key, value, layer)
 
 		if err != nil {
 			return nil, err
