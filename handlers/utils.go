@@ -522,42 +522,16 @@ func parseUnknownDocumentToMap(doc *bson.Document, layer int) (map[string]interf
 		} else {
 			if arrValue, ok := docVal.MutableArrayOK(); ok {
 				// this is an array and we need to get the interface of each element
-				// use iterator of array
-				itr, err := arrValue.Iterator()
-				if err != nil {
-					return nil, errors.New("could not parse array iterator")
+				// recursively call parseUnknownArrayToInterfaces
+				// recursion limited to `MaxRecursion` levels
+				arrIntr, err := parseUnknownArrayToInterfaces(arrValue, layer+1)
+				if err == nil {
+					keyVals[key.String()] = arrIntr
 				}
-
-				// create array of interfaces, this will end up marshalling the proper type in the JSON response
-				interfaceArr := make([]interface{}, 0)
-				for itr.Next() {
-					itrVal := itr.Value()
-					if arrValue, ok := itrVal.MutableArrayOK(); ok {
-						// this is an array and we need to get the interface of each element
-						// recursively call parseUnknownArrayToInterfaces
-						// recursion limited to `MaxRecursion` levels
-						arrIntr, err := parseUnknownArrayToInterfaces(arrValue, layer+1)
-						if err == nil {
-							interfaceArr = append(interfaceArr, arrIntr)
-						}
-					} else if objValue, ok := itrVal.MutableDocumentOK(); ok {
-						// this is an object and we need to get the interface of each element
-						// recursively call parseUnknownDocumentToMap
-						// recursion limited to `MaxRecursion` levels
-						mObj, err := parseUnknownDocumentToMap(objValue, layer+1)
-						if err == nil {
-							interfaceArr = append(interfaceArr, mObj)
-						}
-					} else {
-						// this is a primitive value, append the interface to the array
-						interfaceArr = append(interfaceArr, itrVal.Interface())
-					}
-				}
-				keyVals[key.String()] = interfaceArr
 			} else if objValue, ok := docVal.MutableDocumentOK(); ok {
 				// this is an object and we need to get the interface of each element
 				// recursively call parseUnknownDocumentToMap
-				// TODO: limit layers
+				// recursion limited to `MaxRecursion` levels
 				mObj, err := parseUnknownDocumentToMap(objValue, layer+1)
 				if err == nil {
 					keyVals[key.String()] = mObj
