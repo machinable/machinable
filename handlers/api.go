@@ -87,7 +87,7 @@ func ListObjects(c *gin.Context) {
 
 		response = append(response, fields)
 	}
-	c.JSON(http.StatusOK, gin.H{"items": response, "definition": resourceDefinition})
+	c.JSON(http.StatusOK, gin.H{"items": response, "definition": resourceDefinition, "count": len(response)})
 }
 
 // GetObject returns a single object with the resourceID for this resource
