@@ -145,7 +145,6 @@ func GetObjectsFromCollection(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
 		return
 	}
-	documents := make([]map[string]interface{}, 0)
 
 	collection := database.Connect().Collection(fmt.Sprintf(database.CollectionFormat, collectionName))
 
@@ -159,31 +158,36 @@ func GetObjectsFromCollection(c *gin.Context) {
 		return
 	}
 
-	//doc := bson.NewDocument()
+	documents := make([]map[string]interface{}, 0)
+	//documents := make([]*bson.Document, 0)
+	doc := bson.NewDocument()
 	for cursor.Next(context.Background()) {
-		//doc.Reset()
-		doc := make(map[string]interface{})
+		doc.Reset()
+		//doc := make(map[string]interface{})
 		err := cursor.Decode(doc)
 		if err != nil {
-			var errid string
-			item := &errorItem{}
-			anotherErr := cursor.Decode(item)
-			if anotherErr == nil {
-				errid = item.ID.Hex()
-			}
-			documents = append(documents, map[string]interface{}{
-				"id":    errid,
-				"error": err.Error(),
-			})
+			// var errid string
+			// item := &errorItem{}
+			// anotherErr := cursor.Decode(item)
+			// if anotherErr == nil {
+			// 	errid = item.ID.Hex()
+			// }
+			// documents = append(documents, map[string]interface{}{
+			// 	"id":    errid,
+			// 	"error": err.Error(),
+			// })
 		} else {
 			// get stringified version of the ID
-			objectID, ok := doc["_id"].(objectid.ObjectID)
-			if ok {
-				doc["id"] = objectID.Hex()
-				delete(doc, "_id")
-			}
+			// objectID, ok := doc["_id"].(objectid.ObjectID)
+			// if ok {
+			// 	doc["id"] = objectID.Hex()
+			// 	delete(doc, "_id")
+			// }
+			document, err := parseUnknownDocumentToMap(doc, 0)
+			if err != nil {
 
-			documents = append(documents, doc)
+			}
+			documents = append(documents, document)
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"items": documents})

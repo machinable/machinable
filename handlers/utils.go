@@ -10,12 +10,19 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
+const (
+	// DocumentIDKey is the key of ids in mongodb
+	DocumentIDKey = "_id"
+	// MaxRecursion is the maximum amount of levels allowed in a JSON object (array and objects)
+	MaxRecursion = 8
+)
+
 // supportedTypes is the list of supported resource field types, this will include any other
 // resource definitions that have been created ("foreign key")
 var supportedTypes = []string{"integer", "number", "boolean", "string", "array"}
 var supportedArrayItemTypes = []string{"integer", "number", "boolean", "string"}
 var supportedFormats = []string{"date-time", "email", "hostname", "ipv4", "ipv6"}
-var reservedFieldKeys = []string{"id", "_id", "ID"}
+var reservedFieldKeys = []string{"id", DocumentIDKey, "ID"}
 
 // supportedType returns true if the string is a supported type, false otherwise.
 func supportedType(a string) bool {
@@ -158,7 +165,7 @@ func getDefinitionByID(resourceID string) (*models.ResourceDefinition, error) {
 	documentResult := collection.FindOne(
 		nil,
 		bson.NewDocument(
-			bson.EC.ObjectID("_id", objectID),
+			bson.EC.ObjectID(DocumentIDKey, objectID),
 		),
 		nil,
 	)
@@ -213,7 +220,7 @@ func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
 	def := models.ResourceDefinition{
 		Properties: make(map[string]models.Property),
 	}
-	def.ID = doc.Lookup("_id").ObjectID().Hex()
+	def.ID = doc.Lookup(DocumentIDKey).ObjectID().Hex()
 	def.Title = doc.Lookup("title").StringValue()
 	def.PathName = doc.Lookup("path_name").StringValue()
 	properties := make(map[string]models.Property)
@@ -407,7 +414,7 @@ func parseDocumentToMap(doc *bson.Document, types map[string]models.Property) (m
 	fields := make(map[string]interface{})
 
 	// Lookup ID and set field
-	idValue, err := doc.LookupErr("_id")
+	idValue, err := doc.LookupErr(DocumentIDKey)
 	if err != nil {
 		return nil, fmt.Errorf("error looking up field '_id', '%s'", err.Error())
 	}
@@ -450,4 +457,116 @@ func parseDocumentToMap(doc *bson.Document, types map[string]models.Property) (m
 		}
 	}
 	return fields, nil
+}
+
+func parseUnknownArrayToInterfaces(arrValue *bson.Array, layer int) ([]interface{}, error) {
+	interfaceArr := make([]interface{}, 0)
+
+	// this object goes deeper than supported
+	if layer > MaxRecursion {
+		return interfaceArr, nil
+	}
+
+	itr, err := arrValue.Iterator()
+	if err != nil {
+		return nil, errors.New("could not parse array iterator")
+	}
+
+	// create array of interfaces, this will end up marshalling the proper type in the JSON response
+	for itr.Next() {
+		itrVal := itr.Value()
+		if arrValue, ok := itrVal.MutableArrayOK(); ok {
+			// this is an array and we need to get the interface of each element
+			// recursively call parseUnknownArrayToInterfaces
+			// recursion limited to `MaxRecursion` levels
+			arrIntr, err := parseUnknownArrayToInterfaces(arrValue, layer+1)
+			if err == nil {
+				interfaceArr = append(interfaceArr, arrIntr)
+			}
+		} else if objValue, ok := itrVal.MutableDocumentOK(); ok {
+			// this is an object and we need to get the interface of each element
+			// recursively call parseUnknownDocumentToMap
+			// recursion limited to `MaxRecursion` levels
+			mObj, err := parseUnknownDocumentToMap(objValue, layer+1)
+			if err == nil {
+				interfaceArr = append(interfaceArr, mObj)
+			}
+		} else {
+			// this is a primitive value, append the interface to the array
+			interfaceArr = append(interfaceArr, itrVal.Interface())
+		}
+	}
+
+	return interfaceArr, nil
+}
+
+func parseUnknownDocumentToMap(doc *bson.Document, layer int) (map[string]interface{}, error) {
+	keyVals := make(map[string]interface{})
+
+	// this object goes deeper than supported
+	if layer > MaxRecursion {
+		return keyVals, nil
+	}
+
+	keys, err := doc.Keys(false)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, key := range keys {
+		docVal := doc.Lookup(key.String())
+
+		if key.String() == DocumentIDKey {
+			keyVals["id"] = docVal.ObjectID().Hex()
+		} else {
+			if arrValue, ok := docVal.MutableArrayOK(); ok {
+				// this is an array and we need to get the interface of each element
+				// use iterator of array
+				itr, err := arrValue.Iterator()
+				if err != nil {
+					return nil, errors.New("could not parse array iterator")
+				}
+
+				// create array of interfaces, this will end up marshalling the proper type in the JSON response
+				interfaceArr := make([]interface{}, 0)
+				for itr.Next() {
+					itrVal := itr.Value()
+					if arrValue, ok := itrVal.MutableArrayOK(); ok {
+						// this is an array and we need to get the interface of each element
+						// recursively call parseUnknownArrayToInterfaces
+						// recursion limited to `MaxRecursion` levels
+						arrIntr, err := parseUnknownArrayToInterfaces(arrValue, layer+1)
+						if err == nil {
+							interfaceArr = append(interfaceArr, arrIntr)
+						}
+					} else if objValue, ok := itrVal.MutableDocumentOK(); ok {
+						// this is an object and we need to get the interface of each element
+						// recursively call parseUnknownDocumentToMap
+						// recursion limited to `MaxRecursion` levels
+						mObj, err := parseUnknownDocumentToMap(objValue, layer+1)
+						if err == nil {
+							interfaceArr = append(interfaceArr, mObj)
+						}
+					} else {
+						// this is a primitive value, append the interface to the array
+						interfaceArr = append(interfaceArr, itrVal.Interface())
+					}
+				}
+				keyVals[key.String()] = interfaceArr
+			} else if objValue, ok := docVal.MutableDocumentOK(); ok {
+				// this is an object and we need to get the interface of each element
+				// recursively call parseUnknownDocumentToMap
+				// TODO: limit layers
+				mObj, err := parseUnknownDocumentToMap(objValue, layer+1)
+				if err == nil {
+					keyVals[key.String()] = mObj
+				}
+			} else {
+				keyVals[key.String()] = docVal.Interface()
+			}
+		}
+	}
+
+	return keyVals, nil
 }
