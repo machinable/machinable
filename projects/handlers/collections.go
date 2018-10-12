@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
-	"bitbucket.org/nsjostrom/machinable/database"
-	"bitbucket.org/nsjostrom/machinable/models"
+	"bitbucket.org/nsjostrom/machinable/projects/database"
+	"bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
@@ -16,8 +15,8 @@ type errorItem struct {
 	ID objectid.ObjectID `bson:"_id"`
 }
 
-func getOrCreateCollection(name string) error {
-	collection := database.Collection(database.Collections)
+func getOrCreateCollection(name, projectSlug string) error {
+	collection := database.Connect().Collection(database.CollectionNames(projectSlug))
 
 	// Find the resource definition for this object
 	documentResult := collection.FindOne(
@@ -32,20 +31,20 @@ func getOrCreateCollection(name string) error {
 	doc := bson.Document{}
 	err := documentResult.Decode(&doc)
 	if err != nil {
-		err := createNewCollection(name)
+		err := createNewCollection(name, projectSlug)
 		return err
 	}
 
 	return err
 }
 
-func createNewCollection(name string) error {
+func createNewCollection(name, projectSlug string) error {
 	// Create document
 	resourceElements := make([]*bson.Element, 0)
 	resourceElements = append(resourceElements, bson.EC.String("name", name))
 
 	// Get a connection and insert the new document
-	collection := database.Connect().Collection(database.Collections)
+	collection := database.Connect().Collection(database.CollectionNames(projectSlug))
 	_, err := collection.InsertOne(
 		context.Background(),
 		bson.NewDocument(resourceElements...),
@@ -56,6 +55,7 @@ func createNewCollection(name string) error {
 
 // AddCollection creates a new collection
 func AddCollection(c *gin.Context) {
+	projectSlug := c.MustGet("project").(string)
 	var newCollection models.Collection
 	c.BindJSON(&newCollection)
 
@@ -64,7 +64,7 @@ func AddCollection(c *gin.Context) {
 		return
 	}
 
-	err := createNewCollection(newCollection.Name)
+	err := createNewCollection(newCollection.Name, projectSlug)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -75,9 +75,10 @@ func AddCollection(c *gin.Context) {
 
 // GetCollections returns the list of collections for a user
 func GetCollections(c *gin.Context) {
+	projectSlug := c.MustGet("project").(string)
 	collections := make([]*models.Collection, 0)
 
-	collection := database.Connect().Collection(database.Collections)
+	collection := database.Connect().Collection(database.CollectionNames(projectSlug))
 
 	cursor, err := collection.Find(
 		context.Background(),
@@ -105,12 +106,13 @@ func GetCollections(c *gin.Context) {
 // AddObjectToCollection adds a new document to the collection
 func AddObjectToCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")
+	projectSlug := c.MustGet("project").(string)
 	if collectionName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
 		return
 	}
 
-	if err := getOrCreateCollection(collectionName); err != nil {
+	if err := getOrCreateCollection(collectionName, projectSlug); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get collection"})
 		return
 	}
@@ -120,7 +122,7 @@ func AddObjectToCollection(c *gin.Context) {
 	c.BindJSON(&bdoc)
 
 	// Get a connection and insert the new document
-	collection := database.Connect().Collection(fmt.Sprintf(database.CollectionFormat, collectionName))
+	collection := database.Connect().Collection(database.CollectionDocs(projectSlug, collectionName))
 	result, err := collection.InsertOne(
 		context.Background(),
 		bdoc,
@@ -138,12 +140,13 @@ func AddObjectToCollection(c *gin.Context) {
 // GetObjectsFromCollection returns the full list of documents
 func GetObjectsFromCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")
+	projectSlug := c.MustGet("project").(string)
 	if collectionName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
 		return
 	}
 
-	collection := database.Connect().Collection(fmt.Sprintf(database.CollectionFormat, collectionName))
+	collection := database.Connect().Collection(database.CollectionDocs(projectSlug, collectionName))
 
 	cursor, err := collection.Find(
 		context.Background(),

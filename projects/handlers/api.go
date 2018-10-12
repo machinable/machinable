@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"bitbucket.org/nsjostrom/machinable/database"
+	"bitbucket.org/nsjostrom/machinable/projects/database"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
@@ -15,12 +15,14 @@ import (
 // AddObject creates a new document of the resource definition
 func AddObject(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
+	projectSlug := c.MustGet("project").(string)
 	fieldValues := make(map[string]interface{})
 
 	c.BindJSON(&fieldValues)
 
+	resDefCollection := database.Collection(database.ResourceDefinitions(projectSlug))
 	// Get field definitions for this resource
-	resourceDefinition, err := getDefinition(resourcePathName)
+	resourceDefinition, err := getDefinition(resourcePathName, resDefCollection)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "resource does not exist"})
 		return
@@ -34,7 +36,7 @@ func AddObject(c *gin.Context) {
 	}
 
 	// Get the resources.{resourcePathName} collection
-	rc := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
+	rc := database.Collection(database.ResourceDocs(projectSlug, resourcePathName))
 	result, err := rc.InsertOne(
 		context.Background(),
 		objectDocument,
@@ -54,11 +56,13 @@ func AddObject(c *gin.Context) {
 // ListObjects returns the list of objects for a resource
 func ListObjects(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
-	collection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
+	projectSlug := c.MustGet("project").(string)
+	collection := database.Collection(database.ResourceDocs(projectSlug, resourcePathName))
+	resDefCollection := database.Collection(database.ResourceDefinitions(projectSlug))
 	response := make([]map[string]interface{}, 0)
 
 	// Find the resource definition for this object
-	resourceDefinition, err := getDefinition(resourcePathName)
+	resourceDefinition, err := getDefinition(resourcePathName, resDefCollection)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "resource does not exist"})
 		return
@@ -97,10 +101,12 @@ func ListObjects(c *gin.Context) {
 func GetObject(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
 	resourceID := c.Param("resourceID")
-	collection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
+	projectSlug := c.MustGet("project").(string)
+	collection := database.Collection(database.ResourceDocs(projectSlug, resourcePathName))
+	resDefCollection := database.Collection(database.ResourceDefinitions(projectSlug))
 
 	// Find the resource definition for this object
-	_, err := getDefinition(resourcePathName)
+	_, err := getDefinition(resourcePathName, resDefCollection)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "resource does not exist"})
 		return
@@ -146,7 +152,8 @@ func GetObject(c *gin.Context) {
 func DeleteObject(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
 	resourceID := c.Param("resourceID")
-	collection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
+	projectSlug := c.MustGet("project").(string)
+	collection := database.Collection(database.ResourceDocs(projectSlug, resourcePathName))
 
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(resourceID)

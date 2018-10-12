@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"bitbucket.org/nsjostrom/machinable/database"
-	"bitbucket.org/nsjostrom/machinable/models"
+	"bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
+	"github.com/mongodb/mongo-go-driver/mongo"
 )
 
 const (
@@ -111,8 +111,7 @@ func processProperties(properties map[string]models.Property, layer int) ([]*bso
 }
 
 // definitionExists returns true if a definition already exists with path_name or name
-func definitionExists(definition *models.ResourceDefinition) bool {
-	collection := database.Collection(database.ResourceDefinitions)
+func definitionExists(definition *models.ResourceDefinition, collection *mongo.Collection) bool {
 	// Find the resource definition for this object
 	documentResult := collection.FindOne(
 		nil,
@@ -140,8 +139,7 @@ func definitionExists(definition *models.ResourceDefinition) bool {
 }
 
 // getDefinition returns the *model.ResourceDefinition for a resource definition path name
-func getDefinition(resourcePathName string) (*models.ResourceDefinition, error) {
-	collection := database.Collection(database.ResourceDefinitions)
+func getDefinition(resourcePathName string, collection *mongo.Collection) (*models.ResourceDefinition, error) {
 
 	// Find the resource definition for this object
 	documentResult := collection.FindOne(
@@ -172,12 +170,11 @@ func getDefinition(resourcePathName string) (*models.ResourceDefinition, error) 
 }
 
 // getDefinitionByID returns the *model.ResourceDefinition by resource definition ID
-func getDefinitionByID(resourceID string) (*models.ResourceDefinition, error) {
+func getDefinitionByID(resourceID string, collection *mongo.Collection) (*models.ResourceDefinition, error) {
 	objectID, err := objectid.FromHex(resourceID)
 	if err != nil {
 		return nil, err
 	}
-	collection := database.Collection(database.ResourceDefinitions)
 
 	// Find the resource definition for this object
 	documentResult := collection.FindOne(

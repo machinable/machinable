@@ -2,11 +2,10 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
-	"bitbucket.org/nsjostrom/machinable/database"
-	"bitbucket.org/nsjostrom/machinable/models"
+	"bitbucket.org/nsjostrom/machinable/projects/database"
+	"bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
@@ -14,6 +13,7 @@ import (
 
 // AddResourceDefinition creates a new resource definition in the users' collection
 func AddResourceDefinition(c *gin.Context) {
+	projectSlug := c.MustGet("project").(string)
 	// Marshal JSON into ResourceDefinition
 	var resourceDefinition models.ResourceDefinition
 	c.BindJSON(&resourceDefinition)
@@ -24,7 +24,8 @@ func AddResourceDefinition(c *gin.Context) {
 		return
 	}
 
-	if exists := definitionExists(&resourceDefinition); exists == true {
+	resDefCollection := database.Collection(database.ResourceDefinitions(projectSlug))
+	if exists := definitionExists(&resourceDefinition, resDefCollection); exists == true {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "resource already exists"})
 		return
 	}
@@ -43,7 +44,7 @@ func AddResourceDefinition(c *gin.Context) {
 	resourceElements = append(resourceElements, bson.EC.SubDocumentFromElements("properties", propertyElements...))
 
 	// Get a connection and insert the new document
-	collection := database.Connect().Collection(database.ResourceDefinitions)
+	collection := database.Connect().Collection(database.ResourceDefinitions(projectSlug))
 	result, err := collection.InsertOne(
 		context.Background(),
 		bson.NewDocument(resourceElements...),
@@ -61,9 +62,10 @@ func AddResourceDefinition(c *gin.Context) {
 
 // ListResourceDefinitions returns the list of all resource definitions
 func ListResourceDefinitions(c *gin.Context) {
+	projectSlug := c.MustGet("project").(string)
 	definitions := make([]*models.ResourceDefinition, 0)
 
-	collection := database.Connect().Collection(database.ResourceDefinitions)
+	collection := database.Connect().Collection(database.ResourceDefinitions(projectSlug))
 
 	cursor, err := collection.Find(
 		context.Background(),
@@ -92,7 +94,9 @@ func ListResourceDefinitions(c *gin.Context) {
 // GetResourceDefinition returns a single resource definition
 func GetResourceDefinition(c *gin.Context) {
 	resourceID := c.Param("resourceDefinitionID")
-	def, err := getDefinitionByID(resourceID)
+	projectSlug := c.MustGet("project").(string)
+	resDefCollection := database.Collection(database.ResourceDefinitions(projectSlug))
+	def, err := getDefinitionByID(resourceID, resDefCollection)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -103,9 +107,11 @@ func GetResourceDefinition(c *gin.Context) {
 // DeleteResourceDefinition deletes the definition and drops the resource collection
 func DeleteResourceDefinition(c *gin.Context) {
 	resourceID := c.Param("resourceDefinitionID")
+	projectSlug := c.MustGet("project").(string)
 
+	resDefCollection := database.Collection(database.ResourceDefinitions(projectSlug))
 	// Get definition for resource name
-	def, err := getDefinitionByID(resourceID)
+	def, err := getDefinitionByID(resourceID, resDefCollection)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -118,7 +124,7 @@ func DeleteResourceDefinition(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	collection := database.Collection(database.ResourceDefinitions)
+	collection := database.Connect().Collection(database.ResourceDefinitions(projectSlug))
 
 	// Delete the definition
 	_, err = collection.DeleteOne(
@@ -132,7 +138,7 @@ func DeleteResourceDefinition(c *gin.Context) {
 		return
 	}
 
-	resourceCollection := database.Collection(fmt.Sprintf(database.ResourceFormat, resourcePathName))
+	resourceCollection := database.Collection(database.ResourceDocs(projectSlug, resourcePathName))
 	resourceCollection.Drop(nil, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
