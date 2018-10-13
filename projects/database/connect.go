@@ -9,17 +9,31 @@ import (
 )
 
 const (
-	// DatabaseName is the name of the application database
+	// databaseName is the name of the application database
 	databaseName = "machinable"
-	// ResourceDefinitions is the collection for storing resource definitions
+	// resourceDefinitions is the collection for storing resource definitions
 	resourceDefinitions = "%s.definitions"
-	// ResourceFormat is the string format for a resource, this should include an account specifier as well
+	// resourceFormat is the string format for a resource, this should include an account specifier as well
 	resourceFormat = "%s.resource.%s"
-	// Collections is the collection of user collections
+	// collections is the collection of user collections
 	collections = "%s.collections"
-	// CollectionFormat is the string format for a user's created collection
+	// collectionFormat is the string format for a user's created collection
 	collectionFormat = "%s.collections.%s"
+	// userCollection is the collection of users for a project
+	userCollection = "%s.users"
+	// tokenCollection is the collection of api tokens for a project
+	tokenCollection = "%s.tokens"
 )
+
+// TokenDocs returns the formatted string of the collection name of the collection that stores project api tokens
+func TokenDocs(projectSlug string) string {
+	return fmt.Sprintf(tokenCollection, projectSlug)
+}
+
+// UserDocs returns the formatted string of the collection name of the collection that stores project users
+func UserDocs(projectSlug string) string {
+	return fmt.Sprintf(userCollection, projectSlug)
+}
 
 // ResourceDefinitions returns the formatted string of the collection name of the collection that stores resource definitons for a project
 func ResourceDefinitions(projectSlug string) string {

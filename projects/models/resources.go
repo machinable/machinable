@@ -22,7 +22,7 @@ type Property struct {
 	Properties  map[string]Property `json:"properties,omitempty"`  // Fields is a map of name, type for each field of this resource
 }
 
-// MarshalJSON is a customer JSON marshaller for Property
+// MarshalJSON is a custom JSON marshaller for Property
 // The main purpose of this is to omit Items if the Items.Type is empty
 func (p Property) MarshalJSON() ([]byte, error) {
 	prop := struct {

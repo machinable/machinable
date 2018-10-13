@@ -528,7 +528,13 @@ func parseUnknownDocumentToMap(doc *bson.Document, layer int) (map[string]interf
 		docVal := doc.Lookup(key.String())
 
 		if key.String() == DocumentIDKey {
-			keyVals["id"] = docVal.ObjectID().Hex()
+			newID, ok := docVal.ObjectIDOK()
+			if ok {
+				keyVals["id"] = newID.Hex()
+			} else {
+				keyVals["id"] = docVal.Interface()
+			}
+
 		} else {
 			if arrValue, ok := docVal.MutableArrayOK(); ok {
 				// this is an array and we need to get the interface of each element

@@ -41,15 +41,18 @@ func CreateProjectRoutes() *gin.Engine {
 	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
 	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
 
-	// TODO
 	users := router.Group("/users")
-	users.GET("/", notImplemented)          // get list of users for this project
-	users.POST("/", notImplemented)         // create a new user of this project
-	users.POST("/sessions", notImplemented) // create a new session for a user
+	users.GET("/", handlers.ListUsers)            // get list of users for this project
+	users.POST("/", handlers.AddUser)             // create a new user of this project
+	users.GET("/:userID", handlers.GetUser)       // get a single user of this project
+	users.DELETE("/:userID", handlers.DeleteUser) // delete a user of this project
 
 	tokens := router.Group("/tokens")
-	tokens.GET("/", notImplemented)  // get list of api tokens for this project
-	tokens.POST("/", notImplemented) // create a new api token for this project
+	tokens.GET("/", handlers.ListTokens) // get list of api tokens for this project
+	tokens.POST("/", handlers.AddToken)  // create a new api token for this project
+
+	sessions := router.Group("/sessions")
+	sessions.POST("/", notImplemented) // create a new session
 
 	return router
 }
