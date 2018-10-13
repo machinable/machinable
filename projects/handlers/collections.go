@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"bitbucket.org/nsjostrom/machinable/projects/database"
@@ -174,4 +175,77 @@ func GetObjectsFromCollection(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"items": documents})
+}
+
+// GetObjectFromCollection returns a single object with the ID for this resource
+func GetObjectFromCollection(c *gin.Context) {
+	collectionName := c.Param("collectionName")
+	objectIDStr := c.Param("objectID")
+	projectSlug := c.MustGet("project").(string)
+	collection := database.Collection(database.CollectionDocs(projectSlug, collectionName))
+
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(objectIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid identifier '%s': %s", objectIDStr, err.Error())})
+		return
+	}
+
+	// Find object based on ID
+	documentResult := collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		nil,
+	)
+
+	if documentResult == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no documents for collection"})
+	}
+
+	// Decode result into document
+	doc := bson.NewDocument()
+	err = documentResult.Decode(doc)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("object does not exist, '%s'", objectID)})
+		return
+	}
+
+	// Lookup  definitions for this resource
+	object, err := parseUnknownDocumentToMap(doc, 0)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
+
+	c.JSON(http.StatusOK, object)
+}
+
+// DeleteObjectFromCollection deletes the object from the collection
+func DeleteObjectFromCollection(c *gin.Context) {
+	collectionName := c.Param("collectionName")
+	objectIDStr := c.Param("objectID")
+	projectSlug := c.MustGet("project").(string)
+	collection := database.Collection(database.CollectionDocs(projectSlug, collectionName))
+
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(objectIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid identifier '%s': %s", objectIDStr, err.Error())})
+		return
+	}
+
+	// Delete the object
+	_, err = collection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }

@@ -23,8 +23,8 @@ func CreateProjectRoutes() *gin.Engine {
 	collections.POST("/", handlers.AddCollection)
 	collections.POST("/:collectionName", handlers.AddObjectToCollection)
 	collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
-	collections.GET("/:collectionName/:objectID", notImplemented)
-	collections.DELETE("/:collectionName/:objectID", notImplemented)
+	collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
+	collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 
 	// TODO JSON Tree with any layer accessible via HTTP URL Path
 	//collections.GET("/:collectionName/*collectionKeys", notImplemented)

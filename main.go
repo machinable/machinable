@@ -26,7 +26,6 @@ func (hs HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	subDomain := hostParts[0]
-	log.Println("sub domain: " + subDomain)
 
 	handler, ok := hs[subDomain]
 
