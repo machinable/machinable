@@ -122,6 +122,14 @@ func AddObjectToCollection(c *gin.Context) {
 
 	c.BindJSON(&bdoc)
 
+	// iterate over root keys for reserved fields
+	for key := range bdoc {
+		if reservedField(key) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("'%s' is a reserved field", key)})
+			return
+		}
+	}
+
 	// Get a connection and insert the new document
 	collection := database.Connect().Collection(database.CollectionDocs(projectSlug, collectionName))
 	result, err := collection.InsertOne(
@@ -134,7 +142,13 @@ func AddObjectToCollection(c *gin.Context) {
 		return
 	}
 
-	bdoc["id"] = result.InsertedID.(objectid.ObjectID).Hex()
+	insertedID, ok := result.InsertedID.(objectid.ObjectID)
+	if ok {
+		bdoc["id"] = insertedID.Hex()
+	} else {
+		bdoc["id"] = result.InsertedID.(interface{})
+	}
+
 	c.JSON(http.StatusCreated, bdoc)
 }
 
@@ -160,11 +174,9 @@ func GetObjectsFromCollection(c *gin.Context) {
 	}
 
 	documents := make([]map[string]interface{}, 0)
-	//documents := make([]*bson.Document, 0)
 	doc := bson.NewDocument()
 	for cursor.Next(context.Background()) {
 		doc.Reset()
-		//doc := make(map[string]interface{})
 		err := cursor.Decode(doc)
 		if err == nil {
 			document, err := parseUnknownDocumentToMap(doc, 0)
@@ -186,7 +198,7 @@ func GetObjectFromCollection(c *gin.Context) {
 
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(objectIDStr)
-	if err != nil {
+	if err != nil && objectIDStr == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid identifier '%s': %s", objectIDStr, err.Error())})
 		return
 	}
@@ -208,7 +220,7 @@ func GetObjectFromCollection(c *gin.Context) {
 	doc := bson.NewDocument()
 	err = documentResult.Decode(doc)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("object does not exist, '%s'", objectID)})
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("object does not exist, '%s'", objectIDStr)})
 		return
 	}
 

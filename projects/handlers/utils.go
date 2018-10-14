@@ -17,16 +17,31 @@ const (
 	MaxRecursion = 8
 )
 
-// supportedTypes is the list of supported resource field types, this will include any other
-// resource definitions that have been created ("foreign key")
+// supportedTypes is the list of supported resource field types
 var supportedTypes = []string{"integer", "number", "boolean", "string", "array", "object"}
-var supportedArrayItemTypes = []string{"integer", "number", "boolean", "string"}
+
+// supportedArrayItemTypes is the list of supported array types. This does not supported arrays of arrays
+var supportedArrayItemTypes = []string{"integer", "number", "boolean", "string", "object"}
+
+// supportedFormats is the list of supported String formats, which are used to validate the field value
 var supportedFormats = []string{"date-time", "email", "hostname", "ipv4", "ipv6"}
-var reservedFieldKeys = []string{"id", DocumentIDKey, "ID"}
+
+// reservedFieldKeys is the list of keys that cannot be used, as they are reserved for machinable use
+var reservedFieldKeys = []string{"id", DocumentIDKey, "ID", "Id", "iD"}
 
 // supportedType returns true if the string is a supported type, false otherwise.
 func supportedType(a string) bool {
 	for _, b := range supportedTypes {
+		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+// supportedArrayType returns true if the string is a supported array type, false otherwise.
+func supportedArrayType(a string) bool {
+	for _, b := range supportedArrayItemTypes {
 		if b == a {
 			return true
 		}
@@ -76,9 +91,13 @@ func processProperties(properties map[string]models.Property, layer int) ([]*bso
 		itemsType := ""
 		if prop.Items != nil {
 			itemsType = prop.Items.Type
-			if !supportedType(itemsType) {
+			if !supportedArrayType(itemsType) {
 				return nil, fmt.Errorf("'%s' is not a supported property items.type", itemsType)
 			}
+
+			// TODO: prop.Items.Type is 'object', process prop.Items.Properties (recursive)
+
+			// NOTE: how do we support arrays of arrays?
 		}
 
 		properties := make([]*bson.Element, 0)
@@ -91,8 +110,6 @@ func processProperties(properties map[string]models.Property, layer int) ([]*bso
 				return nil, errors.New("could not process property's properties")
 			}
 		}
-
-		// TODO: `object` type, call processProperties on `properties`
 
 		propertyElements = append(
 			propertyElements,
@@ -534,7 +551,6 @@ func parseUnknownDocumentToMap(doc *bson.Document, layer int) (map[string]interf
 			} else {
 				keyVals["id"] = docVal.Interface()
 			}
-
 		} else {
 			if arrValue, ok := docVal.MutableArrayOK(); ok {
 				// this is an array and we need to get the interface of each element
