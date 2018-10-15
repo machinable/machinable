@@ -112,7 +112,7 @@ func (s *ProjectSession) UnmarshalBSON(bytes []byte) error {
 
 	// This is the only reason we have this Unmarshaler. The default unmarshal is trying to
 	// set this as an int64, rather than time.Time
-	s.LastAccessed = doc.Lookup("created").Time()
+	s.LastAccessed = doc.Lookup("last_accessed").Time()
 
 	return nil
 }
