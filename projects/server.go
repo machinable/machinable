@@ -52,7 +52,8 @@ func CreateProjectRoutes() *gin.Engine {
 	tokens.POST("/", handlers.AddToken)  // create a new api token for this project
 
 	sessions := router.Group("/sessions")
-	sessions.POST("/", notImplemented) // create a new session
+	sessions.POST("/", handlers.CreateSession) // create a new session
+	sessions.GET("/", handlers.ListSessions)   // list sessions of a project
 
 	return router
 }

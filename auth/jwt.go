@@ -25,8 +25,8 @@ func TokenLookup(token *jwt.Token) (interface{}, error) {
 	return []byte(SecretKey), nil
 }
 
-// GetRefreshToken creates a new JWT to be used as the refresh token. The refresh token can be used to retrieve a new access token.
-func GetRefreshToken(sessionID, userID string) (string, error) {
+// CreateRefreshToken creates a new JWT to be used as the refresh token. The refresh token can be used to retrieve a new access token.
+func CreateRefreshToken(sessionID, userID string) (string, error) {
 	// create refresh jwt
 	claims := jwt.MapClaims{
 		"session_id": sessionID,
