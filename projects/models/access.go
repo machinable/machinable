@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson"
@@ -115,10 +116,26 @@ type NewProjectUser struct {
 	Write    bool   `json:"write"`
 }
 
+// Validate checks that the new user has a username and password.
+func (u *NewProjectUser) Validate() error {
+	if u.Username == "" || u.Password == "" {
+		return errors.New("invalid username or password")
+	}
+	return nil
+}
+
 // NewProjectToken is the JSON structure of a new api token request
 type NewProjectToken struct {
 	Token       string `json:"token"`
 	Description string `json:"description"`
 	Read        bool   `json:"read"`
 	Write       bool   `json:"write"`
+}
+
+// Validate checks that the new token is not empty
+func (u *NewProjectToken) Validate() error {
+	if u.Token == "" {
+		return errors.New("invalid token")
+	}
+	return nil
 }

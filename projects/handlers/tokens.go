@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/projects/database"
 	"bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/gin-gonic/gin"
@@ -19,18 +20,33 @@ func AddToken(c *gin.Context) {
 
 	c.BindJSON(&newToken)
 
+	err := newToken.Validate()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// generate hashed token
+	tokenHash, err := auth.HashPassword(newToken.Token)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	newToken.Token = ""
+
 	token := &models.ProjectAPIToken{
 		ID:          objectid.New(), // I don't like this
 		Created:     time.Now(),
-		TokenHash:   newToken.Token, // salt and hash
+		TokenHash:   tokenHash,
 		Description: newToken.Description,
 		Read:        newToken.Read,
 		Write:       newToken.Write,
 	}
 
-	// Get the resources.{resourcePathName} collection
+	// get the tokens collection
 	rc := database.Collection(database.TokenDocs(projectSlug))
-	_, err := rc.InsertOne(
+	// save token
+	_, err = rc.InsertOne(
 		context.Background(),
 		token,
 	)

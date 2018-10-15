@@ -9,21 +9,20 @@ import (
 )
 
 const (
-	// databaseName is the name of the application database
-	databaseName = "machinable"
-	// resourceDefinitions is the collection for storing resource definitions
+	databaseName        = "machinable"
 	resourceDefinitions = "%s.definitions"
-	// resourceFormat is the string format for a resource, this should include an account specifier as well
-	resourceFormat = "%s.resource.%s"
-	// collections is the collection of user collections
-	collections = "%s.collections"
-	// collectionFormat is the string format for a user's created collection
-	collectionFormat = "%s.collections.%s"
-	// userCollection is the collection of users for a project
-	userCollection = "%s.users"
-	// tokenCollection is the collection of api tokens for a project
-	tokenCollection = "%s.tokens"
+	resourceFormat      = "%s.resource.%s"
+	collections         = "%s.collections"
+	collectionFormat    = "%s.collections.%s"
+	userCollection      = "%s.users"
+	tokenCollection     = "%s.tokens"
+	sessionCollection   = "%s.sessions"
 )
+
+// SessionDocs returns the formatted string of the collection name for the collection of sessions
+func SessionDocs(projectSlug string) string {
+	return fmt.Sprintf(sessionCollection, projectSlug)
+}
 
 // TokenDocs returns the formatted string of the collection name of the collection that stores project api tokens
 func TokenDocs(projectSlug string) string {

@@ -8,6 +8,7 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 
+	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/projects/database"
 	"bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/gin-gonic/gin"
@@ -20,18 +21,35 @@ func AddUser(c *gin.Context) {
 
 	c.BindJSON(&newUser)
 
+	// validate user
+	err := newUser.Validate()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// generate hashed password
+	passwordHash, err := auth.HashPassword(newUser.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	newUser.Password = ""
+
+	// create project user object
 	user := &models.ProjectUser{
 		ID:           objectid.New(), // I don't like this
 		Created:      time.Now(),
-		PasswordHash: newUser.Password, // salt and hash
+		PasswordHash: passwordHash,
 		Username:     newUser.Username,
 		Read:         newUser.Read,
 		Write:        newUser.Write,
 	}
 
-	// Get the resources.{resourcePathName} collection
+	// get the users collection
 	rc := database.Collection(database.UserDocs(projectSlug))
-	_, err := rc.InsertOne(
+	// save the user
+	_, err = rc.InsertOne(
 		context.Background(),
 		user,
 	)
