@@ -25,6 +25,8 @@ func AddUser(c *gin.Context) {
 		Created:      time.Now(),
 		PasswordHash: newUser.Password, // salt and hash
 		Username:     newUser.Username,
+		Read:         newUser.Read,
+		Write:        newUser.Write,
 	}
 
 	// Get the resources.{resourcePathName} collection

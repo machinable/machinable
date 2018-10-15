@@ -24,6 +24,8 @@ func AddToken(c *gin.Context) {
 		Created:     time.Now(),
 		TokenHash:   newToken.Token, // salt and hash
 		Description: newToken.Description,
+		Read:        newToken.Read,
+		Write:       newToken.Write,
 	}
 
 	// Get the resources.{resourcePathName} collection

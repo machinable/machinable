@@ -62,8 +62,10 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// Connect returns a *mongo.Database connection
-func Connect() *mongo.Database {
+// DB is the connectin to the mongodb, TODO: move this to a managed structure
+var DB *mongo.Database
+
+func createConnection() *mongo.Database {
 	host := getEnv("MONGO_HOST", "localhost")
 	port := getEnv("MONGO_PORT", "27017")
 	client, err := mongo.Connect(context.Background(), fmt.Sprintf("mongodb://%s:%s", host, port), nil)
@@ -73,6 +75,15 @@ func Connect() *mongo.Database {
 	}
 
 	return client.Database(databaseName)
+}
+
+// Connect returns a *mongo.Database connection
+func Connect() *mongo.Database {
+	if DB == nil {
+		DB = createConnection()
+	}
+
+	return DB
 }
 
 // Collection returns a *mongo.Collection connection
