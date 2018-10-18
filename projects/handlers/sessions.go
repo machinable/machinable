@@ -3,24 +3,17 @@ package handlers
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"strings"
-	"time"
-
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/mssola/user_agent"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/projects/database"
 	"bitbucket.org/nsjostrom/machinable/projects/models"
+	as "bitbucket.org/nsjostrom/machinable/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/mongo"
 )
 
 // CreateSession creates a new project user session
@@ -93,6 +86,7 @@ func CreateSession(c *gin.Context) {
 			"active": true,
 			"read":   user.Read,
 			"write":  user.Write,
+			"type":   "project",
 		},
 	}
 
@@ -104,7 +98,7 @@ func CreateSession(c *gin.Context) {
 
 	// create session in database (refresh token)
 	sessionCollection := database.Collection(database.SessionDocs(projectSlug))
-	session, err := createSession(user.ID.Hex(), c.ClientIP(), c.Request.UserAgent(), sessionCollection)
+	session, err := as.CreateSession(user.ID.Hex(), c.ClientIP(), c.Request.UserAgent(), sessionCollection)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
 		return
@@ -127,7 +121,7 @@ func CreateSession(c *gin.Context) {
 // ListSessions lists all active user sessions for a project
 func ListSessions(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
-	sessions := make([]*models.ProjectSession, 0)
+	sessions := make([]*as.Session, 0)
 
 	collection := database.Connect().Collection(database.SessionDocs(projectSlug))
 
@@ -142,7 +136,7 @@ func ListSessions(c *gin.Context) {
 	}
 
 	for cursor.Next(context.Background()) {
-		var session models.ProjectSession
+		var session as.Session
 		err := cursor.Decode(&session)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -162,72 +156,4 @@ func RevokeSession(c *gin.Context) {
 // RefreshSession uses the refresh token to generate a new access token
 func RefreshSession(c *gin.Context) {
 
-}
-
-func getGeoIP(ip string) (string, error) {
-	// ... this should be changed to get the access key from a config or environment variable
-	accessKey := "85a38b87f3b696c7dcbf8f6f58c3c6a9"
-	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s", ip, accessKey)
-
-	ipStackData := struct {
-		City       string `json:"city"`
-		RegionCode string `json:"region_code"`
-	}{}
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", errors.New("error creating request")
-	}
-
-	// set client with 10 second timeout
-	client := &http.Client{Timeout: time.Second * 10}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", errors.New("error making request")
-	}
-
-	defer resp.Body.Close()
-
-	if err := json.NewDecoder(resp.Body).Decode(&ipStackData); err != nil {
-		return "", errors.New("error decoding response")
-	}
-
-	location := ""
-
-	if ipStackData.City != "" && ipStackData.RegionCode != "" {
-		location = ipStackData.City + ", " + ipStackData.RegionCode
-	}
-
-	return location, nil
-}
-
-func createSession(userID, ip, userAgent string, collection *mongo.Collection) (*models.ProjectSession, error) {
-	location, _ := getGeoIP(ip)
-
-	ua := user_agent.New(userAgent)
-
-	bname, bversion := ua.Browser()
-	session := &models.ProjectSession{
-		ID:           objectid.New(),
-		UserID:       userID,
-		Location:     location,
-		Mobile:       ua.Mobile(),
-		IP:           ip,
-		LastAccessed: time.Now(),
-		Browser:      bname + " " + bversion,
-		OS:           ua.OS(),
-	}
-
-	// save the user
-	_, err := collection.InsertOne(
-		context.Background(),
-		session,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return session, nil
 }

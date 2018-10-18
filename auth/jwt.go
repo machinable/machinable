@@ -40,7 +40,7 @@ func CreateRefreshToken(sessionID, userID string) (string, error) {
 // CreateAccessToken creates a new JWT to be used as an access token.
 func CreateAccessToken(claims jwt.MapClaims) (string, error) {
 	expiry := time.Now().Add(time.Minute * AccessTokenExpiry).Unix()
-	return CreateJWT(jwt.MapClaims{}, expiry)
+	return CreateJWT(claims, expiry)
 }
 
 // CreateJWT creates a new JWT. This function will add the `exp` key to the claims based on the expiry time.

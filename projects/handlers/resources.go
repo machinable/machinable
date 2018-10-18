@@ -124,10 +124,9 @@ func DeleteResourceDefinition(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	collection := database.Connect().Collection(database.ResourceDefinitions(projectSlug))
 
 	// Delete the definition
-	_, err = collection.DeleteOne(
+	_, err = resDefCollection.DeleteOne(
 		context.Background(),
 		bson.NewDocument(
 			bson.EC.ObjectID("_id", objectID),
