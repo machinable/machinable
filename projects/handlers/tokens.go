@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
+	uuid "github.com/satori/go.uuid"
 )
 
 // AddToken creates a new api token for this project
@@ -89,10 +90,14 @@ func ListTokens(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": tokens})
 }
 
-// GetToken retrieves a single api token of this project by ID
-func GetToken(c *gin.Context) {
-	//projectSlug := c.MustGet("project").(string)
-	c.JSON(http.StatusNotImplemented, gin.H{})
+// GenerateToken retrieves a single api token of this project by ID
+func GenerateToken(c *gin.Context) {
+	UUID, err := uuid.NewV4()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"key": UUID.String()})
 }
 
 // DeleteToken removes an api token by ID

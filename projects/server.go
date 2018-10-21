@@ -54,8 +54,9 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	tokens.Use(middleware.AppUserJwtAuthzMiddleware())
 	tokens.Use(middleware.AppUserProjectAuthzMiddleware())
 
-	tokens.GET("/", handlers.ListTokens) // get list of api tokens for this project
-	tokens.POST("/", handlers.AddToken)  // create a new api token for this project
+	tokens.GET("/generate", handlers.GenerateToken) // get list of api tokens for this project
+	tokens.GET("/", handlers.ListTokens)            // get list of api tokens for this project
+	tokens.POST("/", handlers.AddToken)             // create a new api token for this project
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
