@@ -13,19 +13,19 @@ func notImplemented(c *gin.Context) {
 }
 
 func setupProjectUserRoutes(engine *gin.Engine) {
-	// collections := engine.Group("/collections")
-	// collections.GET("/", handlers.GetCollections)
-	// collections.POST("/", handlers.AddCollection)
-	// collections.POST("/:collectionName", handlers.AddObjectToCollection)
-	// collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
-	// collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
-	// collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
+	collections := engine.Group("/collections")
+	collections.GET("/", handlers.GetCollections)
+	collections.POST("/", handlers.AddCollection)
+	collections.POST("/:collectionName", handlers.AddObjectToCollection)
+	collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
+	collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
+	collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 
-	// api := engine.Group("/api")
-	// api.POST("/:resourcePathName", handlers.AddObject)
-	// api.GET("/:resourcePathName", handlers.ListObjects)
-	// api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
-	// api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
+	api := engine.Group("/api")
+	api.POST("/:resourcePathName", handlers.AddObject)
+	api.GET("/:resourcePathName", handlers.ListObjects)
+	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
+	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
 }
 
 func setupMgmtRoutes(engine *gin.Engine) {
