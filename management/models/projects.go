@@ -2,11 +2,69 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
+	"github.com/mongodb/mongo-go-driver/mongo"
 )
+
+// reservedProjectSlugs is a list of project slugs that are not allowed to be used, partially so
+// we can have reserved sub domains, also so don't muck up our db schema in any way.
+var reservedProjectSlugs = map[string]bool{
+	"management": true,
+	"manage":     true,
+	"users":      true,
+	"projects":   true,
+	"sessions":   true,
+	"machinable": true,
+}
+
+// ProjectBody is used to unmarshal the JSON body of an incoming request
+type ProjectBody struct {
+	UserID      string `json:"user_id"`
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Icon        string `json:"icon"`
+}
+
+// Validate checks the project body for invalid fields
+func (pb *ProjectBody) Validate() error {
+	if pb.UserID == "" || pb.Slug == "" || pb.Name == "" || pb.Icon == "" {
+		return errors.New("invalid project parameters")
+	}
+	return nil
+}
+
+// DuplicateSlug checks the database for the ProjectBody's slug
+func (pb *ProjectBody) DuplicateSlug(col *mongo.Collection) bool {
+	// check if the slug is in the `reservedProjectNames`
+	if _, ok := reservedProjectSlugs[pb.Slug]; ok {
+		// mark as duplicate if this slug is not allowed
+		return true
+	}
+	// look up the user
+	documentResult := col.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.String("slug", pb.Slug),
+		),
+		nil,
+	)
+
+	project := make(map[string]interface{})
+	// decode project document
+	err := documentResult.Decode(project)
+	if err != nil {
+		// no documents in result, project slug does not already exist
+		return false
+	}
+
+	// slug already exists
+	return true
+}
 
 // Project is an application project created and managed by a `User`
 type Project struct {
