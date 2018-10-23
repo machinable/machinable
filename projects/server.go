@@ -26,6 +26,12 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 	api.GET("/:resourcePathName", handlers.ListObjects)
 	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
 	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
+
+	// sessions have a mixed authz policy so there is a route here and at /mgmt/sessions
+	sessions := engine.Group("/sessions")
+	sessions.POST("/", handlers.CreateSession)             // create a new session
+	sessions.GET("/", handlers.ListSessions)               // list sessions of a project
+	sessions.DELETE("/:sessionID", handlers.RevokeSession) // delete this user's session
 }
 
 func setupMgmtRoutes(engine *gin.Engine) {
@@ -76,6 +82,10 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	api.GET("/:resourcePathName", handlers.ListObjects)
 	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
 	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
+
+	sessions := mgmt.Group("/sessions")
+	sessions.GET("/", handlers.ListSessions)
+	sessions.DELETE("/:sessionID", handlers.RevokeSession)
 }
 
 // CreateProjectRoutes creates a gin.Engine for the project routes
@@ -86,11 +96,6 @@ func CreateProjectRoutes() *gin.Engine {
 
 	setupMgmtRoutes(router)
 	setupProjectUserRoutes(router)
-
-	// sessions has a mixed authz policy
-	sessions := router.Group("/sessions")
-	sessions.POST("/", handlers.CreateSession)                                       // create a new session
-	sessions.GET("/", middleware.AppUserJwtAuthzMiddleware(), handlers.ListSessions) // list sessions of a project
 
 	return router
 }

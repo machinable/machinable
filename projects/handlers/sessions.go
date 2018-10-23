@@ -14,6 +14,7 @@ import (
 	as "bitbucket.org/nsjostrom/machinable/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // CreateSession creates a new project user session
@@ -150,7 +151,31 @@ func ListSessions(c *gin.Context) {
 
 // RevokeSession deletes a session from the project collection
 func RevokeSession(c *gin.Context) {
+	sessionID := c.Param("sessionID")
+	projectSlug := c.MustGet("project").(string)
 
+	sessCollection := database.Collection(database.SessionDocs(projectSlug))
+
+	// Get the object id
+	objectID, err := objectid.FromHex(sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Delete the session
+	_, err = sessCollection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 // RefreshSession uses the refresh token to generate a new access token
