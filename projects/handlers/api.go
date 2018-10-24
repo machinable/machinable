@@ -28,6 +28,8 @@ func AddObject(c *gin.Context) {
 		return
 	}
 
+	// TODO: Create openAPI schema and validate submitted data against it
+
 	// Create document for this resource based on the field definitions
 	objectDocument, err := createPropertyDocument(fieldValues, resourceDefinition.Properties, 0)
 	if err != nil {

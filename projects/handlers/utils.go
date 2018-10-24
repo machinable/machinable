@@ -410,7 +410,6 @@ func createPropertyBSONElement(property *models.Property, key string, value inte
 		}
 		return bson.EC.Boolean(key, valueAssert), nil
 	case "string":
-		// TODO: validate value based on `format` definition
 		valueAssert, ok := value.(string)
 		if !ok {
 			return nil, fmt.Errorf("invalid type on '%s'", key)
@@ -435,7 +434,6 @@ func createPropertyBSONElement(property *models.Property, key string, value inte
 
 		return bson.EC.Array(key, bsonArray), nil
 	case "object":
-		// TODO: createPropertyDocument on object
 		propertyProperties := property.Properties
 		valueAssert, ok := value.(map[string]interface{})
 		if !ok {
