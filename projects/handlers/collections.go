@@ -99,9 +99,70 @@ func GetCollections(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		collections = append(collections, &models.Collection{Name: doc.Lookup("name").StringValue()})
+		collections = append(collections, &models.Collection{Name: doc.Lookup("name").StringValue(), ID: doc.Lookup("_id").ObjectID().Hex()})
 	}
 	c.JSON(http.StatusOK, gin.H{"items": collections})
+}
+
+// DeleteCollection deletes a project collection along with all of it's data
+func DeleteCollection(c *gin.Context) {
+	collectionID := c.Param("collectionName")
+	projectSlug := c.MustGet("project").(string)
+
+	collections := database.Collection(database.CollectionNames(projectSlug))
+	// Get the object id for collection name
+	objectID, err := objectid.FromHex(collectionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Find object based on ID
+	documentResult := collections.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		nil,
+	)
+
+	if documentResult == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "collection not found"})
+	}
+
+	// decode result into document
+	doc := bson.NewDocument()
+	err = documentResult.Decode(doc)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("collection not found, '%s'", collectionID)})
+		return
+	}
+
+	// get collection name
+	collectionName := doc.Lookup("name").StringValue()
+
+	// delete the collection
+	_, err = collections.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// drop the collection docs (actual data for this collection)
+	collectionData := database.Collection(database.CollectionDocs(projectSlug, collectionName))
+
+	err = collectionData.Drop(nil, nil)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
 
 // AddObjectToCollection adds a new document to the collection

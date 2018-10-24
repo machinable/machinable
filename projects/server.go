@@ -74,6 +74,7 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	collections.POST("/", handlers.AddCollection)
 	collections.POST("/:collectionName", handlers.AddObjectToCollection)
 	collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
+	collections.DELETE("/:collectionName", handlers.DeleteCollection) // this is actually uses collection ID as the parameter, gin does not allow different wildcard names
 	collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
 	collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 

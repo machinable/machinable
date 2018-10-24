@@ -138,7 +138,7 @@ func DeleteResourceDefinition(c *gin.Context) {
 	}
 
 	resourceCollection := database.Collection(database.ResourceDocs(projectSlug, resourcePathName))
-	resourceCollection.Drop(nil, nil)
+	err = resourceCollection.Drop(nil, nil)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
