@@ -2,13 +2,15 @@ package models
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // ResourceDefinition defines an API resource
 type ResourceDefinition struct {
-	ID         string              `json:"id"`                 // ID is the unique identifier for this resource definition
-	Title      string              `json:"title"`              // Title of this resource
-	PathName   string              `json:"path_name"`          // PathName is the name that will appear in the URL path
+	ID         string              `json:"id"`        // ID is the unique identifier for this resource definition
+	Title      string              `json:"title"`     // Title of this resource
+	PathName   string              `json:"path_name"` // PathName is the name that will appear in the URL path
+	Created    time.Time           `json:"created"`
 	Required   []string            `json:"required,omitempty"` // Required is an array of required properties
 	Properties map[string]Property `json:"properties"`         // Fields is a map of name, type for each field of this resource
 }

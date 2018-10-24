@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"bitbucket.org/nsjostrom/machinable/projects/database"
 	"bitbucket.org/nsjostrom/machinable/projects/models"
@@ -41,6 +42,7 @@ func AddResourceDefinition(c *gin.Context) {
 	resourceElements := make([]*bson.Element, 0)
 	resourceElements = append(resourceElements, bson.EC.String("title", resourceDefinition.Title))
 	resourceElements = append(resourceElements, bson.EC.String("path_name", resourceDefinition.PathName))
+	resourceElements = append(resourceElements, bson.EC.Time("created", time.Now()))
 	resourceElements = append(resourceElements, bson.EC.SubDocumentFromElements("properties", propertyElements...))
 
 	// Get a connection and insert the new document

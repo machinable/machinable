@@ -64,6 +64,11 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	tokens.GET("/", handlers.ListTokens)            // get list of api tokens for this project
 	tokens.POST("/", handlers.AddToken)             // create a new api token for this project
 
+	// stats := engine.Group("/stats")
+	// stats.Use(middleware.AppUserJwtAuthzMiddleware())
+	// stats.Use(middleware.AppUserProjectAuthzMiddleware())
+	// stats.GET("/collections/:collectionID", handlers.GetCollection)
+
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())

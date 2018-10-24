@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"bitbucket.org/nsjostrom/machinable/projects/database"
 	"bitbucket.org/nsjostrom/machinable/projects/models"
@@ -43,6 +44,7 @@ func createNewCollection(name, projectSlug string) error {
 	// Create document
 	resourceElements := make([]*bson.Element, 0)
 	resourceElements = append(resourceElements, bson.EC.String("name", name))
+	resourceElements = append(resourceElements, bson.EC.Time("created", time.Now()))
 
 	// Get a connection and insert the new document
 	collection := database.Connect().Collection(database.CollectionNames(projectSlug))
@@ -99,7 +101,19 @@ func GetCollections(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		collections = append(collections, &models.Collection{Name: doc.Lookup("name").StringValue(), ID: doc.Lookup("_id").ObjectID().Hex()})
+		// get count
+		docName := doc.Lookup("name").StringValue()
+		collectPath := database.CollectionDocs(projectSlug, docName)
+		collection := database.Connect().Collection(collectPath)
+		cnt, _ := collection.CountDocuments(nil, nil, nil)
+
+		collections = append(collections,
+			&models.Collection{
+				Name:    doc.Lookup("name").StringValue(),
+				ID:      doc.Lookup("_id").ObjectID().Hex(),
+				Created: doc.Lookup("created").Time(),
+				Items:   cnt,
+			})
 	}
 	c.JSON(http.StatusOK, gin.H{"items": collections})
 }
@@ -181,7 +195,11 @@ func AddObjectToCollection(c *gin.Context) {
 
 	bdoc := make(map[string]interface{})
 
-	c.BindJSON(&bdoc)
+	err := c.BindJSON(&bdoc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	// iterate over root keys for reserved fields
 	for key := range bdoc {

@@ -288,6 +288,8 @@ func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
 	}
 	def.ID = doc.Lookup(DocumentIDKey).ObjectID().Hex()
 	def.Title = doc.Lookup("title").StringValue()
+	c, _ := doc.Lookup("created").TimeOK()
+	def.Created = c
 	def.PathName = doc.Lookup("path_name").StringValue()
 
 	propertiesDoc, err := getMutableDocument("properties", doc)
