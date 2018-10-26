@@ -78,8 +78,8 @@ func CreateSession(c *gin.Context) {
 
 	// create access token
 	claims := jwt.MapClaims{
-		"projects": []string{
-			projectSlug,
+		"projects": map[string]interface{}{
+			projectSlug: true,
 		},
 		"user": map[string]interface{}{
 			"id":     user.ID,

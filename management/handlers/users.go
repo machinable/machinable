@@ -54,6 +54,7 @@ func (u *newUserBody) DuplicateUsername(col *mongo.Collection) bool {
 }
 
 func createAccessToken(user *models.User) (string, error) {
+	// TODO: add user project map to jwt
 	claims := jwt.MapClaims{
 		"projects": make(map[string]interface{}),
 		"user": map[string]interface{}{

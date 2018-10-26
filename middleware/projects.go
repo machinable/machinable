@@ -13,6 +13,9 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson"
 )
 
+var BEARER = "bearer"
+var APIKEY = "apikey"
+
 // ProjectUserAuthzMiddleware authenticates the JWT and verifies the requesting user has access to this project
 func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -27,69 +30,77 @@ func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 		// validate Authorization header
 		if values, _ := c.Request.Header["Authorization"]; len(values) > 0 {
 
-			tokenString := strings.Split(values[0], " ")[1]
-			token, err := jwt.Parse(tokenString, auth.TokenLookup)
+			vals := strings.Split(values[0], " ")
 
-			if err == nil {
+			authType := strings.ToLower(vals[0])
 
-				// token is valid, get claims and perform authorization
-				claims := token.Claims.(jwt.MapClaims)
+			if authType == BEARER {
+				tokenString := vals[1]
+				token, err := jwt.Parse(tokenString, auth.TokenLookup)
 
-				projects, ok := claims["projects"].(map[string]interface{})
-				if !ok {
-					respondWithError(http.StatusUnauthorized, "improperly formatted access token", c)
+				if err == nil {
+
+					// token is valid, get claims and perform authorization
+					claims := token.Claims.(jwt.MapClaims)
+
+					projects, ok := claims["projects"].(map[string]interface{})
+					if !ok {
+						respondWithError(http.StatusUnauthorized, "improperly formatted access token -projects", c)
+						return
+					}
+
+					_, ok = projects[project]
+					if !ok {
+						// project user does not have access to this project
+						respondWithError(http.StatusNotFound, "project not found", c)
+						return
+					}
+
+					user, ok := claims["user"].(map[string]interface{})
+					if !ok {
+						respondWithError(http.StatusUnauthorized, "improperly formatted access token -user", c)
+						return
+					}
+
+					userType, ok := user["type"].(string)
+					if !ok || userType != "project" {
+						respondWithError(http.StatusUnauthorized, "invalid access token", c)
+						return
+					}
+
+					userIsActive, ok := user["active"].(bool)
+					if !ok || !userIsActive {
+						respondWithError(http.StatusUnauthorized, "user is not active, please confirm your account", c)
+						return
+					}
+
+					// check user permissions
+					perms := map[string]bool{}
+					if user["read"].(bool) {
+						perms["GET"] = true
+					}
+					if user["write"].(bool) {
+						perms["POST"] = true
+						perms["DELETE"] = true
+						perms["PUT"] = true
+						// perms["PATCH"] = true
+					}
+
+					if _, ok := perms[c.Request.Method]; !ok {
+						respondWithError(http.StatusUnauthorized, fmt.Sprintf("user does not have permission to '%s'", c.Request.Method), c)
+						return
+					}
+
+					// inject claims into context
+					c.Set("projects", projects)
+					c.Set("user_id", user["id"])
+					c.Set("username", user["name"])
+
+					c.Next()
 					return
 				}
-
-				_, ok = projects[project]
-				if !ok {
-					// project user does not have access to this project
-					respondWithError(http.StatusNotFound, "project not found", c)
-					return
-				}
-
-				user, ok := claims["user"].(map[string]interface{})
-				if !ok {
-					respondWithError(http.StatusUnauthorized, "improperly formatted access token", c)
-					return
-				}
-
-				userType, ok := user["type"].(string)
-				if !ok || userType != "project" {
-					respondWithError(http.StatusUnauthorized, "invalid access token", c)
-					return
-				}
-
-				userIsActive, ok := user["active"].(bool)
-				if !ok || !userIsActive {
-					respondWithError(http.StatusUnauthorized, "user is not active, please confirm your account", c)
-					return
-				}
-
-				// check user permissions
-				perms := map[string]bool{}
-				if user["read"].(bool) {
-					perms["GET"] = true
-				}
-				if user["write"].(bool) {
-					perms["POST"] = true
-					perms["DELETE"] = true
-					perms["PUT"] = true
-					// perms["PATCH"] = true
-				}
-
-				if _, ok := perms[c.Request.Method]; !ok {
-					respondWithError(http.StatusUnauthorized, fmt.Sprintf("user does not have permission to '%s'", c.Request.Method), c)
-					return
-				}
-
-				// inject claims into context
-				c.Set("projects", projects)
-				c.Set("user_id", user["id"])
-				c.Set("username", user["name"])
-
-				c.Next()
-				return
+			} else if authType == APIKEY {
+				// authenticate api key
 			}
 
 			respondWithError(http.StatusUnauthorized, "invalid access token", c)

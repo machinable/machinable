@@ -32,7 +32,7 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 
 	// sessions have a mixed authz policy so there is a route here and at /mgmt/sessions
 	sessions := engine.Group("/sessions")
-	sessions.Use(middleware.ProjectUserAuthzMiddleware())
+	//sessions.Use(middleware.ProjectUserAuthzMiddleware())
 	sessions.POST("/", handlers.CreateSession)             // create a new session
 	sessions.GET("/", handlers.ListSessions)               // list sessions of a project
 	sessions.DELETE("/:sessionID", handlers.RevokeSession) // delete this user's session
