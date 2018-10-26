@@ -14,6 +14,7 @@ func notImplemented(c *gin.Context) {
 
 func setupProjectUserRoutes(engine *gin.Engine) {
 	collections := engine.Group("/collections")
+	collections.Use(middleware.ProjectUserAuthzMiddleware())
 	collections.GET("/", handlers.GetCollections)
 	collections.POST("/", handlers.AddCollection)
 	collections.POST("/:collectionName", handlers.AddObjectToCollection)
@@ -23,6 +24,7 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 	collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 
 	api := engine.Group("/api")
+	api.Use(middleware.ProjectUserAuthzMiddleware())
 	api.POST("/:resourcePathName", handlers.AddObject)
 	api.GET("/:resourcePathName", handlers.ListObjects)
 	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
@@ -30,6 +32,7 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 
 	// sessions have a mixed authz policy so there is a route here and at /mgmt/sessions
 	sessions := engine.Group("/sessions")
+	sessions.Use(middleware.ProjectUserAuthzMiddleware())
 	sessions.POST("/", handlers.CreateSession)             // create a new session
 	sessions.GET("/", handlers.ListSessions)               // list sessions of a project
 	sessions.DELETE("/:sessionID", handlers.RevokeSession) // delete this user's session
