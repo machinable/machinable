@@ -179,6 +179,66 @@ func DeleteCollection(c *gin.Context) {
 	c.JSON(http.StatusNoContent, gin.H{})
 }
 
+// PutObjectInCollection alters an existing collection document
+func PutObjectInCollection(c *gin.Context) {
+	collectionName := c.Param("collectionName")
+	objectIDStr := c.Param("objectID")
+	projectSlug := c.MustGet("project").(string)
+
+	if collectionName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
+		return
+	}
+
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(objectIDStr)
+	if err != nil && objectIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid identifier '%s': %s", objectIDStr, err.Error())})
+		return
+	}
+
+	bdoc := make(map[string]interface{})
+
+	err = c.BindJSON(&bdoc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// iterate over root keys for reserved fields
+	els := make([]*bson.Element, 0)
+	for key := range bdoc {
+		if reservedField(key) {
+			// remove field for PUT
+			delete(bdoc, key)
+		} else {
+			// append to element slice
+			els = append(els, bson.EC.Interface(key, bdoc[key]))
+		}
+	}
+
+	// Get a connection and update the document
+	collection := database.Connect().Collection(database.CollectionDocs(projectSlug, collectionName))
+	_, err = collection.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				els...,
+			),
+		),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, bdoc)
+}
+
 // AddObjectToCollection adds a new document to the collection
 func AddObjectToCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")

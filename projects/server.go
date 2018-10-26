@@ -19,6 +19,7 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 	collections.POST("/:collectionName", handlers.AddObjectToCollection)
 	collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
 	collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
+	collections.PUT("/:collectionName/:objectID", handlers.PutObjectInCollection)
 	collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 
 	api := engine.Group("/api")
