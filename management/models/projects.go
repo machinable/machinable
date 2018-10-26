@@ -28,6 +28,7 @@ type ProjectBody struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Icon        string `json:"icon"`
+	Authn       bool   `json:"authn"`
 }
 
 // Validate checks the project body for invalid fields
@@ -74,6 +75,7 @@ type Project struct {
 	Description string            `json:"description" bson:"description"`
 	Icon        string            `json:"icon" bson:"icon"`
 	Created     time.Time         `json:"created" bson:"created"`
+	Authn       bool              `json:"authn" bson:"authn"`
 }
 
 // MarshalJSON is the custom marshaller for user structs
@@ -85,6 +87,7 @@ func (p Project) MarshalJSON() ([]byte, error) {
 		Description string    `json:"description"`
 		Icon        string    `json:"icon"`
 		Created     time.Time `json:"created"`
+		Authn       bool      `json:"authn"`
 	}{}
 
 	// Marshal ID to string
@@ -94,6 +97,7 @@ func (p Project) MarshalJSON() ([]byte, error) {
 	project.Description = p.Description
 	project.Icon = p.Icon
 	project.Created = p.Created
+	project.Authn = p.Authn
 
 	return json.Marshal(&project)
 }
@@ -110,6 +114,7 @@ func (p *Project) UnmarshalBSON(bytes []byte) error {
 	p.Name = doc.Lookup("name").StringValue()
 	p.Description = doc.Lookup("description").StringValue()
 	p.Icon = doc.Lookup("icon").StringValue()
+	p.Authn = doc.Lookup("authn").Boolean()
 
 	// This is the only reason we have this Unmarshaler. The default unmarshal is trying to
 	// set this as an int64, rather than time.Time

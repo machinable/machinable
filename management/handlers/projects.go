@@ -51,6 +51,7 @@ func CreateProject(c *gin.Context) {
 		Description: newProject.Description,
 		Icon:        newProject.Icon,
 		Created:     time.Now(),
+		Authn:       newProject.Authn,
 	}
 
 	// save user project
