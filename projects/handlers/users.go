@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -100,6 +101,41 @@ func GetUser(c *gin.Context) {
 
 // DeleteUser removes a user by ID
 func DeleteUser(c *gin.Context) {
-	//projectSlug := c.MustGet("project").(string)
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	userIDStr := c.Param("userID")
+	projectSlug := c.MustGet("project").(string)
+
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(userIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid identifier '%s': %s", userIDStr, err.Error())})
+		return
+	}
+
+	sessCollection := database.Collection(database.SessionDocs(projectSlug))
+	// Delete the sessions
+	_, err = sessCollection.DeleteMany(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.String("user_id", userIDStr),
+		),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	userCollection := database.Collection(database.UserDocs(projectSlug))
+	// Delete the user
+	_, err = userCollection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }
