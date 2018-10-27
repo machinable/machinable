@@ -34,8 +34,7 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 	sessions := engine.Group("/sessions")
 	//sessions.Use(middleware.ProjectUserAuthzMiddleware())
 	sessions.POST("/", handlers.CreateSession)             // create a new session
-	sessions.GET("/", handlers.ListSessions)               // list sessions of a project
-	sessions.DELETE("/:sessionID", handlers.RevokeSession) // delete this user's session
+	sessions.DELETE("/:sessionID", handlers.RevokeSession) // delete this user's session TODO: AUTH
 }
 
 func setupMgmtRoutes(engine *gin.Engine) {
