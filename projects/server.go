@@ -59,13 +59,13 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	users.DELETE("/:userID", handlers.DeleteUser) // delete a user of this project
 
 	// Only app users have access to api key management
-	tokens := engine.Group("/tokens")
-	tokens.Use(middleware.AppUserJwtAuthzMiddleware())
-	tokens.Use(middleware.AppUserProjectAuthzMiddleware())
+	keys := engine.Group("/keys")
+	keys.Use(middleware.AppUserJwtAuthzMiddleware())
+	keys.Use(middleware.AppUserProjectAuthzMiddleware())
 
-	tokens.GET("/generate", handlers.GenerateToken) // get list of api tokens for this project
-	tokens.GET("/", handlers.ListTokens)            // get list of api tokens for this project
-	tokens.POST("/", handlers.AddToken)             // create a new api token for this project
+	keys.GET("/generate", handlers.GenerateKey) // get list of api keys for this project
+	keys.GET("/", handlers.ListKeys)            // get list of api keys for this project
+	keys.POST("/", handlers.AddKey)             // create a new api key for this project
 
 	// stats := engine.Group("/stats")
 	// stats.Use(middleware.AppUserJwtAuthzMiddleware())

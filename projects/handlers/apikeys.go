@@ -14,42 +14,42 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-// AddToken creates a new api token for this project
-func AddToken(c *gin.Context) {
-	var newToken models.NewProjectToken
+// AddKey creates a new api key for this project
+func AddKey(c *gin.Context) {
+	var newKey models.NewProjectKey
 	projectSlug := c.MustGet("project").(string)
 
-	c.BindJSON(&newToken)
+	c.BindJSON(&newKey)
 
-	err := newToken.Validate()
+	err := newKey.Validate()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// generate hashed token
-	tokenHash, err := auth.HashPassword(newToken.Token)
+	// generate hashed key
+	keyHash, err := auth.HashPassword(newKey.Key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	newToken.Token = ""
+	newKey.Key = ""
 
-	token := &models.ProjectAPIToken{
+	key := &models.ProjectAPIKey{
 		ID:          objectid.New(), // I don't like this
 		Created:     time.Now(),
-		TokenHash:   tokenHash,
-		Description: newToken.Description,
-		Read:        newToken.Read,
-		Write:       newToken.Write,
+		KeyHash:     keyHash,
+		Description: newKey.Description,
+		Read:        newKey.Read,
+		Write:       newKey.Write,
 	}
 
-	// get the tokens collection
-	rc := database.Collection(database.TokenDocs(projectSlug))
-	// save token
+	// get the keys collection
+	rc := database.Collection(database.KeyDocs(projectSlug))
+	// save key
 	_, err = rc.InsertOne(
 		context.Background(),
-		token,
+		key,
 	)
 
 	if err != nil {
@@ -57,15 +57,15 @@ func AddToken(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, token)
+	c.JSON(http.StatusCreated, key)
 }
 
-// ListTokens lists all api tokens of this project
-func ListTokens(c *gin.Context) {
+// ListKeys lists all api tokens of this project
+func ListKeys(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
-	tokens := make([]*models.ProjectAPIToken, 0)
+	tokens := make([]*models.ProjectAPIKey, 0)
 
-	collection := database.Connect().Collection(database.TokenDocs(projectSlug))
+	collection := database.Connect().Collection(database.KeyDocs(projectSlug))
 
 	cursor, err := collection.Find(
 		context.Background(),
@@ -78,7 +78,7 @@ func ListTokens(c *gin.Context) {
 	}
 
 	for cursor.Next(context.Background()) {
-		var token models.ProjectAPIToken
+		var token models.ProjectAPIKey
 		err := cursor.Decode(&token)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -90,8 +90,8 @@ func ListTokens(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": tokens})
 }
 
-// GenerateToken retrieves a single api token of this project by ID
-func GenerateToken(c *gin.Context) {
+// GenerateKey retrieves a single api token of this project by ID
+func GenerateKey(c *gin.Context) {
 	UUID, err := uuid.NewV4()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -100,8 +100,8 @@ func GenerateToken(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"key": UUID.String()})
 }
 
-// DeleteToken removes an api token by ID
-func DeleteToken(c *gin.Context) {
+// DeleteKey removes an api token by ID
+func DeleteKey(c *gin.Context) {
 	//projectSlug := c.MustGet("project").(string)
 	c.JSON(http.StatusNotImplemented, gin.H{})
 }

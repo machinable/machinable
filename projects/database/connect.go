@@ -15,7 +15,7 @@ const (
 	collections         = "%s.collections"
 	collectionFormat    = "%s.collections.%s"
 	userCollection      = "%s.users"
-	tokenCollection     = "%s.tokens"
+	tokenCollection     = "%s.keys"
 	sessionCollection   = "%s.sessions"
 )
 
@@ -24,8 +24,8 @@ func SessionDocs(projectSlug string) string {
 	return fmt.Sprintf(sessionCollection, projectSlug)
 }
 
-// TokenDocs returns the formatted string of the collection name of the collection that stores project api tokens
-func TokenDocs(projectSlug string) string {
+// KeyDocs returns the formatted string of the collection name of the collection that stores project api Keys
+func KeyDocs(projectSlug string) string {
 	return fmt.Sprintf(tokenCollection, projectSlug)
 }
 

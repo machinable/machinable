@@ -5,23 +5,25 @@ import (
 	"errors"
 	"time"
 
+	"github.com/satori/go.uuid"
+
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
-// ProjectAPIToken is a static token used to access resources and collections of the project
-type ProjectAPIToken struct {
+// ProjectAPIKey is a static key used to access resources and collections of the project
+type ProjectAPIKey struct {
 	ID          objectid.ObjectID `json:"id" bson:"_id,omitempty"`
-	TokenHash   string            `json:"-" bson:"token_hash"`
+	KeyHash     string            `json:"-" bson:"key_hash"`
 	Created     time.Time         `json:"created" bson:"created"`
 	Description string            `json:"description" bson:"description"`
 	Read        bool              `json:"read"`
 	Write       bool              `json:"write"`
 }
 
-// MarshalJSON is the custom marshaller for api token structs
-func (t ProjectAPIToken) MarshalJSON() ([]byte, error) {
-	token := struct {
+// MarshalJSON is the custom marshaller for api key structs
+func (t ProjectAPIKey) MarshalJSON() ([]byte, error) {
+	key := struct {
 		ID          string    `json:"id"`
 		Description string    `json:"description"`
 		Created     time.Time `json:"created"`
@@ -29,17 +31,17 @@ func (t ProjectAPIToken) MarshalJSON() ([]byte, error) {
 		Write       bool      `json:"write"`
 	}{}
 
-	token.ID = t.ID.Hex()
-	token.Description = t.Description
-	token.Created = t.Created
-	token.Read = t.Read
-	token.Write = t.Write
+	key.ID = t.ID.Hex()
+	key.Description = t.Description
+	key.Created = t.Created
+	key.Read = t.Read
+	key.Write = t.Write
 
-	return json.Marshal(&token)
+	return json.Marshal(&key)
 }
 
 // UnmarshalBSON is the custom unmarshaler
-func (t *ProjectAPIToken) UnmarshalBSON(bytes []byte) error {
+func (t *ProjectAPIKey) UnmarshalBSON(bytes []byte) error {
 	doc, err := bson.ReadDocument(bytes)
 	if err != nil {
 		return err
@@ -47,7 +49,7 @@ func (t *ProjectAPIToken) UnmarshalBSON(bytes []byte) error {
 
 	t.ID = doc.Lookup("_id").ObjectID()
 	t.Description = doc.Lookup("description").StringValue()
-	t.TokenHash = doc.Lookup("token_hash").StringValue()
+	t.KeyHash = doc.Lookup("key_hash").StringValue()
 	t.Read = doc.Lookup("read").Boolean()
 	t.Write = doc.Lookup("write").Boolean()
 
@@ -124,18 +126,23 @@ func (u *NewProjectUser) Validate() error {
 	return nil
 }
 
-// NewProjectToken is the JSON structure of a new api token request
-type NewProjectToken struct {
-	Token       string `json:"token"`
+// NewProjectKey is the JSON structure of a new api key request
+type NewProjectKey struct {
+	Key         string `json:"key"`
 	Description string `json:"description"`
 	Read        bool   `json:"read"`
 	Write       bool   `json:"write"`
 }
 
-// Validate checks that the new token is not empty
-func (u *NewProjectToken) Validate() error {
-	if u.Token == "" {
-		return errors.New("invalid token")
+// Validate checks that the new key is not empty
+func (u *NewProjectKey) Validate() error {
+	if u.Key == "" {
+		return errors.New("invalid key")
 	}
+
+	if _, err := uuid.FromString(u.Key); err != nil {
+		return errors.New("invalid key")
+	}
+
 	return nil
 }
