@@ -72,6 +72,11 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	// stats.Use(middleware.AppUserProjectAuthzMiddleware())
 	// stats.GET("/collections/:collectionID", handlers.GetCollection)
 
+	logs := engine.Group("/logs")
+	logs.Use(middleware.AppUserJwtAuthzMiddleware())
+	logs.Use(middleware.AppUserProjectAuthzMiddleware())
+	logs.GET("/", handlers.GetProjectLogs)
+
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())

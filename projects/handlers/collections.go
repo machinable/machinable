@@ -325,7 +325,7 @@ func GetObjectsFromCollection(c *gin.Context) {
 			documents = append(documents, document)
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"items": documents})
+	c.IndentedJSON(http.StatusOK, gin.H{"items": documents})
 }
 
 // GetObjectFromCollection returns a single object with the ID for this resource
@@ -369,7 +369,7 @@ func GetObjectFromCollection(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	c.JSON(http.StatusOK, object)
+	c.IndentedJSON(http.StatusOK, object)
 }
 
 // DeleteObjectFromCollection deletes the object from the collection

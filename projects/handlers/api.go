@@ -96,7 +96,7 @@ func ListObjects(c *gin.Context) {
 
 		response = append(response, fields)
 	}
-	c.JSON(http.StatusOK, gin.H{"items": response, "definition": resourceDefinition, "count": len(response)})
+	c.IndentedJSON(http.StatusOK, gin.H{"items": response, "definition": resourceDefinition, "count": len(response)})
 }
 
 // GetObject returns a single object with the resourceID for this resource
@@ -147,7 +147,7 @@ func GetObject(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
 
-	c.JSON(http.StatusOK, object)
+	c.IndentedJSON(http.StatusOK, object)
 }
 
 // DeleteObject deletes the object from the collection
