@@ -40,6 +40,7 @@ func CreateManagementRoutes() *gin.Engine {
 	projects.Use(middleware.AppUserJwtAuthzMiddleware())
 	projects.GET("/", handlers.ListUserProjects)
 	projects.POST("/", handlers.CreateProject)
+	projects.PUT("/:projectSlug", handlers.UpdateProject)
 	projects.DELETE("/:projectSlug", handlers.DeleteUserProject)
 
 	// user settings endpoints

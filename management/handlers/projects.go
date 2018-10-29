@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,6 +13,67 @@ import (
 	"bitbucket.org/nsjostrom/machinable/management/models"
 	"github.com/gin-gonic/gin"
 )
+
+// UpdateProject updates the project settings, specifically the authn value
+func UpdateProject(c *gin.Context) {
+	projectSlug := c.Param("projectSlug")
+	requestingUserID := c.MustGet("user_id").(string)
+
+	// Create object ID from resource ID string
+	userID, err := objectid.FromHex(requestingUserID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid user identifier '%s': %s", requestingUserID, err.Error())})
+		return
+	}
+
+	projectCollection := database.Connect().Collection(database.Projects)
+	// Find project based on ID and UserID
+	documentResult := projectCollection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.String("slug", projectSlug),
+			bson.EC.ObjectID("user_id", userID),
+		),
+		nil,
+	)
+
+	if documentResult == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no documents for collection"})
+	}
+
+	// Decode result into document
+	project := &models.Project{}
+	err = documentResult.Decode(project)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("project does not exist, '%s'", projectSlug)})
+		return
+	}
+
+	var updatedProject models.ProjectBody
+	c.BindJSON(&updatedProject)
+
+	// only updated `authn` value
+	_, err = projectCollection.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.String("slug", projectSlug),
+			bson.EC.ObjectID("user_id", userID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				bson.EC.Boolean("authn", updatedProject.Authn),
+			),
+		),
+	)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// successful update
+	c.JSON(http.StatusOK, gin.H{})
+}
 
 // CreateProject creates a new project for an application user.
 func CreateProject(c *gin.Context) {
