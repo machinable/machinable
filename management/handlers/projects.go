@@ -71,8 +71,11 @@ func UpdateProject(c *gin.Context) {
 		return
 	}
 
+	// update project for response
+	project.Authn = updatedProject.Authn
+
 	// successful update
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusOK, project)
 }
 
 // CreateProject creates a new project for an application user.
