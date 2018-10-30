@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -102,6 +103,28 @@ func GenerateKey(c *gin.Context) {
 
 // DeleteKey removes an api token by ID
 func DeleteKey(c *gin.Context) {
-	//projectSlug := c.MustGet("project").(string)
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	keyID := c.Param("keyID")
+	projectSlug := c.MustGet("project").(string)
+
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(keyID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid identifier '%s': %s", keyID, err.Error())})
+		return
+	}
+
+	collection := database.Connect().Collection(database.KeyDocs(projectSlug))
+	// Delete the object
+	_, err = collection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{})
 }

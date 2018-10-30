@@ -66,6 +66,7 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	keys.GET("/generate", handlers.GenerateKey) // get list of api keys for this project
 	keys.GET("/", handlers.ListKeys)            // get list of api keys for this project
 	keys.POST("/", handlers.AddKey)             // create a new api key for this project
+	keys.DELETE("/:keyID", handlers.DeleteKey)  // get list of api keys for this project
 
 	// stats := engine.Group("/stats")
 	// stats.Use(middleware.AppUserJwtAuthzMiddleware())
