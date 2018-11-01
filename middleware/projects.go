@@ -1,9 +1,13 @@
 package middleware
 
 import (
+	"bytes"
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/management/database"
@@ -47,7 +51,7 @@ func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 
 					projects, ok := claims["projects"].(map[string]interface{})
 					if !ok {
-						respondWithError(http.StatusUnauthorized, "improperly formatted access token -projects", c)
+						respondWithError(http.StatusUnauthorized, "improperly formatted access token", c)
 						return
 					}
 
@@ -60,7 +64,7 @@ func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 
 					user, ok := claims["user"].(map[string]interface{})
 					if !ok {
-						respondWithError(http.StatusUnauthorized, "improperly formatted access token -user", c)
+						respondWithError(http.StatusUnauthorized, "improperly formatted access token", c)
 						return
 					}
 
@@ -97,6 +101,8 @@ func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 					// c.Set("projects", projects)
 					// c.Set("user_id", user["id"])
 					// c.Set("username", user["name"])
+					c.Set("authType", "user")
+					c.Set("authString", user["name"])
 
 					c.Next()
 					return
@@ -149,6 +155,8 @@ func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 				// c.Set("projects", projects)
 				// c.Set("user_id", user["id"])
 				// c.Set("username", user["name"])
+				c.Set("authType", "api key")
+				c.Set("authString", key.Description)
 
 				c.Next()
 				return
@@ -187,5 +195,59 @@ func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 
 		respondWithError(http.StatusUnauthorized, "access token required", c)
 		return
+	}
+}
+
+type logWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (w logWriter) Write(b []byte) (int, error) {
+	w.body.Write(b)
+	return w.ResponseWriter.Write(b)
+}
+
+// ProjectLoggingMiddleware logs the request
+func ProjectLoggingMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// inject custom writer
+		lw := &logWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
+		c.Writer = lw
+
+		// continue handler chain
+		c.Next()
+
+		// get status code
+		statusCode := c.Writer.Status()
+		verb := c.Request.Method
+		path := c.Request.URL.Path
+
+		projectSlug := c.GetString("project")
+		authType := c.GetString("authType")
+		authString := c.GetString("authString")
+
+		if authString == "" {
+			authString = "anonymous"
+		}
+
+		plog := &pmodels.Log{
+			Event:      fmt.Sprintf("%s %s", verb, path),
+			StatusCode: statusCode,
+			Created:    time.Now(),
+			Initiator:  fmt.Sprintf("%s %s", authType, authString),
+		}
+
+		// Get the logs collection
+		rc := pdb.Collection(pdb.LogDocs(projectSlug))
+		_, err := rc.InsertOne(
+			context.Background(),
+			plog,
+		)
+
+		if err != nil {
+			log.Println("an error occured trying to save the log")
+			log.Println(err.Error())
+		}
 	}
 }

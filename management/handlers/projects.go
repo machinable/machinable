@@ -177,4 +177,12 @@ func ListUserProjects(c *gin.Context) {
 // DeleteUserProject completely deletes an application user's project, including all related DB collections.
 func DeleteUserProject(c *gin.Context) {
 	// TODO
+	// delete from projects
+	// delete project collections
+	// delete project resources
+	// delete project resource data
+	// delete project users
+	// delete project keys
+	// delete project logs
+	// delete project usage
 }

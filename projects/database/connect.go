@@ -17,7 +17,13 @@ const (
 	userCollection      = "%s.users"
 	tokenCollection     = "%s.keys"
 	sessionCollection   = "%s.sessions"
+	logCollection       = "%s.logs"
 )
+
+// LogDocs just that
+func LogDocs(projectSlug string) string {
+	return fmt.Sprintf(logCollection, projectSlug)
+}
 
 // SessionDocs returns the formatted string of the collection name for the collection of sessions
 func SessionDocs(projectSlug string) string {

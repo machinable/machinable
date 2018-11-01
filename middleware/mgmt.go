@@ -141,6 +141,9 @@ func AppUserJwtAuthzMiddleware() gin.HandlerFunc {
 				c.Set("user_id", user["id"])
 				c.Set("username", user["username"])
 
+				c.Set("authType", "admin")
+				c.Set("authString", user["username"])
+
 				c.Next()
 				return
 			}

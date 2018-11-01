@@ -5,6 +5,7 @@ import "time"
 // Log is any user/api key initiated event that should be recorded
 type Log struct {
 	Event       string    `json:"event"`
+	StatusCode  int       `json:"status_code"`
 	Created     time.Time `json:"created"`
 	Initiator   string    `json:"initiator"`
 	InitiatorID string    `json:"initiator_id"`

@@ -14,6 +14,7 @@ func notImplemented(c *gin.Context) {
 
 func setupProjectUserRoutes(engine *gin.Engine) {
 	collections := engine.Group("/collections")
+	collections.Use(middleware.ProjectLoggingMiddleware())
 	collections.Use(middleware.ProjectUserAuthzMiddleware())
 	collections.GET("/", handlers.GetCollections)
 	collections.POST("/", handlers.AddCollection)
@@ -24,6 +25,7 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 	collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 
 	api := engine.Group("/api")
+	api.Use(middleware.ProjectLoggingMiddleware())
 	api.Use(middleware.ProjectUserAuthzMiddleware())
 	api.POST("/:resourcePathName", handlers.AddObject)
 	api.GET("/:resourcePathName", handlers.ListObjects)
@@ -80,6 +82,7 @@ func setupMgmtRoutes(engine *gin.Engine) {
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
+	mgmt.Use(middleware.ProjectLoggingMiddleware())
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
 
