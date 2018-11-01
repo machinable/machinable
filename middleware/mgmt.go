@@ -139,10 +139,10 @@ func AppUserJwtAuthzMiddleware() gin.HandlerFunc {
 				// inject claims into context
 				c.Set("projects", projects)
 				c.Set("user_id", user["id"])
-				c.Set("username", user["username"])
+				c.Set("username", user["name"])
 
 				c.Set("authType", "admin")
-				c.Set("authString", user["username"])
+				c.Set("authString", user["name"])
 
 				c.Next()
 				return

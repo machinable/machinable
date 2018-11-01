@@ -229,6 +229,8 @@ func ProjectLoggingMiddleware() gin.HandlerFunc {
 
 		if authString == "" {
 			authString = "anonymous"
+		} else {
+			authType = authType + ":"
 		}
 
 		plog := &pmodels.Log{
