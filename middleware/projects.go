@@ -8,6 +8,8 @@ import (
 	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/management/database"
 	"bitbucket.org/nsjostrom/machinable/management/models"
+	pdb "bitbucket.org/nsjostrom/machinable/projects/database"
+	pmodels "bitbucket.org/nsjostrom/machinable/projects/models"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
@@ -92,15 +94,64 @@ func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 					}
 
 					// inject claims into context
-					c.Set("projects", projects)
-					c.Set("user_id", user["id"])
-					c.Set("username", user["name"])
+					// c.Set("projects", projects)
+					// c.Set("user_id", user["id"])
+					// c.Set("username", user["name"])
 
 					c.Next()
 					return
 				}
 			} else if authType == APIKEY {
 				// authenticate api key
+				apiKey := vals[1]
+				hashedKey := auth.SHA1(apiKey)
+				collection := database.Connect().Collection(pdb.KeyDocs(project))
+
+				// Find api key
+				documentResult := collection.FindOne(
+					nil,
+					bson.NewDocument(
+						bson.EC.String("key_hash", hashedKey),
+					),
+					nil,
+				)
+
+				if documentResult == nil {
+					respondWithError(http.StatusInternalServerError, "invalid key", c)
+					return
+				}
+
+				// Decode result into document
+				key := &pmodels.ProjectAPIKey{}
+				err := documentResult.Decode(key)
+				if err != nil {
+					respondWithError(http.StatusNotFound, "invalid key", c)
+					return
+				}
+				// check user permissions
+				perms := map[string]bool{}
+				if key.Read {
+					perms["GET"] = true
+				}
+				if key.Write {
+					perms["POST"] = true
+					perms["DELETE"] = true
+					perms["PUT"] = true
+					// perms["PATCH"] = true
+				}
+
+				if _, ok := perms[c.Request.Method]; !ok {
+					respondWithError(http.StatusUnauthorized, fmt.Sprintf("user does not have permission to '%s'", c.Request.Method), c)
+					return
+				}
+
+				// inject claims into context
+				// c.Set("projects", projects)
+				// c.Set("user_id", user["id"])
+				// c.Set("username", user["name"])
+
+				c.Next()
+				return
 			}
 
 			respondWithError(http.StatusUnauthorized, "invalid access token", c)

@@ -28,12 +28,8 @@ func AddKey(c *gin.Context) {
 		return
 	}
 
-	// generate hashed key
-	keyHash, err := auth.HashPassword(newKey.Key)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	// generate sha1 key
+	keyHash := auth.SHA1(newKey.Key)
 	newKey.Key = ""
 
 	key := &models.ProjectAPIKey{
