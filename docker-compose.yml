@@ -1,0 +1,8 @@
+version: '2'
+services:
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+    - "localhost:5001:5001"

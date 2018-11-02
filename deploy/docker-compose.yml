@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+  mongo:
+    image: 'mongo'
+    ports:
+      - '127.0.0.1:27017:27017'
+    volumes:
+      - 'mongo:/data/db'
+
+  machinable:
+    image: 'anothernick/machinable:0.1.0'
+    depends_on:
+      - 'mongo'
+    ports:
+      - '127.0.0.1:5002:5001'
+    environment:
+      - MONGO_HOST=mongo
+volumes:
+  mongo:
