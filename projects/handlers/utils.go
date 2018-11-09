@@ -484,7 +484,7 @@ func createPropertyDocument(fields map[string]interface{}, types map[string]mode
 	return bson.NewDocument(resourceElements...), nil
 }
 
-// parseUnknownDocumentToMap parses the bson.Array to a []interface{}, recursively
+// parseUnknownArrayToInterfaces parses the bson.Array to a []interface{}, recursively
 func parseUnknownArrayToInterfaces(arrValue *bson.Array, layer int) ([]interface{}, error) {
 	interfaceArr := make([]interface{}, 0)
 
