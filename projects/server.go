@@ -3,7 +3,10 @@ package projects
 import (
 	"net/http"
 
+	"bitbucket.org/nsjostrom/machinable/dsi/mongo"
+	"bitbucket.org/nsjostrom/machinable/dsi/mongo/database"
 	"bitbucket.org/nsjostrom/machinable/middleware"
+	"bitbucket.org/nsjostrom/machinable/projects/collections"
 	"bitbucket.org/nsjostrom/machinable/projects/handlers"
 	"github.com/gin-gonic/gin"
 )
@@ -13,16 +16,16 @@ func notImplemented(c *gin.Context) {
 }
 
 func setupProjectUserRoutes(engine *gin.Engine) {
-	collections := engine.Group("/collections")
-	collections.Use(middleware.ProjectLoggingMiddleware())
-	collections.Use(middleware.ProjectUserAuthzMiddleware())
-	collections.GET("/", handlers.GetCollections)
-	collections.POST("/", handlers.AddCollection)
-	collections.POST("/:collectionName", handlers.AddObjectToCollection)
-	collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
-	collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
-	collections.PUT("/:collectionName/:objectID", handlers.PutObjectInCollection)
-	collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
+	// collections := engine.Group("/collections")
+	// collections.Use(middleware.ProjectLoggingMiddleware())
+	// collections.Use(middleware.ProjectUserAuthzMiddleware())
+	// collections.GET("/", handlers.GetCollections)
+	// collections.POST("/", handlers.AddCollection)
+	// collections.POST("/:collectionName", handlers.AddObjectToCollection)
+	// collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
+	// collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
+	// collections.PUT("/:collectionName/:objectID", handlers.PutObjectInCollection)
+	// collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 
 	api := engine.Group("/api")
 	api.Use(middleware.ProjectLoggingMiddleware())
@@ -86,14 +89,14 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
 
-	collections := mgmt.Group("/collections")
-	collections.GET("/", handlers.GetCollections)
-	collections.POST("/", handlers.AddCollection)
-	collections.POST("/:collectionName", handlers.AddObjectToCollection)
-	collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
-	collections.DELETE("/:collectionName", handlers.DeleteCollection) // this is actually uses collection ID as the parameter, gin does not allow different wildcard names
-	collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
-	collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
+	// collections := mgmt.Group("/collections")
+	// collections.GET("/", handlers.GetCollections)
+	// collections.POST("/", handlers.AddCollection)
+	// collections.POST("/:collectionName", handlers.AddObjectToCollection)
+	// collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
+	// collections.DELETE("/:collectionName", handlers.DeleteCollection) // this is actually uses collection ID as the parameter, gin does not allow different wildcard names
+	// collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
+	// collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 
 	api := mgmt.Group("/api")
 	api.POST("/:resourcePathName", handlers.AddObject)
@@ -108,9 +111,16 @@ func setupMgmtRoutes(engine *gin.Engine) {
 
 // CreateProjectRoutes creates a gin.Engine for the project routes
 func CreateProjectRoutes() *gin.Engine {
+	// use mongoDB connector
+	// if another connector is desired, the Datastore interface needs to be implemented and these 2 lines changes to instantiate the new connector
+	mongoDB := database.Connect()
+	datastore := mongo.New(mongoDB)
+
 	router := gin.Default()
 	router.Use(middleware.OpenCORSMiddleware())
 	router.Use(middleware.SubDomainMiddleware())
+
+	collections.SetRoutes(router, datastore)
 
 	setupMgmtRoutes(router)
 	setupProjectUserRoutes(router)

@@ -3,14 +3,8 @@ package mongo
 import (
 	"errors"
 
+	"bitbucket.org/nsjostrom/machinable/dsi"
 	"github.com/mongodb/mongo-go-driver/bson"
-)
-
-const (
-	// DocumentIDKey is the key of ids in mongodb
-	DocumentIDKey = "_id"
-	// MaxRecursion is the maximum amount of levels allowed in a JSON object (array and objects)
-	MaxRecursion = 8
 )
 
 // parseUnknownArrayToInterfaces parses the bson.Array to a []interface{}, recursively
@@ -18,7 +12,7 @@ func parseUnknownArrayToInterfaces(arrValue *bson.Array, layer int) ([]interface
 	interfaceArr := make([]interface{}, 0)
 
 	// this object goes deeper than supported
-	if layer > MaxRecursion {
+	if layer > dsi.MaxRecursion {
 		return interfaceArr, nil
 	}
 
@@ -60,7 +54,7 @@ func parseUnknownDocumentToMap(doc *bson.Document, layer int) (map[string]interf
 	keyVals := make(map[string]interface{})
 
 	// this object goes deeper than supported
-	if layer > MaxRecursion {
+	if layer > dsi.MaxRecursion {
 		return keyVals, nil
 	}
 
@@ -73,7 +67,7 @@ func parseUnknownDocumentToMap(doc *bson.Document, layer int) (map[string]interf
 	for _, key := range keys {
 		docVal := doc.Lookup(key.String())
 
-		if key.String() == DocumentIDKey {
+		if key.String() == dsi.DocumentIDKey {
 			newID, ok := docVal.ObjectIDOK()
 			if ok {
 				keyVals["id"] = newID.Hex()

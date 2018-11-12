@@ -2,36 +2,42 @@ package interfaces
 
 import "bitbucket.org/nsjostrom/machinable/dsi/models"
 
-// ProjectDefinitionDocuments provides an interface to the collection of defined api objects
-type ProjectDefinitionDocuments interface {
-	AddDocument(project, path string, fields map[string]interface{}) (string, error)
-	ListDocuments(project, path string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, error)
-	GetDocument(project, path, documentID string) (map[string]interface{}, error)
-	DeleteDocument(project, path, documentID string) error
-	DropAll(project, path string) error
-}
+// Datastore exposes the necessary functions to interact with the Machinable datastore.
+// Functions are grouped logically based on their purpose and the collections they interact with.
+type Datastore interface {
+	// Project definition documents
+	AddDefDocument(project, path string, fields map[string]interface{}) (string, error)
+	ListDefDocuments(project, path string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, error)
+	GetDefDocument(project, path, documentID string) (map[string]interface{}, error)
+	DeleteDefDocument(project, path, documentID string) error
+	DropAllDefDocuments(project, path string) error
 
-// ProjectDefinitions provides an interface to the collection of definitions
-type ProjectDefinitions interface {
+	// Project resource definitions
 	AddDefinition(project string, def *models.ResourceDefinition) (string, error)
 	ListDefinitions(project string) ([]*models.ResourceDefinition, error)
 	GetDefinition(project, definitionID string) (*models.ResourceDefinition, error)
 	DeleteDefinition(project, definitionID string) error
-}
 
-// ProjectCollections provides an interface to the project collections. The collections are just references to the documents by the user provided path name.
-type ProjectCollections interface {
-	CreateCollection(project, name string) error
+	// Project collections
+	AddCollection(project, name string) error
 	GetCollection(project, name string) (string, error)
-	GetCollections(project string) ([]string, error)
+	GetCollections(project string) ([]*models.Collection, error)
 	DeleteCollection(project, name string) error
-}
 
-// ProjectCollectionDocuments provides an interface to the project collection documents. These documents can have any structure.
-type ProjectCollectionDocuments interface {
-	AddDocument(project, collectionName string, document map[string]interface{}) (map[string]interface{}, error)
-	UpdateDocument(project, collectionName, documentID string, updatedDocumet map[string]interface{}) error
-	GetDocuments(project, collectionName string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, error)
-	GetDocument(project, collectionName, documentID string) (map[string]interface{}, error)
-	DropAll(project, collectionName string) error
+	// Project collection documents
+	AddCollectionDocument(project, collectionName string, document map[string]interface{}) (map[string]interface{}, error)
+	UpdateCollectionDocument(project, collectionName, documentID string, updatedDocumet map[string]interface{}) error
+	GetCollectionDocuments(project, collectionName string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, error)
+	GetCollectionDocument(project, collectionName, documentID string) (map[string]interface{}, error)
+	CountCollectionDocuments(project, collectionName string) (int64, error)
+	DeleteCollectionDocument(project, collectionName, documentID string) error
+	DropAllCollectionDocuments(project, collectionName string) error
+
+	// Project users
+	// Project apikeys
+	// Project logs
+	// Project sessions
+	// Projects
+	// Users
+	// Sessions
 }

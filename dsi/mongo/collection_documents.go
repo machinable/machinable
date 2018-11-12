@@ -1,23 +1,20 @@
 package mongo
 
+// Functions related to the Project Collection Documents.
+
 import (
 	"context"
 	"fmt"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/mongo/database"
+	"bitbucket.org/nsjostrom/machinable/dsi"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
-// CollectionDocs is the mongoDB implementation of the ProjectCollectionDocuments interface
-type CollectionDocs struct {
-	db *database.Database
-}
-
-// AddDocument creates a new arbitrary argument in the given collection for the project
-func (c *CollectionDocs) AddDocument(project, collectionName string, document map[string]interface{}) (map[string]interface{}, error) {
+// AddCollectionDocument creates a new arbitrary argument in the given collection for the project
+func (d *Datastore) AddCollectionDocument(project, collectionName string, document map[string]interface{}) (map[string]interface{}, error) {
 	// Get a connection and insert the new document
-	collection := c.db.CollectionDocs(project, collectionName)
+	collection := d.db.CollectionDocs(project, collectionName)
 	result, err := collection.InsertOne(
 		context.Background(),
 		document,
@@ -38,14 +35,46 @@ func (c *CollectionDocs) AddDocument(project, collectionName string, document ma
 	return document, nil
 }
 
-// UpdateDocument updates the entire document for the documentID
-func (c *CollectionDocs) UpdateDocument(project, collectionName, documentID string, updatedDocumet map[string]interface{}) error {
-	return nil
+// UpdateCollectionDocument updates the entire document for the documentID, removing any reserved fields with `dsi.ReservedField`
+func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID string, updatedDocument map[string]interface{}) error {
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(documentID)
+	if err != nil || documentID == "" {
+		return fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error())
+	}
+
+	// iterate over root keys for reserved fields
+	updatedElements := make([]*bson.Element, 0)
+	for key := range updatedDocument {
+		if dsi.ReservedField(key) {
+			// remove field for PUT
+			delete(updatedDocument, key)
+		} else {
+			// append to element slice
+			updatedElements = append(updatedElements, bson.EC.Interface(key, updatedDocument[key]))
+		}
+	}
+
+	// Get a connection and update the document
+	collection := d.db.CollectionDocs(project, collectionName)
+	_, err = collection.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				updatedElements...,
+			),
+		),
+	)
+
+	return err
 }
 
-// GetDocuments retrieves the entire list of documents for a collection
-func (c *CollectionDocs) GetDocuments(project, collectionName string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, error) {
-	collection := c.db.CollectionDocs(project, collectionName)
+// GetCollectionDocuments retrieves the entire list of documents for a collection
+func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, error) {
+	collection := d.db.CollectionDocs(project, collectionName)
 
 	cursor, err := collection.Find(
 		context.Background(),
@@ -73,15 +102,15 @@ func (c *CollectionDocs) GetDocuments(project, collectionName string, limit, off
 	return documents, nil
 }
 
-// GetDocument retrieves a single document from the collection
-func (c *CollectionDocs) GetDocument(project, collectionName, documentID string) (map[string]interface{}, error) {
+// GetCollectionDocument retrieves a single document from the collection
+func (d *Datastore) GetCollectionDocument(project, collectionName, documentID string) (map[string]interface{}, error) {
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(documentID)
 	if err != nil && documentID == "" {
 		return nil, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error())
 	}
 
-	collection := c.db.CollectionDocs(project, collectionName)
+	collection := d.db.CollectionDocs(project, collectionName)
 
 	// Find object based on ID and decode result into document
 	doc := bson.NewDocument()
@@ -106,6 +135,40 @@ func (c *CollectionDocs) GetDocument(project, collectionName, documentID string)
 	return object, nil
 }
 
-func (c *CollectionDocs) DropAll(project, collectionName string) error {
-	return nil
+// CountCollectionDocuments returns the count of all documents for a project collection
+func (d *Datastore) CountCollectionDocuments(project, collectionName string) (int64, error) {
+	collection := d.db.CollectionDocs(project, collectionName)
+	cnt, err := collection.CountDocuments(nil, nil, nil)
+
+	return cnt, err
+}
+
+// DeleteCollectionDocument removes a single document from the provided collection by `ID`
+func (d *Datastore) DeleteCollectionDocument(project, collectionName, documentID string) error {
+	// Create object ID from resource ID string
+	objectID, err := objectid.FromHex(documentID)
+	if err != nil {
+		return fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error())
+	}
+
+	collection := d.db.CollectionDocs(project, collectionName)
+
+	// Delete the object
+	_, err = collection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+
+	return err
+}
+
+// DropAllCollectionDocuments drops the entire collection
+func (d *Datastore) DropAllCollectionDocuments(project, collectionName string) error {
+	// drop the collection docs (actual data for this collection)
+	collection := d.db.CollectionDocs(project, collectionName)
+
+	err := collection.Drop(nil, nil)
+	return err
 }
