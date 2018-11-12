@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"time"
 
+	"bitbucket.org/nsjostrom/machinable/dsi/errors"
 	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // AddCollection creates a new project collection
-func (d *Datastore) AddCollection(project, name string) error {
+func (d *Datastore) AddCollection(project, name string) *errors.DatastoreError {
 	// Create document
 	resourceElements := make([]*bson.Element, 0)
 	resourceElements = append(resourceElements, bson.EC.String("name", name))
@@ -24,11 +25,11 @@ func (d *Datastore) AddCollection(project, name string) error {
 		bson.NewDocument(resourceElements...),
 	)
 
-	return err
+	return errors.New(errors.UnknownError, err)
 }
 
 // GetCollection retrieves a collection by name, confirming the collection exists
-func (d *Datastore) GetCollection(project, name string) (string, error) {
+func (d *Datastore) GetCollection(project, name string) (string, *errors.DatastoreError) {
 	collection := d.db.CollectionNames(project)
 	doc := bson.Document{}
 
@@ -41,11 +42,11 @@ func (d *Datastore) GetCollection(project, name string) (string, error) {
 		nil,
 	).Decode(&doc)
 
-	return name, err
+	return name, errors.New(errors.UnknownError, err)
 }
 
 // GetCollections retrieves the full list of collections, by name, for a project. Each item has the count of documents within the collection.
-func (d *Datastore) GetCollections(project string) ([]*models.Collection, error) {
+func (d *Datastore) GetCollections(project string) ([]*models.Collection, *errors.DatastoreError) {
 	collections := make([]*models.Collection, 0)
 
 	collection := d.db.CollectionNames(project)
@@ -56,7 +57,7 @@ func (d *Datastore) GetCollections(project string) ([]*models.Collection, error)
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.New(errors.UnknownError, err)
 	}
 
 	doc := bson.NewDocument()
@@ -64,7 +65,7 @@ func (d *Datastore) GetCollections(project string) ([]*models.Collection, error)
 		doc.Reset()
 		err := cursor.Decode(doc)
 		if err != nil {
-			return nil, err
+			return nil, errors.New(errors.UnknownError, err)
 		}
 		// get count
 		docName := doc.Lookup("name").StringValue()
@@ -83,12 +84,12 @@ func (d *Datastore) GetCollections(project string) ([]*models.Collection, error)
 }
 
 // DeleteCollection deletes the collection document, as well as all documents for the collection
-func (d *Datastore) DeleteCollection(project, collectionID string) error {
+func (d *Datastore) DeleteCollection(project, collectionID string) *errors.DatastoreError {
 	collections := d.db.CollectionNames(project)
 	// Get the object id for collection name
 	objectID, err := objectid.FromHex(collectionID)
 	if err != nil {
-		return err
+		return errors.New(errors.BadParameter, err)
 	}
 
 	// Find object based on ID
@@ -103,7 +104,7 @@ func (d *Datastore) DeleteCollection(project, collectionID string) error {
 	).Decode(doc)
 
 	if err != nil {
-		return fmt.Errorf("collection not found, '%s'", collectionID)
+		return errors.New(errors.NotFound, fmt.Errorf("collection not found, '%s'", collectionID))
 	}
 
 	// get collection name
@@ -117,11 +118,11 @@ func (d *Datastore) DeleteCollection(project, collectionID string) error {
 		),
 	)
 	if err != nil {
-		return err
+		return errors.New(errors.UnknownError, err)
 	}
 
 	// drop dollection
-	err = d.DropAllCollectionDocuments(project, collectionName)
+	dropErr := d.DropAllCollectionDocuments(project, collectionName)
 
-	return err
+	return dropErr
 }

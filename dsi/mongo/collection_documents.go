@@ -7,12 +7,13 @@ import (
 	"fmt"
 
 	"bitbucket.org/nsjostrom/machinable/dsi"
+	"bitbucket.org/nsjostrom/machinable/dsi/errors"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // AddCollectionDocument creates a new arbitrary argument in the given collection for the project
-func (d *Datastore) AddCollectionDocument(project, collectionName string, document map[string]interface{}) (map[string]interface{}, error) {
+func (d *Datastore) AddCollectionDocument(project, collectionName string, document map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
 	// Get a connection and insert the new document
 	collection := d.db.CollectionDocs(project, collectionName)
 	result, err := collection.InsertOne(
@@ -21,7 +22,7 @@ func (d *Datastore) AddCollectionDocument(project, collectionName string, docume
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.New(errors.UnknownError, err)
 	}
 
 	// Grab and set the new document ID
@@ -36,11 +37,11 @@ func (d *Datastore) AddCollectionDocument(project, collectionName string, docume
 }
 
 // UpdateCollectionDocument updates the entire document for the documentID, removing any reserved fields with `dsi.ReservedField`
-func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID string, updatedDocument map[string]interface{}) error {
+func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID string, updatedDocument map[string]interface{}) *errors.DatastoreError {
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(documentID)
 	if err != nil || documentID == "" {
-		return fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error())
+		return errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
 	}
 
 	// iterate over root keys for reserved fields
@@ -69,11 +70,11 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 		),
 	)
 
-	return err
+	return errors.New(errors.UnknownError, err)
 }
 
 // GetCollectionDocuments retrieves the entire list of documents for a collection
-func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, error) {
+func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError) {
 	collection := d.db.CollectionDocs(project, collectionName)
 
 	cursor, err := collection.Find(
@@ -82,7 +83,7 @@ func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit
 	)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.New(errors.UnknownError, err)
 	}
 
 	documents := make([]map[string]interface{}, 0)
@@ -103,11 +104,11 @@ func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit
 }
 
 // GetCollectionDocument retrieves a single document from the collection
-func (d *Datastore) GetCollectionDocument(project, collectionName, documentID string) (map[string]interface{}, error) {
+func (d *Datastore) GetCollectionDocument(project, collectionName, documentID string) (map[string]interface{}, *errors.DatastoreError) {
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(documentID)
 	if err != nil && documentID == "" {
-		return nil, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error())
+		return nil, errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
 	}
 
 	collection := d.db.CollectionDocs(project, collectionName)
@@ -128,27 +129,24 @@ func (d *Datastore) GetCollectionDocument(project, collectionName, documentID st
 
 	// Lookup  definitions for this resource
 	object, err := parseUnknownDocumentToMap(doc, 0)
-	if err != nil {
-		return nil, err
-	}
 
-	return object, nil
+	return object, errors.New(errors.UnknownError, err)
 }
 
 // CountCollectionDocuments returns the count of all documents for a project collection
-func (d *Datastore) CountCollectionDocuments(project, collectionName string) (int64, error) {
+func (d *Datastore) CountCollectionDocuments(project, collectionName string) (int64, *errors.DatastoreError) {
 	collection := d.db.CollectionDocs(project, collectionName)
 	cnt, err := collection.CountDocuments(nil, nil, nil)
 
-	return cnt, err
+	return cnt, errors.New(errors.UnknownError, err)
 }
 
 // DeleteCollectionDocument removes a single document from the provided collection by `ID`
-func (d *Datastore) DeleteCollectionDocument(project, collectionName, documentID string) error {
+func (d *Datastore) DeleteCollectionDocument(project, collectionName, documentID string) *errors.DatastoreError {
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(documentID)
 	if err != nil {
-		return fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error())
+		return errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
 	}
 
 	collection := d.db.CollectionDocs(project, collectionName)
@@ -161,14 +159,15 @@ func (d *Datastore) DeleteCollectionDocument(project, collectionName, documentID
 		),
 	)
 
-	return err
+	return errors.New(errors.UnknownError, err)
 }
 
 // DropAllCollectionDocuments drops the entire collection
-func (d *Datastore) DropAllCollectionDocuments(project, collectionName string) error {
+func (d *Datastore) DropAllCollectionDocuments(project, collectionName string) *errors.DatastoreError {
 	// drop the collection docs (actual data for this collection)
 	collection := d.db.CollectionDocs(project, collectionName)
 
 	err := collection.Drop(nil, nil)
-	return err
+
+	return errors.New(errors.UnknownError, err)
 }

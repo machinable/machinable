@@ -35,7 +35,7 @@ func (h *Collections) AddCollection(c *gin.Context) {
 	// add collection and return error if anything goes wrong
 	err := h.store.AddCollection(projectSlug, newCollection.Name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -51,7 +51,7 @@ func (h *Collections) GetCollections(c *gin.Context) {
 	collections, err := h.store.GetCollections(projectSlug)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -65,7 +65,7 @@ func (h *Collections) DeleteCollection(c *gin.Context) {
 
 	err := h.store.DeleteCollection(projectSlug, collectionID)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -94,10 +94,10 @@ func (h *Collections) PutObjectInCollection(c *gin.Context) {
 	}
 
 	// updated the document
-	err = h.store.UpdateCollectionDocument(projectSlug, collectionName, objectIDStr, bdoc)
+	updateErr := h.store.UpdateCollectionDocument(projectSlug, collectionName, objectIDStr, bdoc)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(updateErr.Code(), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -131,9 +131,9 @@ func (h *Collections) AddObjectToCollection(c *gin.Context) {
 	}
 
 	// add the new document
-	newDocument, err := h.store.AddCollectionDocument(projectSlug, collectionName, bdoc)
+	newDocument, docErr := h.store.AddCollectionDocument(projectSlug, collectionName, bdoc)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(docErr.Code(), gin.H{"error": err.Error()})
 		return
 	}
 
@@ -152,7 +152,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	documents, err := h.store.GetCollectionDocuments(projectSlug, collectionName, 0, 0, nil)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"items": documents})
@@ -167,7 +167,7 @@ func (h *Collections) GetObjectFromCollection(c *gin.Context) {
 	object, err := h.store.GetCollectionDocument(projectSlug, collectionName, objectID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
 	}
 
 	c.IndentedJSON(http.StatusOK, object)
@@ -182,7 +182,7 @@ func (h *Collections) DeleteObjectFromCollection(c *gin.Context) {
 	err := h.store.DeleteCollectionDocument(projectSlug, collectionName, objectID)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
 	}
 
