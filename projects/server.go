@@ -16,17 +16,6 @@ func notImplemented(c *gin.Context) {
 }
 
 func setupProjectUserRoutes(engine *gin.Engine) {
-	// collections := engine.Group("/collections")
-	// collections.Use(middleware.ProjectLoggingMiddleware())
-	// collections.Use(middleware.ProjectUserAuthzMiddleware())
-	// collections.GET("/", handlers.GetCollections)
-	// collections.POST("/", handlers.AddCollection)
-	// collections.POST("/:collectionName", handlers.AddObjectToCollection)
-	// collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
-	// collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
-	// collections.PUT("/:collectionName/:objectID", handlers.PutObjectInCollection)
-	// collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
-
 	api := engine.Group("/api")
 	api.Use(middleware.ProjectLoggingMiddleware())
 	api.Use(middleware.ProjectUserAuthzMiddleware())
@@ -88,15 +77,6 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	mgmt.Use(middleware.ProjectLoggingMiddleware())
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
-
-	// collections := mgmt.Group("/collections")
-	// collections.GET("/", handlers.GetCollections)
-	// collections.POST("/", handlers.AddCollection)
-	// collections.POST("/:collectionName", handlers.AddObjectToCollection)
-	// collections.GET("/:collectionName", handlers.GetObjectsFromCollection)
-	// collections.DELETE("/:collectionName", handlers.DeleteCollection) // this is actually uses collection ID as the parameter, gin does not allow different wildcard names
-	// collections.GET("/:collectionName/:objectID", handlers.GetObjectFromCollection)
-	// collections.DELETE("/:collectionName/:objectID", handlers.DeleteObjectFromCollection)
 
 	api := mgmt.Group("/api")
 	api.POST("/:resourcePathName", handlers.AddObject)
