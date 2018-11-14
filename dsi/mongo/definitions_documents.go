@@ -2,22 +2,25 @@ package mongo
 
 import (
 	"bitbucket.org/nsjostrom/machinable/dsi/errors"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
 )
 
-// Project resource definitions
-func (d *Datastore) AddDefinition(project string, def *models.ResourceDefinition) (string, *errors.DatastoreError) {
+// Project definition documents
+func (d *Datastore) AddDefDocument(project, path string, fields map[string]interface{}) (string, *errors.DatastoreError) {
 	return "", nil
 }
 
-func (d *Datastore) ListDefinitions(project string) ([]*models.ResourceDefinition, *errors.DatastoreError) {
+func (d *Datastore) ListDefDocuments(project, path string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError) {
 	return nil, nil
 }
 
-func (d *Datastore) GetDefinition(project, definitionID string) (*models.ResourceDefinition, *errors.DatastoreError) {
+func (d *Datastore) GetDefDocument(project, path, documentID string) (map[string]interface{}, *errors.DatastoreError) {
 	return nil, nil
 }
 
-func (d *Datastore) DeleteDefinition(project, definitionID string) *errors.DatastoreError {
+func (d *Datastore) DeleteDefDocument(project, path, documentID string) *errors.DatastoreError {
+	return nil
+}
+
+func (d *Datastore) DropAllDefDocuments(project, path string) *errors.DatastoreError {
 	return nil
 }
