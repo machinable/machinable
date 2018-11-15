@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 )
 
@@ -13,6 +14,19 @@ type ResourceDefinition struct {
 	Created    time.Time           `json:"created"`
 	Required   []string            `json:"required,omitempty"` // Required is an array of required properties
 	Properties map[string]Property `json:"properties"`         // Fields is a map of name, type for each field of this resource
+}
+
+// Validate validates the fields of a resource definition.
+func (def *ResourceDefinition) Validate() error {
+	if def.Title == "" {
+		return errors.New("resource title cannot be empty")
+	} else if def.PathName == "" {
+		return errors.New("resource path_name cannot be empty")
+	} else if len(def.Properties) == 0 {
+		return errors.New("resource properties cannot be empty")
+	}
+
+	return nil
 }
 
 // Property describes a resource property

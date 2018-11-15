@@ -8,6 +8,7 @@ import (
 	"bitbucket.org/nsjostrom/machinable/middleware"
 	"bitbucket.org/nsjostrom/machinable/projects/collections"
 	"bitbucket.org/nsjostrom/machinable/projects/handlers"
+	"bitbucket.org/nsjostrom/machinable/projects/resources"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,14 +34,14 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 
 func setupMgmtRoutes(engine *gin.Engine) {
 	// Only application users have access to resource definitions
-	resources := engine.Group("/resources")
-	resources.Use(middleware.AppUserJwtAuthzMiddleware())
-	resources.Use(middleware.AppUserProjectAuthzMiddleware())
+	// resources := engine.Group("/resources")
+	// resources.Use(middleware.AppUserJwtAuthzMiddleware())
+	// resources.Use(middleware.AppUserProjectAuthzMiddleware())
 
-	resources.POST("/", handlers.AddResourceDefinition)
-	resources.GET("/", handlers.ListResourceDefinitions)
-	resources.GET("/:resourceDefinitionID", handlers.GetResourceDefinition)
-	resources.DELETE("/:resourceDefinitionID", handlers.DeleteResourceDefinition)
+	// resources.POST("/", handlers.AddResourceDefinition)
+	// resources.GET("/", handlers.ListResourceDefinitions)
+	// resources.GET("/:resourceDefinitionID", handlers.GetResourceDefinition)
+	// resources.DELETE("/:resourceDefinitionID", handlers.DeleteResourceDefinition)
 
 	// Only app users have access to user management
 	users := engine.Group("/users")
@@ -100,7 +101,9 @@ func CreateProjectRoutes() *gin.Engine {
 	router.Use(middleware.OpenCORSMiddleware())
 	router.Use(middleware.SubDomainMiddleware())
 
+	// set routes -> handlers for each package
 	collections.SetRoutes(router, datastore)
+	resources.SetRoutes(router, datastore)
 
 	setupMgmtRoutes(router)
 	setupProjectUserRoutes(router)
