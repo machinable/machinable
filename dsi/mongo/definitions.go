@@ -78,11 +78,48 @@ func (d *Datastore) ListDefinitions(project string) ([]*models.ResourceDefinitio
 
 // GetDefinition returns a single definition by ID.
 func (d *Datastore) GetDefinition(project, definitionID string) (*models.ResourceDefinition, *errors.DatastoreError) {
-	return nil, nil
+	resDefCollection := d.db.ResourceDefinitions(project)
+	def, err := d.getDefinitionByID(definitionID, resDefCollection)
+	if err != nil {
+		return nil, errors.New(errors.NotFound, err)
+	}
+
+	return def, nil
 }
 
 // DeleteDefinition deletes a definition as well as any data stored for that definition
 func (d *Datastore) DeleteDefinition(project, definitionID string) *errors.DatastoreError {
+	resDefCollection := d.db.ResourceDefinitions(project)
+	// Get definition for resource name
+	def, err := d.getDefinitionByID(definitionID, resDefCollection)
+	if err != nil {
+		return errors.New(errors.NotFound, err)
+	}
+	resourcePathName := def.PathName
+
+	// Get the object id
+	objectID, err := objectid.FromHex(definitionID)
+	if err != nil {
+		return errors.New(errors.UnknownError, err)
+	}
+
+	// Delete the definition
+	_, err = resDefCollection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+	)
+	if err != nil {
+		return errors.New(errors.UnknownError, err)
+	}
+
+	resourceCollection := d.db.ResourceDocs(project, resourcePathName)
+	err = resourceCollection.Drop(nil, nil)
+	if err != nil {
+		return errors.New(errors.UnknownError, err)
+	}
+
 	return nil
 }
 
@@ -167,4 +204,39 @@ func (d *Datastore) processProperties(properties map[string]models.Property, lay
 	}
 
 	return propertyElements, nil
+}
+
+// getDefinitionByID returns the *model.ResourceDefinition by resource definition ID
+func (d *Datastore) getDefinitionByID(resourceID string, collection *mongo.Collection) (*models.ResourceDefinition, error) {
+	objectID, err := objectid.FromHex(resourceID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Find the resource definition for this object
+	documentResult := collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID(dsi.DocumentIDKey, objectID),
+		),
+		nil,
+	)
+
+	if documentResult == nil {
+		return nil, fmt.Errorf("no documents for resource")
+	}
+
+	// Decode result into document
+	doc := bson.Document{}
+	err = documentResult.Decode(&doc)
+	if err != nil {
+		return nil, fmt.Errorf("no documents for resource")
+	}
+	// Lookup field definitions for this resource
+	resourceDefinition, err := parseDefinition(&doc)
+	if err != nil {
+		return nil, err
+	}
+
+	return resourceDefinition, nil
 }
