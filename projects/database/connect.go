@@ -10,14 +10,14 @@ import (
 
 const (
 	databaseName        = "machinable"
-	resourceDefinitions = "%s.definitions"
-	resourceFormat      = "%s.resource.%s"
-	collections         = "%s.collections"
-	collectionFormat    = "%s.collections.%s"
-	userCollection      = "%s.users"
-	tokenCollection     = "%s.keys"
-	sessionCollection   = "%s.sessions"
-	logCollection       = "%s.logs"
+	resourceDefinitions = "project.%s.definitions"
+	resourceFormat      = "project.%s.resource.%s"
+	collections         = "project.%s.collections"
+	collectionFormat    = "project.%s.collections.%s"
+	userCollection      = "project.%s.users"
+	tokenCollection     = "project.%s.keys"
+	sessionCollection   = "project.%s.sessions"
+	logCollection       = "project.%s.logs"
 )
 
 // LogDocs just that

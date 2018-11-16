@@ -266,7 +266,7 @@ func RefreshToken(c *gin.Context) {
 	err := documentResult.Decode(&session)
 	if err != nil {
 		// no documents in result, user does not exist
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "error creating access token."})
+		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
 	}
 
@@ -285,14 +285,14 @@ func RefreshToken(c *gin.Context) {
 	err = documentResult.Decode(&user)
 	if err != nil {
 		// no documents in result, user does not exist
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "error creating access token."})
+		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
 	}
 
 	// create new access jwt
 	accessToken, err := createAccessToken(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "error creating access token."})
+		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
 	}
 

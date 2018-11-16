@@ -7,7 +7,39 @@ import (
 	"bitbucket.org/nsjostrom/machinable/dsi"
 	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
+	"github.com/mongodb/mongo-go-driver/mongo"
 )
+
+// getDefinition returns the *model.ResourceDefinition for a resource definition path name
+func getDefinition(resourcePathName string, collection *mongo.Collection) (*models.ResourceDefinition, error) {
+
+	// Find the resource definition for this object
+	documentResult := collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.String("path_name", resourcePathName),
+		),
+		nil,
+	)
+
+	if documentResult == nil {
+		return nil, errors.New("no documents for resource")
+	}
+
+	// Decode result into document
+	doc := bson.Document{}
+	err := documentResult.Decode(&doc)
+	if err != nil {
+		return nil, errors.New("no documents for resource")
+	}
+	// Lookup field definitions for this resource
+	resourceDefinition, err := parseDefinition(&doc)
+	if err != nil {
+		return nil, err
+	}
+
+	return resourceDefinition, nil
+}
 
 func getMutableDocument(key string, doc *bson.Document) (*bson.Document, error) {
 	val, err := doc.LookupErr(key)
@@ -93,6 +125,183 @@ func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
 	def.Properties = properties
 
 	return &def, nil
+}
+
+// Int64 attempts to cast the interface to a int64
+func Int64(unk interface{}) (int64, error) {
+	switch unk.(type) {
+	case int64:
+		return unk.(int64), nil
+	case int32:
+		val := unk.(int32)
+		return int64(val), nil
+	case int:
+		val := unk.(int)
+		return int64(val), nil
+	case uint:
+		val := unk.(uint)
+		return int64(val), nil
+	case float64:
+		val := unk.(float64)
+		return int64(val), nil
+	case float32:
+		val := unk.(float32)
+		return int64(val), nil
+	default:
+		return -1, errors.New("unknown value is of incompatible type, int64")
+	}
+}
+
+// Float64 attempts to cast the interface to a float64
+func Float64(unk interface{}) (float64, error) {
+	switch unk.(type) {
+	case float64:
+		return unk.(float64), nil
+	case int64:
+		val := unk.(int32)
+		return float64(val), nil
+	case int32:
+		val := unk.(int32)
+		return float64(val), nil
+	case int:
+		val := unk.(int)
+		return float64(val), nil
+	case uint:
+		val := unk.(uint)
+		return float64(val), nil
+	case float32:
+		val := unk.(float32)
+		return float64(val), nil
+	default:
+		return -1, errors.New("unknown value is of incompatible type, float64")
+	}
+}
+
+// createVCType creates a bson.Value from the interface based on the `propType`
+func createVCType(propType, value interface{}) (*bson.Value, error) {
+	switch propType {
+	case "integer":
+		valueAssert, err := Int64(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for type '%s': %s", propType, err.Error())
+		}
+		return bson.VC.Int64(valueAssert), nil
+	case "number":
+		valueAssert, err := Float64(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for type '%s'", propType)
+		}
+		return bson.VC.Double(valueAssert), nil
+	case "boolean":
+		valueAssert, ok := value.(bool)
+		if !ok {
+			return nil, fmt.Errorf("invalid value for type '%s'", propType)
+		}
+		return bson.VC.Boolean(valueAssert), nil
+	case "string":
+		// TODO: check based on `format` definition
+		valueAssert, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid value for type '%s'", propType)
+		}
+		return bson.VC.String(valueAssert), nil
+	default:
+		return nil, fmt.Errorf("unsupported value for type '%s'", propType)
+	}
+}
+
+// createPropertyBSONElement creates a bson.Element for the interface based on the property definition
+func createPropertyBSONElement(property *models.Property, key string, value interface{}, layer int) (*bson.Element, error) {
+	switch property.Type {
+	case "integer":
+		valueAssert, err := Int64(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid type on '%s': %s", key, err.Error())
+		}
+		return bson.EC.Int64(key, valueAssert), nil
+	case "number":
+		valueAssert, err := Float64(value)
+		if err != nil {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+		return bson.EC.Double(key, valueAssert), nil
+	case "boolean":
+		valueAssert, ok := value.(bool)
+		if !ok {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+		return bson.EC.Boolean(key, valueAssert), nil
+	case "string":
+		valueAssert, ok := value.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+		return bson.EC.String(key, valueAssert), nil
+	case "array":
+		valueAssert, ok := value.([]interface{})
+		if !ok {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+
+		bsonArray := bson.NewArray()
+
+		// populate bson array with correct type, based on property definition
+		for _, arrValue := range valueAssert {
+			bcValue, err := createVCType(property.Items.Type, arrValue)
+			if err != nil {
+				return nil, fmt.Errorf("invalid type on array items for '%s', %s required", key, property.Items.Type)
+			}
+			bsonArray.Append(bcValue)
+		}
+
+		return bson.EC.Array(key, bsonArray), nil
+	case "object":
+		propertyProperties := property.Properties
+		valueAssert, ok := value.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("invalid type on '%s'", key)
+		}
+
+		propDoc, err := createPropertyDocument(valueAssert, propertyProperties, layer+1)
+		if err != nil {
+			return nil, fmt.Errorf("invalid type on object items for '%s'", key)
+		}
+
+		return bson.EC.SubDocument(key, propDoc), err
+	default:
+		return nil, fmt.Errorf("unsupported type '%s'", property.Type)
+	}
+}
+
+// createPropertyDocument creates a *bson.Document of the object fields based on their defined type
+func createPropertyDocument(fields map[string]interface{}, types map[string]models.Property, layer int) (*bson.Document, error) {
+	resourceElements := make([]*bson.Element, 0)
+
+	// this object goes deeper than supported
+	if layer > dsi.MaxRecursion {
+		return bson.NewDocument(resourceElements...), nil
+	}
+
+	// Iterate types and parse fields into document
+	for key, property := range types {
+		value, ok := fields[key]
+		if !ok {
+			return nil, fmt.Errorf("resource field not found in body '%s'", key)
+		}
+
+		// create element from property
+		element, err := createPropertyBSONElement(&property, key, value, layer)
+
+		if err != nil {
+			return nil, err
+		}
+
+		// append to list of elements
+		resourceElements = append(resourceElements, element)
+	}
+
+	// create new document from elements
+	return bson.NewDocument(resourceElements...), nil
 }
 
 // parseUnknownArrayToInterfaces parses the bson.Array to a []interface{}, recursively

@@ -93,7 +93,8 @@ func setupMgmtRoutes(engine *gin.Engine) {
 // CreateProjectRoutes creates a gin.Engine for the project routes
 func CreateProjectRoutes() *gin.Engine {
 	// use mongoDB connector
-	// if another connector is desired, the Datastore interface needs to be implemented and these 2 lines changes to instantiate the new connector
+	// if another connector is needed, the Datastore interface can be implemented and these 2 lines changes to instantiate the new connector
+	// potential connectors: InfluxDB, Postgres JSON, Redis, CouchDB
 	mongoDB := database.Connect()
 	datastore := mongo.New(mongoDB)
 

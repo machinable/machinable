@@ -7,6 +7,8 @@ import (
 
 // Datastore exposes the necessary functions to interact with the Machinable datastore.
 // Functions are grouped logically based on their purpose and the collections they interact with.
+// implemented connectors: MongoDB
+// potential connectors: InfluxDB, Postgres JSON, Redis, CouchDB, etc.
 type Datastore interface {
 	// Project definition documents
 	AddDefDocument(project, path string, fields map[string]interface{}) (string, *errors.DatastoreError)
