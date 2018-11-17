@@ -124,7 +124,7 @@ func (d *Datastore) GetCollectionDocument(project, collectionName, documentID st
 	).Decode(doc)
 
 	if err != nil {
-		return nil, nil
+		return nil, errors.New(errors.NotFound, fmt.Errorf("document does not exist"))
 	}
 
 	// Lookup  definitions for this resource

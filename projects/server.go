@@ -7,6 +7,7 @@ import (
 	"bitbucket.org/nsjostrom/machinable/dsi/mongo/database"
 	"bitbucket.org/nsjostrom/machinable/middleware"
 	"bitbucket.org/nsjostrom/machinable/projects/collections"
+	"bitbucket.org/nsjostrom/machinable/projects/documents"
 	"bitbucket.org/nsjostrom/machinable/projects/handlers"
 	"bitbucket.org/nsjostrom/machinable/projects/resources"
 	"github.com/gin-gonic/gin"
@@ -17,14 +18,6 @@ func notImplemented(c *gin.Context) {
 }
 
 func setupProjectUserRoutes(engine *gin.Engine) {
-	api := engine.Group("/api")
-	api.Use(middleware.ProjectLoggingMiddleware())
-	api.Use(middleware.ProjectUserAuthzMiddleware())
-	api.POST("/:resourcePathName", handlers.AddObject)
-	api.GET("/:resourcePathName", handlers.ListObjects)
-	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
-	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
-
 	// sessions have a mixed authz policy so there is a route here and at /mgmt/sessions
 	sessions := engine.Group("/sessions")
 	//sessions.Use(middleware.ProjectUserAuthzMiddleware())
@@ -33,16 +26,6 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 }
 
 func setupMgmtRoutes(engine *gin.Engine) {
-	// Only application users have access to resource definitions
-	// resources := engine.Group("/resources")
-	// resources.Use(middleware.AppUserJwtAuthzMiddleware())
-	// resources.Use(middleware.AppUserProjectAuthzMiddleware())
-
-	// resources.POST("/", handlers.AddResourceDefinition)
-	// resources.GET("/", handlers.ListResourceDefinitions)
-	// resources.GET("/:resourceDefinitionID", handlers.GetResourceDefinition)
-	// resources.DELETE("/:resourceDefinitionID", handlers.DeleteResourceDefinition)
-
 	// Only app users have access to user management
 	users := engine.Group("/users")
 	users.Use(middleware.AppUserJwtAuthzMiddleware())
@@ -79,12 +62,6 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
 
-	api := mgmt.Group("/api")
-	api.POST("/:resourcePathName", handlers.AddObject)
-	api.GET("/:resourcePathName", handlers.ListObjects)
-	api.GET("/:resourcePathName/:resourceID", handlers.GetObject)
-	api.DELETE("/:resourcePathName/:resourceID", handlers.DeleteObject)
-
 	sessions := mgmt.Group("/sessions")
 	sessions.GET("/", handlers.ListSessions)
 	sessions.DELETE("/:sessionID", handlers.RevokeSession)
@@ -105,6 +82,7 @@ func CreateProjectRoutes() *gin.Engine {
 	// set routes -> handlers for each package
 	collections.SetRoutes(router, datastore)
 	resources.SetRoutes(router, datastore)
+	documents.SetRoutes(router, datastore)
 
 	setupMgmtRoutes(router)
 	setupProjectUserRoutes(router)

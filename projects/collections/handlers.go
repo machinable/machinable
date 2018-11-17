@@ -153,6 +153,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, gin.H{"items": documents})
@@ -168,6 +169,7 @@ func (h *Collections) GetObjectFromCollection(c *gin.Context) {
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
+		return
 	}
 
 	c.IndentedJSON(http.StatusOK, object)
