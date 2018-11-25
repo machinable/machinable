@@ -82,9 +82,11 @@ func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit
 	limitOpt := findopt.Limit(limit)
 	offsetOpt := findopt.Skip(offset)
 
+	// filter = make(map[string]interface{})
+	// filter["name"] = "Murphy"
 	cursor, err := collection.Find(
 		context.Background(),
-		bson.NewDocument(),
+		filter,
 		limitOpt,
 		offsetOpt,
 	)
