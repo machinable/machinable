@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	Limit  = "10"
-	Scheme = "http"
+	Limit    = "10"
+	MaxLimit = 100
+	Scheme   = "http"
 )
 
 // NewLinks creates the pagination links

@@ -165,24 +165,18 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	}
 
 	// Parse and validate pagination
-	iLimit, err := strconv.Atoi(limit)
-	if err != nil {
+	il, err := strconv.Atoi(limit)
+	if err != nil || il > models.MaxLimit {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
 		return
 	}
-	iOffset, err := strconv.Atoi(offset)
+	iLimit := int64(il)
+	io, err := strconv.Atoi(offset)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid offset"})
 		return
 	}
-
-	// Retrieve documents for the page
-	documents, colErr := h.store.GetCollectionDocuments(projectSlug, collectionName, int64(iLimit), int64(iOffset), nil)
-
-	if colErr != nil {
-		c.JSON(colErr.Code(), gin.H{"error": err.Error()})
-		return
-	}
+	iOffset := int64(io)
 
 	// Get the total count of documents for pagination
 	docCount, colErr := h.store.CountCollectionDocuments(projectSlug, collectionName)
@@ -192,9 +186,23 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 		return
 	}
 
-	links := models.NewLinks(c.Request, int64(iLimit), int64(iOffset), docCount)
+	pageMax := (docCount % iLimit) + docCount
+	if (iLimit+iOffset) > pageMax && iOffset >= docCount {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page"})
+		return
+	}
 
-	c.PureJSON(http.StatusOK, gin.H{"items": documents, "links": links})
+	// Retrieve documents for the page
+	documents, colErr := h.store.GetCollectionDocuments(projectSlug, collectionName, iLimit, iOffset, nil)
+
+	if colErr != nil {
+		c.JSON(colErr.Code(), gin.H{"error": err.Error()})
+		return
+	}
+
+	links := models.NewLinks(c.Request, iLimit, iOffset, docCount)
+
+	c.PureJSON(http.StatusOK, gin.H{"items": documents, "links": links, "count": docCount})
 }
 
 // GetObjectFromCollection returns a single object with the ID for this resource
