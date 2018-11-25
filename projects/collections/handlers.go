@@ -2,6 +2,7 @@ package collections
 
 import (
 	"net/http"
+	"strconv"
 
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 	"bitbucket.org/nsjostrom/machinable/projects/models"
@@ -149,14 +150,51 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 		return
 	}
 
-	documents, err := h.store.GetCollectionDocuments(projectSlug, collectionName, 0, 0, nil)
+	// Get pagination parameters
+	values := c.Request.URL.Query()
+	limit := values.Get("_limit")
+	offset := values.Get("_offset")
 
+	// Set defaults if necessary
+	if limit == "" {
+		limit = models.Limit
+	}
+
+	if offset == "" {
+		offset = "0"
+	}
+
+	// Parse and validate pagination
+	iLimit, err := strconv.Atoi(limit)
 	if err != nil {
-		c.JSON(err.Code(), gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
+		return
+	}
+	iOffset, err := strconv.Atoi(offset)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid offset"})
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"items": documents})
+	// Retrieve documents for the page
+	documents, colErr := h.store.GetCollectionDocuments(projectSlug, collectionName, int64(iLimit), int64(iOffset), nil)
+
+	if colErr != nil {
+		c.JSON(colErr.Code(), gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get the total count of documents for pagination
+	docCount, colErr := h.store.CountCollectionDocuments(projectSlug, collectionName)
+
+	if colErr != nil {
+		c.JSON(colErr.Code(), gin.H{"error": err.Error()})
+		return
+	}
+
+	links := models.NewLinks(c.Request, int64(iLimit), int64(iOffset), docCount)
+
+	c.PureJSON(http.StatusOK, gin.H{"items": documents, "links": links})
 }
 
 // GetObjectFromCollection returns a single object with the ID for this resource

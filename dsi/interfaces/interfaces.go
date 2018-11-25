@@ -32,7 +32,7 @@ type Datastore interface {
 	// Project collection documents
 	AddCollectionDocument(project, collectionName string, document map[string]interface{}) (map[string]interface{}, *errors.DatastoreError)
 	UpdateCollectionDocument(project, collectionName, documentID string, updatedDocumet map[string]interface{}) *errors.DatastoreError
-	GetCollectionDocuments(project, collectionName string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError)
+	GetCollectionDocuments(project, collectionName string, limit, offset int64, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError)
 	GetCollectionDocument(project, collectionName, documentID string) (map[string]interface{}, *errors.DatastoreError)
 	CountCollectionDocuments(project, collectionName string) (int64, *errors.DatastoreError)
 	DeleteCollectionDocument(project, collectionName, documentID string) *errors.DatastoreError

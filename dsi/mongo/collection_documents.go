@@ -6,6 +6,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mongodb/mongo-go-driver/mongo/findopt"
+
 	"bitbucket.org/nsjostrom/machinable/dsi"
 	"bitbucket.org/nsjostrom/machinable/dsi/errors"
 	"github.com/mongodb/mongo-go-driver/bson"
@@ -74,12 +76,17 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 }
 
 // GetCollectionDocuments retrieves the entire list of documents for a collection
-func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError) {
+func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit, offset int64, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError) {
 	collection := d.db.CollectionDocs(project, collectionName)
+
+	limitOpt := findopt.Limit(limit)
+	offsetOpt := findopt.Skip(offset)
 
 	cursor, err := collection.Find(
 		context.Background(),
 		bson.NewDocument(),
+		limitOpt,
+		offsetOpt,
 	)
 
 	if err != nil {
