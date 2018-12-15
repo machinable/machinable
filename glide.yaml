@@ -1,0 +1,4 @@
+package: bitbucket.org/nsjostrom/machinable
+import:
+  - package: github.com/mongodb/mongo-go-driver
+    version: v0.0.17

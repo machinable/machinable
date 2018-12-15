@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"bitbucket.org/nsjostrom/machinable/projects/database"
 	"bitbucket.org/nsjostrom/machinable/projects/models"
@@ -21,10 +22,17 @@ func GetProjectLogs(c *gin.Context) {
 	sortOpt := findopt.Sort(bson.NewDocument(
 		bson.EC.Int32("created", -1),
 	))
+
+	old := time.Now().Add(-time.Hour * 24)
+	filterOpt := bson.NewDocument(
+		bson.EC.SubDocumentFromElements("created",
+			bson.EC.DateTime("$gte", old.UnixNano()/int64(time.Millisecond)),
+		),
+	)
 	// Find all logs
 	cursor, err := collection.Find(
 		context.Background(),
-		bson.NewDocument(),
+		filterOpt,
 		sortOpt,
 	)
 

@@ -187,7 +187,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	}
 
 	pageMax := (docCount % iLimit) + docCount
-	if (iLimit+iOffset) > pageMax && iOffset >= docCount {
+	if (iLimit+iOffset) > pageMax && iOffset >= docCount && docCount != 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page"})
 		return
 	}
