@@ -7,7 +7,7 @@ import (
 )
 
 // SetRoutes sets all of the appropriate routes to handlers for project collections
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.CollectionsDatastore) error {
 	// create new Collections handler with datastore, set routes -> handlers
 	handler := New(datastore)
 

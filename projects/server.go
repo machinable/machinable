@@ -9,6 +9,7 @@ import (
 	"bitbucket.org/nsjostrom/machinable/projects/collections"
 	"bitbucket.org/nsjostrom/machinable/projects/documents"
 	"bitbucket.org/nsjostrom/machinable/projects/handlers"
+	"bitbucket.org/nsjostrom/machinable/projects/logs"
 	"bitbucket.org/nsjostrom/machinable/projects/resources"
 	"github.com/gin-gonic/gin"
 )
@@ -51,11 +52,6 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	// stats.Use(middleware.AppUserProjectAuthzMiddleware())
 	// stats.GET("/collections/:collectionID", handlers.GetCollection)
 
-	logs := engine.Group("/logs")
-	logs.Use(middleware.AppUserJwtAuthzMiddleware())
-	logs.Use(middleware.AppUserProjectAuthzMiddleware())
-	logs.GET("/", handlers.GetProjectLogs)
-
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
 	mgmt.Use(middleware.ProjectLoggingMiddleware())
@@ -83,6 +79,7 @@ func CreateProjectRoutes() *gin.Engine {
 	collections.SetRoutes(router, datastore)
 	resources.SetRoutes(router, datastore)
 	documents.SetRoutes(router, datastore)
+	logs.SetRoutes(router, datastore)
 
 	setupMgmtRoutes(router)
 	setupProjectUserRoutes(router)

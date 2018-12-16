@@ -2,3 +2,8 @@ package: bitbucket.org/nsjostrom/machinable
 import:
   - package: github.com/mongodb/mongo-go-driver
     version: v0.0.17
+  - package: github.com/mssola/user_agent
+  - package: github.com/satori/go.uuid
+  - package: github.com/gin-gonic/gin
+  - package: github.com/dgrijalva/jwt-go
+  

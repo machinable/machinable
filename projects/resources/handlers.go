@@ -9,7 +9,7 @@ import (
 )
 
 // New returns a pointer to a new `Resources` struct
-func New(db interfaces.Datastore) *Resources {
+func New(db interfaces.ResourcesDatastore) *Resources {
 	return &Resources{
 		store: db,
 	}
@@ -17,7 +17,7 @@ func New(db interfaces.Datastore) *Resources {
 
 // Resources contains the datastore and any HTTP handlers for project resource definitions and documents
 type Resources struct {
-	store interfaces.Datastore
+	store interfaces.ResourcesDatastore
 }
 
 // AddResourceDefinition creates a new resource definition in the users' collection

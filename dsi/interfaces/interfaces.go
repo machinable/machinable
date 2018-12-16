@@ -10,6 +10,34 @@ import (
 // implemented connectors: MongoDB
 // potential connectors: InfluxDB, Postgres JSON, Redis, CouchDB, etc.
 type Datastore interface {
+	// Project resources/definitions
+	ResourcesDatastore
+	// Project collections
+	CollectionsDatastore
+	// Project users
+
+	// Project apikeys
+
+	// Project logs
+	ProjectLogsDatastore
+	// Project sessions
+
+	// Projects
+
+	// Users
+
+	// Sessions
+
+}
+
+// ProjectLogsDatastore exposes functions to the project access logs
+type ProjectLogsDatastore interface {
+	AddProjectLog(project string, log *models.Log) error
+	GetProjectLogsForLastHours(project string, hours int) ([]*models.Log, error)
+}
+
+// ResourcesDatastore exposes functions to the resources and definitions
+type ResourcesDatastore interface {
 	// Project definition documents
 	AddDefDocument(project, path string, fields map[string]interface{}) (string, *errors.DatastoreError)
 	ListDefDocuments(project, path string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError)
@@ -22,7 +50,10 @@ type Datastore interface {
 	ListDefinitions(project string) ([]*models.ResourceDefinition, *errors.DatastoreError)
 	GetDefinition(project, definitionID string) (*models.ResourceDefinition, *errors.DatastoreError)
 	DeleteDefinition(project, definitionID string) *errors.DatastoreError
+}
 
+// CollectionsDatastore exposes functions to collections
+type CollectionsDatastore interface {
 	// Project collections
 	AddCollection(project, name string) *errors.DatastoreError
 	GetCollection(project, name string) (string, *errors.DatastoreError)
@@ -37,12 +68,4 @@ type Datastore interface {
 	CountCollectionDocuments(project, collectionName string) (int64, *errors.DatastoreError)
 	DeleteCollectionDocument(project, collectionName, documentID string) *errors.DatastoreError
 	DropAllCollectionDocuments(project, collectionName string) *errors.DatastoreError
-
-	// Project users
-	// Project apikeys
-	// Project logs
-	// Project sessions
-	// Projects
-	// Users
-	// Sessions
 }

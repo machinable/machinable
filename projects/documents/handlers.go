@@ -8,7 +8,7 @@ import (
 )
 
 // New returns a pointer to a new `Documents` struct
-func New(db interfaces.Datastore) *Documents {
+func New(db interfaces.ResourcesDatastore) *Documents {
 	return &Documents{
 		store: db,
 	}
@@ -16,7 +16,7 @@ func New(db interfaces.Datastore) *Documents {
 
 // Documents contains the datastore and any HTTP handlers for project resource documents
 type Documents struct {
-	store interfaces.Datastore
+	store interfaces.ResourcesDatastore
 }
 
 // AddObject creates a new document of the resource definition
