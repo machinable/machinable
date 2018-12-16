@@ -11,6 +11,7 @@ import (
 	"bitbucket.org/nsjostrom/machinable/projects/handlers"
 	"bitbucket.org/nsjostrom/machinable/projects/logs"
 	"bitbucket.org/nsjostrom/machinable/projects/resources"
+	"bitbucket.org/nsjostrom/machinable/projects/users"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,16 +28,6 @@ func setupProjectUserRoutes(engine *gin.Engine) {
 }
 
 func setupMgmtRoutes(engine *gin.Engine) {
-	// Only app users have access to user management
-	users := engine.Group("/users")
-	users.Use(middleware.AppUserJwtAuthzMiddleware())
-	users.Use(middleware.AppUserProjectAuthzMiddleware())
-
-	users.GET("/", handlers.ListUsers)            // get list of users for this project
-	users.POST("/", handlers.AddUser)             // create a new user of this project
-	users.GET("/:userID", handlers.GetUser)       // get a single user of this project
-	users.DELETE("/:userID", handlers.DeleteUser) // delete a user of this project
-
 	// Only app users have access to api key management
 	keys := engine.Group("/keys")
 	keys.Use(middleware.AppUserJwtAuthzMiddleware())
@@ -80,6 +71,7 @@ func CreateProjectRoutes() *gin.Engine {
 	resources.SetRoutes(router, datastore)
 	documents.SetRoutes(router, datastore)
 	logs.SetRoutes(router, datastore)
+	users.SetRoutes(router, datastore)
 
 	setupMgmtRoutes(router)
 	setupProjectUserRoutes(router)

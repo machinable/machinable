@@ -9,8 +9,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"bitbucket.org/nsjostrom/machinable/projects/database"
-	"bitbucket.org/nsjostrom/machinable/projects/models"
 	as "bitbucket.org/nsjostrom/machinable/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"

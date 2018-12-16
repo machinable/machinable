@@ -10,8 +10,8 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"bitbucket.org/nsjostrom/machinable/projects/database"
-	"bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/gin-gonic/gin"
 )
 

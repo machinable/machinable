@@ -15,7 +15,7 @@ type Datastore interface {
 	// Project collections
 	CollectionsDatastore
 	// Project users
-
+	ProjectUsersDatastore
 	// Project apikeys
 
 	// Project logs
