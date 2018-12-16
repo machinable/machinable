@@ -30,6 +30,13 @@ type Datastore interface {
 
 }
 
+// ProjectUsersDatastore exposes functions to manage project users
+type ProjectUsersDatastore interface {
+	CreateUser(project string, user *models.ProjectUser) error
+	ListUsers(project string) ([]*models.ProjectUser, error)
+	DeleteUser(project, userID string) error
+}
+
 // ProjectLogsDatastore exposes functions to the project access logs
 type ProjectLogsDatastore interface {
 	AddProjectLog(project string, log *models.Log) error
