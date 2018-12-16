@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
+	dbModels "bitbucket.org/nsjostrom/machinable/dsi/models"
 	"bitbucket.org/nsjostrom/machinable/management/database"
 	"bitbucket.org/nsjostrom/machinable/management/models"
 	pdb "bitbucket.org/nsjostrom/machinable/projects/database"
@@ -233,7 +234,7 @@ func ProjectLoggingMiddleware() gin.HandlerFunc {
 			authType = authType + ":"
 		}
 
-		plog := &pmodels.Log{
+		plog := &dbModels.Log{
 			Event:      fmt.Sprintf("%s %s", verb, path),
 			StatusCode: statusCode,
 			Created:    time.Now(),
