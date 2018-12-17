@@ -17,11 +17,11 @@ type Datastore interface {
 	// Project users
 	ProjectUsersDatastore
 	// Project apikeys
-
+	ProjectAPIKeysDatastore
 	// Project logs
 	ProjectLogsDatastore
 	// Project sessions
-	ProjectSessions
+	ProjectSessionsDatastore
 	// Projects
 
 	// Users
@@ -30,8 +30,15 @@ type Datastore interface {
 
 }
 
-// ProjectSessions exposes functions to manage project user sessions
-type ProjectSessions interface {
+// ProjectAPIKeysDatastore exposes functions to manage project api keys
+type ProjectAPIKeysDatastore interface {
+	CreateAPIKey(project, hash, description string, read, write bool) (*models.ProjectAPIKey, error)
+	ListAPIKeys(project string) ([]*models.ProjectAPIKey, error)
+	DeleteAPIKey(project, keyID string) error
+}
+
+// ProjectSessionsDatastore exposes functions to manage project user sessions
+type ProjectSessionsDatastore interface {
 	CreateSession(project string, session *models.Session) error
 	GetSession(project, sessionID string) (*models.Session, error)
 	ListSessions(project string) ([]*models.Session, error)

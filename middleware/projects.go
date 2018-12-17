@@ -13,7 +13,6 @@ import (
 	dbModels "bitbucket.org/nsjostrom/machinable/dsi/models"
 	"bitbucket.org/nsjostrom/machinable/management/database"
 	"bitbucket.org/nsjostrom/machinable/management/models"
-	pdb "bitbucket.org/nsjostrom/machinable/projects/database"
 	pmodels "bitbucket.org/nsjostrom/machinable/projects/models"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
