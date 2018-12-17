@@ -11,20 +11,13 @@ import (
 	"bitbucket.org/nsjostrom/machinable/projects/handlers"
 	"bitbucket.org/nsjostrom/machinable/projects/logs"
 	"bitbucket.org/nsjostrom/machinable/projects/resources"
+	"bitbucket.org/nsjostrom/machinable/projects/sessions"
 	"bitbucket.org/nsjostrom/machinable/projects/users"
 	"github.com/gin-gonic/gin"
 )
 
 func notImplemented(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{})
-}
-
-func setupProjectUserRoutes(engine *gin.Engine) {
-	// sessions have a mixed authz policy so there is a route here and at /mgmt/sessions
-	sessions := engine.Group("/sessions")
-	//sessions.Use(middleware.ProjectUserAuthzMiddleware())
-	sessions.POST("/", handlers.CreateSession)             // create a new session
-	sessions.DELETE("/:sessionID", handlers.RevokeSession) // delete this user's session TODO: AUTH
 }
 
 func setupMgmtRoutes(engine *gin.Engine) {
@@ -37,21 +30,6 @@ func setupMgmtRoutes(engine *gin.Engine) {
 	keys.GET("/", handlers.ListKeys)            // get list of api keys for this project
 	keys.POST("/", handlers.AddKey)             // create a new api key for this project
 	keys.DELETE("/:keyID", handlers.DeleteKey)  // get list of api keys for this project
-
-	// stats := engine.Group("/stats")
-	// stats.Use(middleware.AppUserJwtAuthzMiddleware())
-	// stats.Use(middleware.AppUserProjectAuthzMiddleware())
-	// stats.GET("/collections/:collectionID", handlers.GetCollection)
-
-	// App mgmt routes with different authz policy
-	mgmt := engine.Group("/mgmt")
-	mgmt.Use(middleware.ProjectLoggingMiddleware())
-	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
-
-	sessions := mgmt.Group("/sessions")
-	sessions.GET("/", handlers.ListSessions)
-	sessions.DELETE("/:sessionID", handlers.RevokeSession)
 }
 
 // CreateProjectRoutes creates a gin.Engine for the project routes
@@ -72,9 +50,9 @@ func CreateProjectRoutes() *gin.Engine {
 	documents.SetRoutes(router, datastore)
 	logs.SetRoutes(router, datastore)
 	users.SetRoutes(router, datastore)
+	sessions.SetRoutes(router, datastore)
 
 	setupMgmtRoutes(router)
-	setupProjectUserRoutes(router)
 
 	return router
 }

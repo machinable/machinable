@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"bitbucket.org/nsjostrom/machinable/management/database"
-	"bitbucket.org/nsjostrom/machinable/management/models"
+	localModels "bitbucket.org/nsjostrom/machinable/management/models"
 	as "bitbucket.org/nsjostrom/machinable/sessions"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -53,7 +54,7 @@ func (u *newUserBody) DuplicateUsername(col *mongo.Collection) bool {
 	return true
 }
 
-func createAccessToken(user *models.User) (string, error) {
+func createAccessToken(user *localModels.User) (string, error) {
 	// TODO: add user project map to jwt
 	claims := jwt.MapClaims{
 		"projects": make(map[string]interface{}),
@@ -74,7 +75,7 @@ func createAccessToken(user *models.User) (string, error) {
 }
 
 // createTokensAndSession returns an accessToken, refreshToken, error
-func createTokensAndSession(user *models.User, c *gin.Context) (string, string, *as.Session, error) {
+func createTokensAndSession(user *localModels.User, c *gin.Context) (string, string, *models.Session, error) {
 	// create access token
 	accessToken, err := createAccessToken(user)
 	if err != nil {
@@ -128,7 +129,7 @@ func RegisterUser(c *gin.Context) {
 	}
 
 	// create project user object
-	user := &models.User{
+	user := &localModels.User{
 		ID:           objectid.New(), // I don't like this
 		Created:      time.Now(),
 		PasswordHash: passwordHash,
@@ -204,7 +205,7 @@ func LoginUser(c *gin.Context) {
 		nil,
 	)
 
-	user := &models.User{}
+	user := &localModels.User{}
 	// decode user document
 	err := documentResult.Decode(user)
 	if err != nil {
@@ -247,8 +248,8 @@ func RefreshToken(c *gin.Context) {
 		return
 	}
 
-	var session as.Session
-	var user models.User
+	var session models.Session
+	var user localModels.User
 	// load session to update last accessed
 
 	// verify session exists

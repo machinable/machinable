@@ -21,7 +21,7 @@ type Datastore interface {
 	// Project logs
 	ProjectLogsDatastore
 	// Project sessions
-
+	ProjectSessions
 	// Projects
 
 	// Users
@@ -30,8 +30,17 @@ type Datastore interface {
 
 }
 
+// ProjectSessions exposes functions to manage project user sessions
+type ProjectSessions interface {
+	CreateSession(project string, session *models.Session) error
+	GetSession(project, sessionID string) (*models.Session, error)
+	ListSessions(project string) ([]*models.Session, error)
+	DeleteSession(project, sessionID string) error
+}
+
 // ProjectUsersDatastore exposes functions to manage project users
 type ProjectUsersDatastore interface {
+	GetUserByUsername(project, userName string) (*models.ProjectUser, error)
 	CreateUser(project string, user *models.ProjectUser) error
 	ListUsers(project string) ([]*models.ProjectUser, error)
 	DeleteUser(project, userID string) error

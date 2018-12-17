@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"time"
 
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/mssola/user_agent"
 )
 
-func getGeoIP(ip string) (string, error) {
+func GetGeoIP(ip string) (string, error) {
 	// ... this should be changed to get the access key from a config or environment variable
 	accessKey := "85a38b87f3b696c7dcbf8f6f58c3c6a9"
 	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s", ip, accessKey)
@@ -51,13 +52,13 @@ func getGeoIP(ip string) (string, error) {
 	return location, nil
 }
 
-func CreateSession(userID, ip, userAgent string, collection *mongo.Collection) (*Session, error) {
-	location, _ := getGeoIP(ip)
+func CreateSession(userID, ip, userAgent string, collection *mongo.Collection) (*models.Session, error) {
+	location, _ := GetGeoIP(ip)
 
 	ua := user_agent.New(userAgent)
 
 	bname, bversion := ua.Browser()
-	session := &Session{
+	session := &models.Session{
 		ID:           objectid.New(),
 		UserID:       userID,
 		Location:     location,

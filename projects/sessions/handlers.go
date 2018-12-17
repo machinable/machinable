@@ -1,24 +1,56 @@
-package handlers
+package sessions
 
 import (
-	"context"
 	"encoding/base64"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/mssola/user_agent"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
+	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	"bitbucket.org/nsjostrom/machinable/projects/database"
 	as "bitbucket.org/nsjostrom/machinable/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
+// New returns a pointer to a new `Users` struct
+func New(db interfaces.Datastore) *Sessions {
+	return &Sessions{
+		store: db,
+	}
+}
+
+// Sessions wraps the datastore and any HTTP handlers for project user sessions
+type Sessions struct {
+	store interfaces.Datastore
+}
+
+func (s *Sessions) generateSession(userID, ip, userAgent string) *models.Session {
+	location, _ := as.GetGeoIP(ip)
+
+	ua := user_agent.New(userAgent)
+
+	bname, bversion := ua.Browser()
+	session := &models.Session{
+		ID:           objectid.New(), // no
+		UserID:       userID,
+		Location:     location,
+		Mobile:       ua.Mobile(),
+		IP:           ip,
+		LastAccessed: time.Now(),
+		Browser:      bname + " " + bversion,
+		OS:           ua.OS(),
+	}
+
+	return session
+}
+
 // CreateSession creates a new project user session
-func CreateSession(c *gin.Context) {
+func (s *Sessions) CreateSession(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
 
 	// basic auth for login
@@ -50,21 +82,7 @@ func CreateSession(c *gin.Context) {
 		return
 	}
 
-	// get the users collection
-	userCollection := database.Collection(database.UserDocs(projectSlug))
-
-	// look up the user
-	documentResult := userCollection.FindOne(
-		nil,
-		bson.NewDocument(
-			bson.EC.String("username", userName),
-		),
-		nil,
-	)
-
-	user := &models.ProjectUser{}
-	// decode user document
-	err := documentResult.Decode(user)
+	user, err := s.store.GetUserByUsername(projectSlug, userName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "username not found"})
 		return
@@ -98,8 +116,8 @@ func CreateSession(c *gin.Context) {
 	}
 
 	// create session in database (refresh token)
-	sessionCollection := database.Collection(database.SessionDocs(projectSlug))
-	session, err := as.CreateSession(user.ID.Hex(), c.ClientIP(), c.Request.UserAgent(), sessionCollection)
+	session := s.generateSession(user.ID.Hex(), c.ClientIP(), c.Request.UserAgent())
+	err = s.store.CreateSession(projectSlug, session)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
 		return
@@ -120,56 +138,26 @@ func CreateSession(c *gin.Context) {
 }
 
 // ListSessions lists all active user sessions for a project
-func ListSessions(c *gin.Context) {
+func (s *Sessions) ListSessions(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
-	sessions := make([]*as.Session, 0)
 
-	collection := database.Connect().Collection(database.SessionDocs(projectSlug))
-
-	cursor, err := collection.Find(
-		context.Background(),
-		bson.NewDocument(),
-	)
+	sessions, err := s.store.ListSessions(projectSlug)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-
-	for cursor.Next(context.Background()) {
-		var session as.Session
-		err := cursor.Decode(&session)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-		sessions = append(sessions, &session)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"items": sessions})
 }
 
 // RevokeSession deletes a session from the project collection
-func RevokeSession(c *gin.Context) {
+func (s *Sessions) RevokeSession(c *gin.Context) {
 	sessionID := c.Param("sessionID")
 	projectSlug := c.MustGet("project").(string)
 
-	sessCollection := database.Collection(database.SessionDocs(projectSlug))
+	err := s.store.DeleteSession(projectSlug, sessionID)
 
-	// Get the object id
-	objectID, err := objectid.FromHex(sessionID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Delete the session
-	_, err = sessCollection.DeleteOne(
-		context.Background(),
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", objectID),
-		),
-	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -179,6 +167,6 @@ func RevokeSession(c *gin.Context) {
 }
 
 // RefreshSession uses the refresh token to generate a new access token
-func RefreshSession(c *gin.Context) {
+func (s *Sessions) RefreshSession(c *gin.Context) {
 
 }

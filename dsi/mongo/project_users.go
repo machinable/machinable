@@ -8,6 +8,27 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
+// GetUserByUsername retrieves a project user by the user's username
+func (d *Datastore) GetUserByUsername(project, userName string) (*models.ProjectUser, error) {
+	// get the users collection
+	collection := d.db.UserDocs(project)
+
+	// look up the user
+	documentResult := collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.String("username", userName),
+		),
+		nil,
+	)
+
+	user := &models.ProjectUser{}
+	// decode user document
+	err := documentResult.Decode(user)
+
+	return user, err
+}
+
 // CreateUser creates a new project user for the project
 func (d *Datastore) CreateUser(project string, user *models.ProjectUser) error {
 	// get the users collection
