@@ -18,7 +18,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
-	mgmt.Use(middleware.ProjectLoggingMiddleware())
+	mgmt.Use(middleware.ProjectLoggingMiddleware(datastore))
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
 

@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,20 +9,23 @@ import (
 	"time"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
+	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 	dbModels "bitbucket.org/nsjostrom/machinable/dsi/models"
 	"bitbucket.org/nsjostrom/machinable/management/database"
 	"bitbucket.org/nsjostrom/machinable/management/models"
-	pmodels "bitbucket.org/nsjostrom/machinable/projects/models"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
 )
 
+// BEARER is the key for the bearer authorization token
 var BEARER = "bearer"
+
+// APIKEY is the key for the apikey authorization token
 var APIKEY = "apikey"
 
 // ProjectUserAuthzMiddleware authenticates the JWT and verifies the requesting user has access to this project
-func ProjectUserAuthzMiddleware() gin.HandlerFunc {
+func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get project slug
 		// get project from context, inserted into context from subdomain
@@ -111,25 +113,8 @@ func ProjectUserAuthzMiddleware() gin.HandlerFunc {
 				// authenticate api key
 				apiKey := vals[1]
 				hashedKey := auth.SHA1(apiKey)
-				collection := database.Connect().Collection(pdb.KeyDocs(project))
 
-				// Find api key
-				documentResult := collection.FindOne(
-					nil,
-					bson.NewDocument(
-						bson.EC.String("key_hash", hashedKey),
-					),
-					nil,
-				)
-
-				if documentResult == nil {
-					respondWithError(http.StatusInternalServerError, "invalid key", c)
-					return
-				}
-
-				// Decode result into document
-				key := &pmodels.ProjectAPIKey{}
-				err := documentResult.Decode(key)
+				key, err := store.GetAPIKeyByKey(project, hashedKey)
 				if err != nil {
 					respondWithError(http.StatusNotFound, "invalid key", c)
 					return
@@ -209,7 +194,7 @@ func (w logWriter) Write(b []byte) (int, error) {
 }
 
 // ProjectLoggingMiddleware logs the request
-func ProjectLoggingMiddleware() gin.HandlerFunc {
+func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// inject custom writer
 		lw := &logWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
@@ -241,11 +226,7 @@ func ProjectLoggingMiddleware() gin.HandlerFunc {
 		}
 
 		// Get the logs collection
-		rc := pdb.Collection(pdb.LogDocs(projectSlug))
-		_, err := rc.InsertOne(
-			context.Background(),
-			plog,
-		)
+		err := store.AddProjectLog(projectSlug, plog)
 
 		if err != nil {
 			log.Println("an error occured trying to save the log")

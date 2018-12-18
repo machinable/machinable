@@ -7,15 +7,15 @@ import (
 )
 
 // SetRoutes sets all of the appropriate routes to handlers for project collections
-func SetRoutes(engine *gin.Engine, datastore interfaces.CollectionsDatastore) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	// create new Collections handler with datastore, set routes -> handlers
 	handler := New(datastore)
 
 	// routes for http api access to collections
 	collections := engine.Group("/collections")
 
-	collections.Use(middleware.ProjectLoggingMiddleware())
-	collections.Use(middleware.ProjectUserAuthzMiddleware())
+	collections.Use(middleware.ProjectLoggingMiddleware(datastore))
+	collections.Use(middleware.ProjectUserAuthzMiddleware(datastore))
 
 	collections.GET("/", handler.GetCollections)
 	collections.POST("/", handler.AddCollection)
@@ -29,7 +29,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.CollectionsDatastore) er
 
 	// admin routes with different authz policy
 	mgmt := engine.Group("/mgmt")
-	mgmt.Use(middleware.ProjectLoggingMiddleware())
+	mgmt.Use(middleware.ProjectLoggingMiddleware(datastore))
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
 

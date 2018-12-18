@@ -9,6 +9,24 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
+// GetAPIKeyByKey retrieves a single api key by key hash
+func (d *Datastore) GetAPIKeyByKey(project, hash string) (*models.ProjectAPIKey, error) {
+	// get the keys collection
+	col := d.db.KeyDocs(project)
+	key := &models.ProjectAPIKey{}
+
+	// Find api key
+	err := col.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.String("key_hash", hash),
+		),
+		nil,
+	).Decode(key)
+
+	return key, err
+}
+
 // CreateAPIKey creates a new api key for the project
 func (d *Datastore) CreateAPIKey(project, hash, description string, read, write bool) (*models.ProjectAPIKey, error) {
 	key := &models.ProjectAPIKey{
