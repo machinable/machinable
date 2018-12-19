@@ -10,9 +10,8 @@ import (
 
 	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	dbModels "bitbucket.org/nsjostrom/machinable/dsi/models"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"bitbucket.org/nsjostrom/machinable/management/database"
-	"bitbucket.org/nsjostrom/machinable/management/models"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
@@ -218,7 +217,7 @@ func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			authType = authType + ":"
 		}
 
-		plog := &dbModels.Log{
+		plog := &models.Log{
 			Event:      fmt.Sprintf("%s %s", verb, path),
 			StatusCode: statusCode,
 			Created:    time.Now(),

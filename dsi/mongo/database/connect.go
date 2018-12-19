@@ -18,6 +18,10 @@ const (
 	tokenCollection     = "project.%s.keys"
 	sessionCollection   = "project.%s.sessions"
 	logCollection       = "project.%s.logs"
+
+	usersCollection    = "users"
+	sessionsCollection = "sessions"
+	projectsCollection = "projects"
 )
 
 func getEnv(key, fallback string) string {
@@ -49,6 +53,21 @@ func Connect() *Database {
 // Database wraps the mongo database connection and provides helper functions for collections
 type Database struct {
 	db *mongo.Database
+}
+
+// Projects returns the app projects collection
+func (d *Database) Projects() *mongo.Collection {
+	return d.db.Collection(projectsCollection)
+}
+
+// Users returns the app users collection
+func (d *Database) Users() *mongo.Collection {
+	return d.db.Collection(usersCollection)
+}
+
+// Sessions returns the app sessions collection
+func (d *Database) Sessions() *mongo.Collection {
+	return d.db.Collection(sessionsCollection)
 }
 
 // LogDocs the collection of project logs

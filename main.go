@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strings"
 
+	"bitbucket.org/nsjostrom/machinable/dsi/mongo"
+	"bitbucket.org/nsjostrom/machinable/dsi/mongo/database"
 	"bitbucket.org/nsjostrom/machinable/management"
 	"bitbucket.org/nsjostrom/machinable/projects"
 )
@@ -37,16 +39,19 @@ func (hs HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	appRoutes := management.CreateManagementRoutes()
-	projectRoutes := projects.CreateProjectRoutes()
+	// use mongoDB connector
+	// if another connector is needed, the Datastore interface can be implemented and these 2 lines changes to instantiate the new connector
+	// potential connectors: InfluxDB, Postgres JSON, Redis, CouchDB
+	mongoDB := database.Connect()
+	datastore := mongo.New(mongoDB)
 
 	// switch routers based on subdomain
 	hostSwitch := make(HostSwitch)
 
 	// manage is for the management application api, i.e. project/team management
-	hostSwitch["manage"] = appRoutes
+	hostSwitch["manage"] = management.CreateRoutes(datastore)
 	// all other subdomains will be treated as project names, and use the project routes
-	hostSwitch["*"] = projectRoutes
+	hostSwitch["*"] = projects.CreateRoutes(datastore)
 
 	log.Fatal(http.ListenAndServe(":5001", hostSwitch))
 }

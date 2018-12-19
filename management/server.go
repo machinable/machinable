@@ -3,7 +3,9 @@ package management
 import (
 	"net/http"
 
+	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 	"bitbucket.org/nsjostrom/machinable/management/handlers"
+	"bitbucket.org/nsjostrom/machinable/management/projects"
 	"bitbucket.org/nsjostrom/machinable/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -16,8 +18,8 @@ func version(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"version": "0.0.0"})
 }
 
-// CreateManagementRoutes creates a gin.Engine with routes to the application management resources
-func CreateManagementRoutes() *gin.Engine {
+// CreateRoutes creates a gin.Engine with routes to the application management resources
+func CreateRoutes(datastore interfaces.Datastore) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(middleware.OpenCORSMiddleware())
@@ -35,13 +37,7 @@ func CreateManagementRoutes() *gin.Engine {
 	users.POST("/refresh", middleware.ValidateRefreshToken(), handlers.RefreshToken)
 	users.POST("/password", middleware.AppUserJwtAuthzMiddleware(), handlers.ResetPassword)
 
-	// project endpoints
-	projects := router.Group("/projects")
-	projects.Use(middleware.AppUserJwtAuthzMiddleware())
-	projects.GET("/", handlers.ListUserProjects)
-	projects.POST("/", handlers.CreateProject)
-	projects.PUT("/:projectSlug", handlers.UpdateProject)
-	projects.DELETE("/:projectSlug", handlers.DeleteUserProject)
+	projects.SetRoutes(router, datastore)
 
 	// user settings endpoints
 	// TODO

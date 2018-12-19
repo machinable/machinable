@@ -1,10 +1,8 @@
 package projects
 
 import (
-	"net/http"
+	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/mongo"
-	"bitbucket.org/nsjostrom/machinable/dsi/mongo/database"
 	"bitbucket.org/nsjostrom/machinable/middleware"
 	"bitbucket.org/nsjostrom/machinable/projects/apikeys"
 	"bitbucket.org/nsjostrom/machinable/projects/collections"
@@ -16,17 +14,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func notImplemented(c *gin.Context) {
-	c.JSON(http.StatusNotImplemented, gin.H{})
-}
-
-// CreateProjectRoutes creates a gin.Engine for the project routes
-func CreateProjectRoutes() *gin.Engine {
-	// use mongoDB connector
-	// if another connector is needed, the Datastore interface can be implemented and these 2 lines changes to instantiate the new connector
-	// potential connectors: InfluxDB, Postgres JSON, Redis, CouchDB
-	mongoDB := database.Connect()
-	datastore := mongo.New(mongoDB)
+// CreateRoutes creates a gin.Engine for the project routes
+func CreateRoutes(datastore interfaces.Datastore) *gin.Engine {
 
 	router := gin.Default()
 	router.Use(middleware.OpenCORSMiddleware())

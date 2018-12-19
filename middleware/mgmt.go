@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"bitbucket.org/nsjostrom/machinable/management/database"
-	"bitbucket.org/nsjostrom/machinable/management/models"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson"
