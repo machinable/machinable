@@ -36,6 +36,7 @@ func (p *Projects) UpdateProject(c *gin.Context) {
 	}
 
 	// successful update
+	// TODO return updated project.
 	c.JSON(http.StatusOK, gin.H{})
 }
 
