@@ -11,10 +11,8 @@ import (
 	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	"bitbucket.org/nsjostrom/machinable/management/database"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/mongodb/mongo-go-driver/bson"
 )
 
 // BEARER is the key for the bearer authorization token
@@ -151,21 +149,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		}
 		// if no Authorization header is present, load the project and check the authn policy
 
-		// get the project collection
-		col := database.Connect().Collection(database.Projects)
-
-		// look up the user
-		documentResult := col.FindOne(
-			nil,
-			bson.NewDocument(
-				bson.EC.String("slug", project),
-			),
-			nil,
-		)
-
-		prj := &models.Project{}
-		// decode user document
-		err := documentResult.Decode(prj)
+		prj, err := store.GetProjectBySlug(project)
 		if err != nil {
 			respondWithError(http.StatusNotFound, "project not found", c)
 			return

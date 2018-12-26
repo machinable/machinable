@@ -1,7 +1,6 @@
 package sessions
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,8 +8,6 @@ import (
 	"time"
 
 	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
-	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/mssola/user_agent"
 )
 
@@ -52,14 +49,13 @@ func GetGeoIP(ip string) (string, error) {
 	return location, nil
 }
 
-func CreateSession(userID, ip, userAgent string, collection *mongo.Collection) (*models.Session, error) {
+func CreateSession(userID, ip, userAgent string) *models.Session {
 	location, _ := GetGeoIP(ip)
 
 	ua := user_agent.New(userAgent)
 
 	bname, bversion := ua.Browser()
 	session := &models.Session{
-		ID:           objectid.New(),
 		UserID:       userID,
 		Location:     location,
 		Mobile:       ua.Mobile(),
@@ -69,15 +65,5 @@ func CreateSession(userID, ip, userAgent string, collection *mongo.Collection) (
 		OS:           ua.OS(),
 	}
 
-	// save the user
-	_, err := collection.InsertOne(
-		context.Background(),
-		session,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return session, nil
+	return session
 }

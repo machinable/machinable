@@ -20,7 +20,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmt := engine.Group("/mgmt")
 	mgmt.Use(middleware.ProjectLoggingMiddleware(datastore))
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
+	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
 	mgmtSessions := mgmt.Group("/sessions")
 	mgmtSessions.GET("/", handler.ListSessions)

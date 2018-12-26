@@ -5,7 +5,6 @@ import (
 
 	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 )
@@ -24,7 +23,7 @@ type APIKeys struct {
 
 // AddKey creates a new api key for this project
 func (k *APIKeys) AddKey(c *gin.Context) {
-	var newKey models.NewProjectKey
+	var newKey NewProjectKey
 	projectSlug := c.MustGet("project").(string)
 
 	c.BindJSON(&newKey)

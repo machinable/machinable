@@ -1,7 +1,6 @@
 package users
 
 import (
-	"context"
 	"encoding/base64"
 	"errors"
 	"net/http"
@@ -11,12 +10,9 @@ import (
 	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	"bitbucket.org/nsjostrom/machinable/management/database"
 	as "bitbucket.org/nsjostrom/machinable/sessions"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // New returns a pointer to a new `Users`
@@ -31,20 +27,7 @@ type Users struct {
 	store interfaces.Datastore
 }
 
-type newUserBody struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
-// Validate checks that the new user has a username and password.
-func (u *newUserBody) Validate() error {
-	if u.Username == "" || u.Password == "" {
-		return errors.New("invalid username or password")
-	}
-	return nil
-}
-
-func createAccessToken(user *models.User) (string, error) {
+func (u *Users) createAccessToken(user *models.User) (string, error) {
 	// TODO: add user project map to jwt
 	claims := jwt.MapClaims{
 		"projects": make(map[string]interface{}),
@@ -65,16 +48,16 @@ func createAccessToken(user *models.User) (string, error) {
 }
 
 // createTokensAndSession returns an accessToken, refreshToken, error
-func createTokensAndSession(user *models.User, c *gin.Context) (string, string, *models.Session, error) {
+func (u *Users) createTokensAndSession(user *models.User, c *gin.Context) (string, string, *models.Session, error) {
 	// create access token
-	accessToken, err := createAccessToken(user)
+	accessToken, err := u.createAccessToken(user)
 	if err != nil {
 		return "", "", nil, err
 	}
 
 	// create session in database (refresh token)
-	sessionCollection := database.Connect().Collection(database.Sessions)
-	session, err := as.CreateSession(user.ID.Hex(), c.ClientIP(), c.Request.UserAgent(), sessionCollection)
+	session := as.CreateSession(user.ID.Hex(), c.ClientIP(), c.Request.UserAgent())
+	err = u.store.CreateAppSession(session)
 	if err != nil {
 		return "", "", nil, errors.New("failed to create session")
 	}
@@ -118,7 +101,6 @@ func (u *Users) RegisterUser(c *gin.Context) {
 
 	// create project user object
 	user := &models.User{
-		ID:           objectid.New(), // I don't like this
 		Created:      time.Now(),
 		PasswordHash: passwordHash,
 		Username:     newUser.Username,
@@ -132,7 +114,7 @@ func (u *Users) RegisterUser(c *gin.Context) {
 	}
 
 	// TODO: refactor sessions
-	accessToken, refreshToken, session, err := createTokensAndSession(user, c)
+	accessToken, refreshToken, session, err := u.createTokensAndSession(user, c)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -191,7 +173,7 @@ func (u *Users) LoginUser(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, session, err := createTokensAndSession(user, c)
+	accessToken, refreshToken, session, err := u.createTokensAndSession(user, c)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -220,23 +202,12 @@ func (u *Users) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	var session models.Session
 	var user models.User
 	// load session to update last accessed
 
 	// verify session exists
-	sessionCollection := database.Connect().Collection(database.Sessions)
-	sessionObjectID, _ := objectid.FromHex(sessionID)
-	documentResult := sessionCollection.FindOne(
-		nil,
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", sessionObjectID),
-		),
-		nil,
-	)
+	_, err := u.store.GetAppSession(sessionID)
 
-	// decode session document
-	err := documentResult.Decode(&session)
 	if err != nil {
 		// no documents in result, user does not exist
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
@@ -252,24 +223,15 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	}
 
 	// create new access jwt
-	accessToken, err := createAccessToken(&user)
+	accessToken, err := u.createAccessToken(&user)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
 	}
 
 	// update session `last_accessed` time
-	_, err = sessionCollection.UpdateOne(
-		context.Background(),
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", sessionObjectID),
-		),
-		bson.NewDocument(
-			bson.EC.SubDocumentFromElements("$set",
-				bson.EC.Time("last_accessed", time.Now()),
-			),
-		),
-	)
+	u.store.UpdateAppSessionLastAccessed(sessionID, time.Now())
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -284,21 +246,8 @@ func (u *Users) RefreshToken(c *gin.Context) {
 func (u *Users) RevokeSession(c *gin.Context) {
 	sessionID := c.Param("sessionID")
 
-	sessionCollection := database.Connect().Collection(database.Sessions)
-	// Get the object id
-	objectID, err := objectid.FromHex(sessionID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	err := u.store.DeleteAppSession(sessionID)
 
-	// Delete the definition
-	_, err = sessionCollection.DeleteOne(
-		context.Background(),
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", objectID),
-		),
-	)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

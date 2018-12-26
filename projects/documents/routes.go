@@ -24,7 +24,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmt := engine.Group("/mgmt")
 	mgmt.Use(middleware.ProjectLoggingMiddleware(datastore))
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmt.Use(middleware.AppUserProjectAuthzMiddleware())
+	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
 	mgmtAPI := mgmt.Group("/api")
 	mgmtAPI.POST("/:resourcePathName", handler.AddObject)

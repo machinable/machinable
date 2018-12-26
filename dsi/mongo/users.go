@@ -55,6 +55,7 @@ func (d *Datastore) GetAppUserByID(id string) (*models.User, error) {
 
 // CreateAppUser saves a new application user
 func (d *Datastore) CreateAppUser(user *models.User) error {
+	user.ID = objectid.New()
 	col := d.db.Users()
 
 	// save the user

@@ -15,7 +15,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	// Only application users have access to resource definitions
 	resources := engine.Group("/resources")
 	resources.Use(middleware.AppUserJwtAuthzMiddleware())
-	resources.Use(middleware.AppUserProjectAuthzMiddleware())
+	resources.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
 	resources.POST("/", handler.AddResourceDefinition)
 	resources.GET("/", handler.ListResourceDefinitions)

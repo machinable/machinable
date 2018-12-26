@@ -8,5 +8,6 @@ type ProjectsDatastore interface {
 	CreateProject(userID, slug, name, description, icon string, authn bool) (*models.Project, error)
 	ListUserProjects(userID string) ([]*models.Project, error)
 	GetProjectBySlug(slug string) (*models.Project, error)
+	GetProjectBySlugAndUserID(slug, userID string) (*models.Project, error)
 	DeleteProject(slug string) error
 }

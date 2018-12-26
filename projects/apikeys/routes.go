@@ -14,7 +14,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	// Only app users have access to api key management
 	keys := engine.Group("/keys")
 	keys.Use(middleware.AppUserJwtAuthzMiddleware())
-	keys.Use(middleware.AppUserProjectAuthzMiddleware())
+	keys.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
 	keys.GET("/generate", handler.GenerateKey) // get list of api keys for this project
 	keys.GET("/", handler.ListKeys)            // get list of api keys for this project

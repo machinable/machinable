@@ -93,6 +93,30 @@ func (d *Datastore) GetProjectBySlug(slug string) (*models.Project, error) {
 	return project, err
 }
 
+// GetProjectBySlugAndUserID retrieves a project by slug for a given user ID
+func (d *Datastore) GetProjectBySlugAndUserID(slug, userID string) (*models.Project, error) {
+	// connect to project collection
+	col := d.db.Projects()
+
+	userObjectID, err := objectid.FromHex(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	project := &models.Project{}
+	// look up the user
+	err = col.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.String("slug", slug),
+			bson.EC.ObjectID("user_id", userObjectID),
+		),
+		nil,
+	).Decode(project)
+
+	return project, err
+}
+
 // ListUserProjects retrieves all projects for a user
 func (d *Datastore) ListUserProjects(userID string) ([]*models.Project, error) {
 	// create ObjectID from UserID string

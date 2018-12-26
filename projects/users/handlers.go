@@ -7,7 +7,6 @@ import (
 	"bitbucket.org/nsjostrom/machinable/auth"
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	localModels "bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
@@ -26,7 +25,7 @@ type Users struct {
 
 // AddUser creates a new user for this project
 func (u *Users) AddUser(c *gin.Context) {
-	var newUser localModels.NewProjectUser
+	var newUser NewProjectUser
 	projectSlug := c.MustGet("project").(string)
 
 	c.BindJSON(&newUser)

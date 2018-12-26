@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	localModels "bitbucket.org/nsjostrom/machinable/management/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,7 +24,7 @@ func (p *Projects) UpdateProject(c *gin.Context) {
 	projectSlug := c.Param("projectSlug")
 	userID := c.MustGet("user_id").(string)
 
-	var updatedProject localModels.ProjectBody
+	var updatedProject ProjectBody
 	c.BindJSON(&updatedProject)
 
 	project, err := p.store.UpdateProjectAuthn(projectSlug, userID, updatedProject.Authn)
@@ -41,7 +40,7 @@ func (p *Projects) UpdateProject(c *gin.Context) {
 
 // CreateProject creates a new project for an application user.
 func (p *Projects) CreateProject(c *gin.Context) {
-	var newProject localModels.ProjectBody
+	var newProject ProjectBody
 	userID := c.MustGet("user_id").(string)
 
 	c.BindJSON(&newProject)

@@ -22,5 +22,5 @@ type Datastore interface {
 	// Users
 	UsersDatastore
 	// Sessions
-
+	SessionsDatastore
 }

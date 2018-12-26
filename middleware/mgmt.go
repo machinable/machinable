@@ -5,12 +5,9 @@ import (
 	"strings"
 
 	"bitbucket.org/nsjostrom/machinable/auth"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	"bitbucket.org/nsjostrom/machinable/management/database"
+	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 func respondWithError(code int, message string, c *gin.Context) {
@@ -21,7 +18,7 @@ func respondWithError(code int, message string, c *gin.Context) {
 }
 
 // AppUserProjectAuthzMiddleware validates this app user has access to the project
-func AppUserProjectAuthzMiddleware() gin.HandlerFunc {
+func AppUserProjectAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if values, _ := c.Request.Header["Authorization"]; len(values) > 0 {
 
@@ -56,29 +53,10 @@ func AppUserProjectAuthzMiddleware() gin.HandlerFunc {
 				_, ok = projects[project]
 				if !ok {
 					// the project is not in the claims, look in the database in case it was created with the last 5 minutes
+					userID := user["id"].(string)
 
-					// create ObjectID from UserID string
-					userObjectID, err := objectid.FromHex(user["id"].(string))
-					if err != nil {
-						respondWithError(http.StatusUnauthorized, "improperly formatted access token", c)
-						return
-					}
-					// get the project collection
-					col := database.Connect().Collection(database.Projects)
+					_, err := store.GetProjectBySlugAndUserID(project, userID)
 
-					// look up the user
-					documentResult := col.FindOne(
-						nil,
-						bson.NewDocument(
-							bson.EC.String("slug", project),
-							bson.EC.ObjectID("user_id", userObjectID),
-						),
-						nil,
-					)
-
-					prj := &models.Project{}
-					// decode user document
-					err = documentResult.Decode(prj)
 					if err != nil {
 						respondWithError(http.StatusNotFound, "project not found", c)
 						return
