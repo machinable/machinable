@@ -28,7 +28,7 @@ func (p *Projects) UpdateProject(c *gin.Context) {
 	var updatedProject localModels.ProjectBody
 	c.BindJSON(&updatedProject)
 
-	err := p.store.UpdateProjectAuthn(projectSlug, userID, updatedProject.Authn)
+	project, err := p.store.UpdateProjectAuthn(projectSlug, userID, updatedProject.Authn)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -36,8 +36,7 @@ func (p *Projects) UpdateProject(c *gin.Context) {
 	}
 
 	// successful update
-	// TODO return updated project.
-	c.JSON(http.StatusOK, gin.H{})
+	c.JSON(http.StatusOK, project)
 }
 
 // CreateProject creates a new project for an application user.

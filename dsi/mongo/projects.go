@@ -11,11 +11,11 @@ import (
 )
 
 // UpdateProjectAuthn updates the project authentication policy
-func (d *Datastore) UpdateProjectAuthn(slug, userID string, authn bool) error {
+func (d *Datastore) UpdateProjectAuthn(slug, userID string, authn bool) (*models.Project, error) {
 	// Create object ID from resource ID string
 	userObjectID, err := objectid.FromHex(userID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// connect to project collection
@@ -35,7 +35,13 @@ func (d *Datastore) UpdateProjectAuthn(slug, userID string, authn bool) error {
 		),
 	)
 
-	return err
+	if err != nil {
+		return nil, err
+	}
+
+	project, err := d.GetProjectBySlug(slug)
+
+	return project, err
 }
 
 // CreateProject creates a new project for a user
