@@ -11,6 +11,7 @@ ENV SRC_DIR=${HOME}/go/src/bitbucket.org/nsjostrom/machinable/
 ADD . $SRC_DIR
 
 # Build it:
+# NOTE - dependencies will need to be in the vendor directory before building this image
 RUN cd $SRC_DIR;\
     apk add --no-cache git;\
 	go get ./;\
