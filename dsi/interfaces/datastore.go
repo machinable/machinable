@@ -20,7 +20,7 @@ type Datastore interface {
 	// Projects
 	ProjectsDatastore
 	// Users
-
+	UsersDatastore
 	// Sessions
 
 }

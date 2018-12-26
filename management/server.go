@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/management/handlers"
 	"bitbucket.org/nsjostrom/machinable/management/projects"
+	"bitbucket.org/nsjostrom/machinable/management/users"
 	"bitbucket.org/nsjostrom/machinable/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -30,17 +30,8 @@ func CreateRoutes(datastore interfaces.Datastore) *gin.Engine {
 	meta.GET("/version", version)
 
 	// user endpoints
-	users := router.Group("/users")
-	users.POST("/register", handlers.RegisterUser)
-	users.POST("/sessions", handlers.LoginUser)
-	users.DELETE("/sessions/:sessionID", middleware.AppUserJwtAuthzMiddleware(), handlers.RevokeSession)
-	users.POST("/refresh", middleware.ValidateRefreshToken(), handlers.RefreshToken)
-	users.POST("/password", middleware.AppUserJwtAuthzMiddleware(), handlers.ResetPassword)
-
+	users.SetRoutes(router, datastore)
 	projects.SetRoutes(router, datastore)
-
-	// user settings endpoints
-	// TODO
 
 	return router
 }
