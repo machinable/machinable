@@ -23,7 +23,7 @@ Machinable teams are groups of users that manage team projects. A team can have 
 
 ## Projects
 
-A machinable project is a project that is created and managed by a machinable user or team. A project will have a unique hostname, `{project-slug}.mchbl.com`, that will provide access to the projects API Resource definition, collection, and auth endpoints.
+A machinable project is a project that is created and managed by a machinable user or team. A project will have a unique hostname, `{project-slug}.machinable.io`, that will provide access to the projects API Resource definition, collection, and auth endpoints.
 
 The API Resources and collections are HTTP interfaces to a NoSQL database.
 

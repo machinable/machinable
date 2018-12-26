@@ -164,6 +164,18 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 		offset = "0"
 	}
 
+	// Clear reserved query parameters
+
+	// Format query parameters
+	filter := make(map[string]interface{})
+
+	for k, v := range values {
+		if k == "_limit" || k == "_offset" {
+			continue
+		}
+		filter[k] = v[0]
+	}
+
 	// Parse and validate pagination
 	il, err := strconv.Atoi(limit)
 	if err != nil || il > models.MaxLimit {
@@ -193,7 +205,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	}
 
 	// Retrieve documents for the page
-	documents, colErr := h.store.GetCollectionDocuments(projectSlug, collectionName, iLimit, iOffset, nil)
+	documents, colErr := h.store.GetCollectionDocuments(projectSlug, collectionName, iLimit, iOffset, filter)
 
 	if colErr != nil {
 		c.JSON(colErr.Code(), gin.H{"error": err.Error()})
