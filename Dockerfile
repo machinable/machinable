@@ -14,7 +14,6 @@ ADD . $SRC_DIR
 # NOTE - dependencies will need to be in the vendor directory before building this image
 RUN cd $SRC_DIR;\
     apk add --no-cache git;\
-	go get ./;\
     go build -o api;
 
 ENTRYPOINT ["/go/src/bitbucket.org/nsjostrom/machinable/api"]

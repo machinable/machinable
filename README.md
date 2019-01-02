@@ -6,7 +6,7 @@ Define functional HTTP APIs.
 
 ```
 # run glide
-$ glide install
+$ make install
 
 # build the docker image
 $ make build
