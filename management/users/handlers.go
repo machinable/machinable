@@ -230,7 +230,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	}
 
 	// update session `last_accessed` time
-	u.store.UpdateAppSessionLastAccessed(sessionID, time.Now())
+	err = u.store.UpdateAppSessionLastAccessed(sessionID, time.Now())
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
