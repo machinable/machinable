@@ -8,7 +8,7 @@ import (
 // ResourcesDatastore exposes functions to the resources and definitions
 type ResourcesDatastore interface {
 	// Project definition documents
-	AddDefDocument(project, path string, fields map[string]interface{}) (string, *errors.DatastoreError)
+	AddDefDocument(project, path string, fields map[string]interface{}, metadata *models.MetaData) (string, *errors.DatastoreError)
 	ListDefDocuments(project, path string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError)
 	GetDefDocument(project, path, documentID string) (map[string]interface{}, *errors.DatastoreError)
 	DeleteDefDocument(project, path, documentID string) *errors.DatastoreError

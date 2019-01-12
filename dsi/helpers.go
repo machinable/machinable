@@ -1,8 +1,16 @@
 package dsi
 
 const (
+	// JSONIDKey is the key of the id returned in the JSON response
+	JSONIDKey = "id"
 	// DocumentIDKey is the key of ids in mongodb
 	DocumentIDKey = "_id"
+	// LimitKey is used for paginating HTTP requests
+	LimitKey = "_limit"
+	// OffsetKey is used for paginating HTTP requests
+	OffsetKey = "_offset"
+	// MetadataKey is the key used to store internal metadata for an object
+	MetadataKey = "_metadata"
 	// MaxRecursion is the maximum amount of levels allowed in a JSON object (array and objects)
 	MaxRecursion = 8
 )
@@ -17,7 +25,7 @@ var supportedArrayItemTypes = []string{"integer", "number", "boolean", "string",
 var supportedFormats = []string{"date-time", "email", "hostname", "ipv4", "ipv6"}
 
 // reservedFieldKeys is the list of keys that cannot be used, as they are reserved for machinable use
-var reservedFieldKeys = []string{"id", DocumentIDKey, "ID", "Id", "iD"}
+var reservedFieldKeys = []string{JSONIDKey, DocumentIDKey, LimitKey, OffsetKey, MetadataKey}
 
 // SupportedType returns true if the string is a supported type, false otherwise.
 func SupportedType(a string) bool {

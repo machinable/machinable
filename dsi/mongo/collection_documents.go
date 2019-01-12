@@ -10,12 +10,16 @@ import (
 
 	"bitbucket.org/nsjostrom/machinable/dsi"
 	"bitbucket.org/nsjostrom/machinable/dsi/errors"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // AddCollectionDocument creates a new arbitrary argument in the given collection for the project
-func (d *Datastore) AddCollectionDocument(project, collectionName string, document map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
+func (d *Datastore) AddCollectionDocument(project, collectionName string, document map[string]interface{}, metadata *models.MetaData) (map[string]interface{}, *errors.DatastoreError) {
+	// Append metadata
+	document["_metadata"] = metadata.Map()
+
 	// Get a connection and insert the new document
 	collection := d.db.CollectionDocs(project, collectionName)
 	result, err := collection.InsertOne(
@@ -57,6 +61,8 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 			updatedElements = append(updatedElements, bson.EC.Interface(key, updatedDocument[key]))
 		}
 	}
+
+	// TODO: retrieve the existing document to copy metadata
 
 	// Get a connection and update the document
 	collection := d.db.CollectionDocs(project, collectionName)

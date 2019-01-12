@@ -10,6 +10,19 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo"
 )
 
+func appendMetadata(doc *bson.Document, metadata *models.MetaData) {
+	md := bson.NewDocument(
+		bson.EC.String("creator", metadata.Creator),
+		bson.EC.String("creator_type", metadata.CreatorType),
+		bson.EC.Int64("created", metadata.Created),
+	)
+
+	doc.Append(bson.EC.SubDocument(
+		"_metadata",
+		md,
+	))
+}
+
 // getDefinition returns the *model.ResourceDefinition for a resource definition path name
 func getDefinition(resourcePathName string, collection *mongo.Collection) (*models.ResourceDefinition, error) {
 

@@ -5,12 +5,13 @@ import (
 	"fmt"
 
 	"bitbucket.org/nsjostrom/machinable/dsi/errors"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // AddDefDocument creates a new document for the existing resource, specified by the path.
-func (d *Datastore) AddDefDocument(project, path string, fields map[string]interface{}) (string, *errors.DatastoreError) {
+func (d *Datastore) AddDefDocument(project, path string, fields map[string]interface{}, metadata *models.MetaData) (string, *errors.DatastoreError) {
 	resDefCollection := d.db.ResourceDefinitions(project)
 	// Get field definitions for this resource
 	resourceDefinition, err := getDefinition(path, resDefCollection)
@@ -25,6 +26,9 @@ func (d *Datastore) AddDefDocument(project, path string, fields map[string]inter
 	if err != nil {
 		return "", errors.New(errors.BadParameter, err)
 	}
+
+	// Append metadata
+	appendMetadata(objectDocument, metadata)
 
 	// Get the resources.{resourcePathName} collection
 	rc := d.db.ResourceDocs(project, path)
