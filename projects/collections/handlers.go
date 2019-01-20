@@ -5,7 +5,8 @@ import (
 	"strconv"
 
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/projects/models"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	localModels "bitbucket.org/nsjostrom/machinable/projects/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -110,6 +111,9 @@ func (h *Collections) PutObjectInCollection(c *gin.Context) {
 func (h *Collections) AddObjectToCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")
 	projectSlug := c.MustGet("project").(string)
+	creator := c.MustGet("authID").(string)
+	creatorType := c.MustGet("authType").(string)
+
 	if collectionName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
 		return
@@ -131,8 +135,10 @@ func (h *Collections) AddObjectToCollection(c *gin.Context) {
 		return
 	}
 
+	meta := models.NewMetaData(creator, creatorType)
+
 	// add the new document
-	newDocument, docErr := h.store.AddCollectionDocument(projectSlug, collectionName, bdoc)
+	newDocument, docErr := h.store.AddCollectionDocument(projectSlug, collectionName, bdoc, meta)
 	if err != nil {
 		c.JSON(docErr.Code(), gin.H{"error": err.Error()})
 		return
@@ -157,7 +163,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 
 	// Set defaults if necessary
 	if limit == "" {
-		limit = models.Limit
+		limit = localModels.Limit
 	}
 
 	if offset == "" {
@@ -178,7 +184,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 
 	// Parse and validate pagination
 	il, err := strconv.Atoi(limit)
-	if err != nil || il > models.MaxLimit {
+	if err != nil || il > localModels.MaxLimit {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
 		return
 	}
@@ -212,7 +218,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 		return
 	}
 
-	links := models.NewLinks(c.Request, iLimit, iOffset, docCount)
+	links := localModels.NewLinks(c.Request, iLimit, iOffset, docCount)
 
 	c.PureJSON(http.StatusOK, gin.H{"items": documents, "links": links, "count": docCount})
 }

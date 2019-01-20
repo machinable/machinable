@@ -102,6 +102,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 					// c.Set("username", user["name"])
 					c.Set("authType", "user")
 					c.Set("authString", user["name"])
+					c.Set("authID", user["id"])
 
 					c.Next()
 					return
@@ -139,6 +140,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				// c.Set("username", user["name"])
 				c.Set("authType", "api key")
 				c.Set("authString", key.Description)
+				c.Set("authID", key.ID.Hex())
 
 				c.Next()
 				return
@@ -156,6 +158,10 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		}
 
 		if !prj.Authn {
+			c.Set("authType", "anonymous")
+			c.Set("authString", "anonymous")
+			c.Set("authID", "anonymous")
+
 			// project does not require authentication, carry on
 			c.Next()
 			return

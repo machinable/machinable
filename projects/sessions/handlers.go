@@ -100,7 +100,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 			projectSlug: true,
 		},
 		"user": map[string]interface{}{
-			"id":     user.ID,
+			"id":     user.ID.Hex(),
 			"name":   user.Username,
 			"active": true,
 			"read":   user.Read,

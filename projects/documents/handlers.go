@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
+	"bitbucket.org/nsjostrom/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,11 +24,16 @@ type Documents struct {
 func (h *Documents) AddObject(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
 	projectSlug := c.MustGet("project").(string)
+	creator := c.MustGet("authID").(string)
+	creatorType := c.MustGet("authType").(string)
+
 	fieldValues := make(map[string]interface{})
 
 	c.BindJSON(&fieldValues)
 
-	newID, err := h.store.AddDefDocument(projectSlug, resourcePathName, fieldValues)
+	meta := models.NewMetaData(creator, creatorType)
+
+	newID, err := h.store.AddDefDocument(projectSlug, resourcePathName, fieldValues, meta)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
