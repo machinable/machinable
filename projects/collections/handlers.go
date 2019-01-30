@@ -79,6 +79,8 @@ func (h *Collections) PutObjectInCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")
 	objectIDStr := c.Param("objectID")
 	projectSlug := c.MustGet("project").(string)
+	creator := c.MustGet("authID").(string)
+	creatorType := c.MustGet("authType").(string)
 
 	bdoc := make(map[string]interface{})
 
@@ -95,8 +97,10 @@ func (h *Collections) PutObjectInCollection(c *gin.Context) {
 		return
 	}
 
+	meta := models.NewMetaData(creator, creatorType)
+
 	// updated the document
-	updateErr := h.store.UpdateCollectionDocument(projectSlug, collectionName, objectIDStr, bdoc)
+	updateErr := h.store.UpdateCollectionDocument(projectSlug, collectionName, objectIDStr, bdoc, meta)
 
 	if err != nil {
 		c.JSON(updateErr.Code(), gin.H{"error": err.Error()})

@@ -43,7 +43,7 @@ func (d *Datastore) AddCollectionDocument(project, collectionName string, docume
 }
 
 // UpdateCollectionDocument updates the entire document for the documentID, removing any reserved fields with `dsi.ReservedField`
-func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID string, updatedDocument map[string]interface{}) *errors.DatastoreError {
+func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID string, updatedDocument map[string]interface{}, metadata *models.MetaData) *errors.DatastoreError {
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(documentID)
 	if err != nil || documentID == "" {
@@ -61,6 +61,9 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 			updatedElements = append(updatedElements, bson.EC.Interface(key, updatedDocument[key]))
 		}
 	}
+
+	// Append metadata
+	updatedElements = append(updatedElements, bson.EC.Interface("_metadata", metadata))
 
 	// TODO: retrieve the existing document to copy metadata
 
