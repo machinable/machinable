@@ -5,7 +5,7 @@ FROM golang:alpine as builder
 RUN apk add --update gcc musl-dev
 # Set an env var that matches github repo name
 # ENV CGO_ENABLED=0
-ENV SRC_DIR=${HOME}/go/src/bitbucket.org/nsjostrom/machinable/
+ENV SRC_DIR=${HOME}/go/src/github.com/anothrnick/machinable/
 
 # Add the source code:
 ADD . $SRC_DIR
@@ -16,7 +16,7 @@ RUN cd $SRC_DIR;\
     apk add --no-cache git;\
     go build -o api;
 
-ENTRYPOINT ["/go/src/bitbucket.org/nsjostrom/machinable/api"]
+ENTRYPOINT ["/go/src/github.com/anothrnick/machinable/api"]
 
 # alpine production environment
 # copy binary for smallest image size
@@ -26,6 +26,6 @@ RUN apk add --no-cache ca-certificates
 
 ENV GIN_MODE=release
 
-COPY --from=builder /go/src/bitbucket.org/nsjostrom/machinable/api /bin/api
+COPY --from=builder /go/src/github.com/anothrnick/machinable/api /bin/api
 
 ENTRYPOINT ["/bin/api"]

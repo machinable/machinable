@@ -3,7 +3,7 @@ package mongo
 import (
 	"context"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )

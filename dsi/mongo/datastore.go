@@ -1,6 +1,6 @@
 package mongo
 
-import "bitbucket.org/nsjostrom/machinable/dsi/mongo/database"
+import "github.com/anothrnick/machinable/dsi/mongo/database"
 
 // New returns a new MongoDatastore struct. `database.Database` is required.
 func New(db *database.Database) *Datastore {

@@ -9,10 +9,10 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mssola/user_agent"
 
-	"bitbucket.org/nsjostrom/machinable/auth"
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	as "bitbucket.org/nsjostrom/machinable/sessions"
+	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/models"
+	as "github.com/anothrnick/machinable/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )

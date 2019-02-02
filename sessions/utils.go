@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/mssola/user_agent"
 )
 

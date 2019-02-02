@@ -1,6 +1,6 @@
 package interfaces
 
-import "bitbucket.org/nsjostrom/machinable/dsi/models"
+import "github.com/anothrnick/machinable/dsi/models"
 
 // ProjectSessionsDatastore exposes functions to manage project user sessions
 type ProjectSessionsDatastore interface {

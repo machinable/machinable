@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	localModels "bitbucket.org/nsjostrom/machinable/projects/models"
+	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/models"
+	localModels "github.com/anothrnick/machinable/projects/models"
 	"github.com/gin-gonic/gin"
 )
 

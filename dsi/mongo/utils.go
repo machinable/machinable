@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"bitbucket.org/nsjostrom/machinable/dsi"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo"
 )

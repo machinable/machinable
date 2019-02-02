@@ -3,7 +3,7 @@ package logs
 import (
 	"net/http"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/gin-gonic/gin"
 )
 

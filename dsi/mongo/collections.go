@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/errors"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi/errors"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )

@@ -3,7 +3,7 @@ package interfaces
 import (
 	"time"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi/models"
 )
 
 // SessionsDatastore exposes functions to manage application user sessions

@@ -1,16 +1,16 @@
 package projects
 
 import (
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/interfaces"
 
-	"bitbucket.org/nsjostrom/machinable/middleware"
-	"bitbucket.org/nsjostrom/machinable/projects/apikeys"
-	"bitbucket.org/nsjostrom/machinable/projects/collections"
-	"bitbucket.org/nsjostrom/machinable/projects/documents"
-	"bitbucket.org/nsjostrom/machinable/projects/logs"
-	"bitbucket.org/nsjostrom/machinable/projects/resources"
-	"bitbucket.org/nsjostrom/machinable/projects/sessions"
-	"bitbucket.org/nsjostrom/machinable/projects/users"
+	"github.com/anothrnick/machinable/middleware"
+	"github.com/anothrnick/machinable/projects/apikeys"
+	"github.com/anothrnick/machinable/projects/collections"
+	"github.com/anothrnick/machinable/projects/documents"
+	"github.com/anothrnick/machinable/projects/logs"
+	"github.com/anothrnick/machinable/projects/resources"
+	"github.com/anothrnick/machinable/projects/sessions"
+	"github.com/anothrnick/machinable/projects/users"
 	"github.com/gin-gonic/gin"
 )
 

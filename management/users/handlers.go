@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"bitbucket.org/nsjostrom/machinable/auth"
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
-	as "bitbucket.org/nsjostrom/machinable/sessions"
+	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/models"
+	as "github.com/anothrnick/machinable/sessions"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )

@@ -1,6 +1,6 @@
 package interfaces
 
-import "bitbucket.org/nsjostrom/machinable/dsi/models"
+import "github.com/anothrnick/machinable/dsi/models"
 
 // ProjectLogsDatastore exposes functions to the project access logs
 type ProjectLogsDatastore interface {

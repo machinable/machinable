@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"bitbucket.org/nsjostrom/machinable/auth"
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )

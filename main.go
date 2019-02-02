@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/mongo"
-	"bitbucket.org/nsjostrom/machinable/dsi/mongo/database"
-	"bitbucket.org/nsjostrom/machinable/management"
-	"bitbucket.org/nsjostrom/machinable/projects"
+	"github.com/anothrnick/machinable/dsi/mongo"
+	"github.com/anothrnick/machinable/dsi/mongo/database"
+	"github.com/anothrnick/machinable/management"
+	"github.com/anothrnick/machinable/projects"
 )
 
 // HostSwitch is used to switch routers based on sub domain

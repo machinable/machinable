@@ -1,8 +1,8 @@
 package users
 
 import (
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/middleware"
+	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
 )
 

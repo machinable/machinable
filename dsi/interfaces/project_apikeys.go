@@ -1,6 +1,6 @@
 package interfaces
 
-import "bitbucket.org/nsjostrom/machinable/dsi/models"
+import "github.com/anothrnick/machinable/dsi/models"
 
 // ProjectAPIKeysDatastore exposes functions to manage project api keys
 type ProjectAPIKeysDatastore interface {

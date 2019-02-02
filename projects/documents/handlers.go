@@ -3,8 +3,8 @@ package documents
 import (
 	"net/http"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
 )
 

@@ -1,5 +1,5 @@
 install:
-	docker run --rm -it -v $(shell pwd):/go/src/bitbucket.org/nsjostrom/machinable -w /go/src/bitbucket.org/nsjostrom/machinable \
+	docker run --rm -it -v $(shell pwd):/go/src/github.com/anothrnick/machinable -w /go/src/github.com/anothrnick/machinable \
     instrumentisto/glide install
 
 rebuild: install

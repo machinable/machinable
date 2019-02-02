@@ -3,10 +3,10 @@ package management
 import (
 	"net/http"
 
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
-	"bitbucket.org/nsjostrom/machinable/management/projects"
-	"bitbucket.org/nsjostrom/machinable/management/users"
-	"bitbucket.org/nsjostrom/machinable/middleware"
+	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/management/projects"
+	"github.com/anothrnick/machinable/management/users"
+	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
 )
 

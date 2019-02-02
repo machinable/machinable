@@ -1,8 +1,8 @@
 package interfaces
 
 import (
-	"bitbucket.org/nsjostrom/machinable/dsi/errors"
-	"bitbucket.org/nsjostrom/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi/errors"
+	"github.com/anothrnick/machinable/dsi/models"
 )
 
 // ResourcesDatastore exposes functions to the resources and definitions

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"bitbucket.org/nsjostrom/machinable/auth"
-	"bitbucket.org/nsjostrom/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/dsi/interfaces"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
