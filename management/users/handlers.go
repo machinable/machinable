@@ -202,7 +202,6 @@ func (u *Users) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	var user models.User
 	// load session to update last accessed
 
 	// verify session exists
@@ -215,7 +214,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	}
 
 	// verify user exists
-	_, err = u.store.GetAppUserByID(userID)
+	user, err := u.store.GetAppUserByID(userID)
 	if err != nil {
 		// no documents in result, user does not exist
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
@@ -223,7 +222,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	}
 
 	// create new access jwt
-	accessToken, err := u.createAccessToken(&user)
+	accessToken, err := u.createAccessToken(user)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
