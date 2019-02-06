@@ -97,12 +97,10 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 					}
 
 					// inject claims into context
-					// c.Set("projects", projects)
-					// c.Set("user_id", user["id"])
-					// c.Set("username", user["name"])
 					c.Set("authType", "user")
 					c.Set("authString", user["name"])
 					c.Set("authID", user["id"])
+					c.Set("authRole", user["role"])
 
 					c.Next()
 					return
@@ -135,12 +133,10 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				}
 
 				// inject claims into context
-				// c.Set("projects", projects)
-				// c.Set("user_id", user["id"])
-				// c.Set("username", user["name"])
 				c.Set("authType", "api key")
 				c.Set("authString", key.Description)
 				c.Set("authID", key.ID.Hex())
+				c.Set("authRole", key.Role)
 
 				c.Next()
 				return
@@ -161,6 +157,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			c.Set("authType", "anonymous")
 			c.Set("authString", "anonymous")
 			c.Set("authID", "anonymous")
+			c.Set("authRole", "anonymous")
 
 			// project does not require authentication, carry on
 			c.Next()

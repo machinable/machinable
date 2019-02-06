@@ -10,7 +10,11 @@ const (
 	// OffsetKey is used for paginating HTTP requests
 	OffsetKey = "_offset"
 	// MetadataKey is the key used to store internal metadata for an object
-	MetadataKey = "_metadata"
+	MetadataKey         = "_metadata"
+	MetadataCreated     = "_metadata.created"
+	MetadataCreator     = "_metadata.creator"
+	MetadataCreatorType = "_metadata.creator_type"
+
 	// MaxRecursion is the maximum amount of levels allowed in a JSON object (array and objects)
 	MaxRecursion = 8
 )
@@ -25,7 +29,7 @@ var supportedArrayItemTypes = []string{"integer", "number", "boolean", "string",
 var supportedFormats = []string{"date-time", "email", "hostname", "ipv4", "ipv6"}
 
 // reservedFieldKeys is the list of keys that cannot be used, as they are reserved for machinable use
-var reservedFieldKeys = []string{JSONIDKey, DocumentIDKey, LimitKey, OffsetKey, MetadataKey}
+var reservedFieldKeys = []string{JSONIDKey, DocumentIDKey, LimitKey, OffsetKey, MetadataKey, MetadataCreated, MetadataCreator, MetadataCreatorType}
 
 // SupportedType returns true if the string is a supported type, false otherwise.
 func SupportedType(a string) bool {

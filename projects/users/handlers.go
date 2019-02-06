@@ -53,6 +53,7 @@ func (u *Users) AddUser(c *gin.Context) {
 		Username:     newUser.Username,
 		Read:         newUser.Read,
 		Write:        newUser.Write,
+		Role:         newUser.Role,
 	}
 
 	u.store.CreateUser(projectSlug, user)

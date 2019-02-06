@@ -43,7 +43,9 @@ func (k *APIKeys) AddKey(c *gin.Context) {
 		keyHash,
 		newKey.Description,
 		newKey.Read,
-		newKey.Write)
+		newKey.Write,
+		newKey.Role,
+	)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

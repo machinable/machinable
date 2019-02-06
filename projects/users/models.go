@@ -1,8 +1,10 @@
 package users
 
-import "errors"
+import (
+	"errors"
 
-var validRoles = []string{"user", "admin"}
+	"github.com/anothrnick/machinable/auth"
+)
 
 // NewProjectUser is the JSON structure of a new user request
 type NewProjectUser struct {
@@ -14,9 +16,9 @@ type NewProjectUser struct {
 }
 
 // SupportedRole verifies that the users role is valid and supported
-func (u *NewProjectUser) SupportedRole(a string) bool {
-	for _, b := range validRoles {
-		if b == a {
+func (u *NewProjectUser) SupportedRole() bool {
+	for _, b := range auth.ValidRoles {
+		if b == u.Role {
 			return true
 		}
 	}
@@ -27,6 +29,16 @@ func (u *NewProjectUser) SupportedRole(a string) bool {
 func (u *NewProjectUser) Validate() error {
 	if u.Username == "" || u.Password == "" {
 		return errors.New("invalid username or password")
+	}
+
+	// Set default role
+	if u.Role == "" {
+		u.Role = auth.RoleUser
+	}
+
+	// Validate role
+	if ok := u.SupportedRole(); !ok {
+		return errors.New("invalid role")
 	}
 
 	return nil

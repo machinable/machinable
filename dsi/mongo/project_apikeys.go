@@ -28,7 +28,7 @@ func (d *Datastore) GetAPIKeyByKey(project, hash string) (*models.ProjectAPIKey,
 }
 
 // CreateAPIKey creates a new api key for the project
-func (d *Datastore) CreateAPIKey(project, hash, description string, read, write bool) (*models.ProjectAPIKey, error) {
+func (d *Datastore) CreateAPIKey(project, hash, description string, read, write bool, role string) (*models.ProjectAPIKey, error) {
 	key := &models.ProjectAPIKey{
 		ID:          objectid.New(), // I don't like this
 		Created:     time.Now(),
@@ -36,6 +36,7 @@ func (d *Datastore) CreateAPIKey(project, hash, description string, read, write 
 		Description: description,
 		Read:        read,
 		Write:       write,
+		Role:        role,
 	}
 
 	// get the keys collection
