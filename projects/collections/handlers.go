@@ -35,7 +35,7 @@ func (h *Collections) AddCollection(c *gin.Context) {
 	}
 
 	// add collection and return error if anything goes wrong
-	err := h.store.AddCollection(projectSlug, newCollection.Name)
+	err := h.store.AddCollection(projectSlug, &newCollection)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
@@ -125,7 +125,7 @@ func (h *Collections) AddObjectToCollection(c *gin.Context) {
 
 	// get or create the project collection
 	if _, err := h.store.GetCollection(projectSlug, collectionName); err != nil {
-		if err := h.store.AddCollection(projectSlug, collectionName); err != nil {
+		if err := h.store.AddCollection(projectSlug, &models.Collection{Name: collectionName}); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get collection"})
 			return
 		}

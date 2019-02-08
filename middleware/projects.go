@@ -21,16 +21,53 @@ var BEARER = "bearer"
 // APIKEY is the key for the apikey authorization token
 var APIKEY = "apikey"
 
-// ProjectUserAuthzMiddleware authenticates the JWT and verifies the requesting user has access to this project
+// ProjectAuthzBuildFiltersMiddleware builds the necessary filters based on the requester's role, permissions, as well as
+// the collection/resource's access policies. This middleware requires that the requester `role` has been injected into
+// the context.
+func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		_, projectAuthn := c.Get("projectAuthn")
+		// if the projectAuthn key exists, this project does not require authn or authz
+		if projectAuthn {
+			c.Next()
+			return
+		}
+
+		rRole := c.GetString("authnRole")
+		// rID := c.GetString("authnID")
+
+		// based on the requester's role and collection/resource access policies, build filters
+		if rRole == auth.RoleUser {
+			fmt.Sprintln(c.Request.URL.Path)
+			// `user` role:
+			//	  > Load collection/resource access policies
+			//	  > Compare PARALLEL_READ/PARALLEL_WRITE to request VERB.
+			//      * GET and PARALLEL_READ == TRUE, no filters
+			//		* GET and PARALLEL_READ == FALSE, filters
+			//      * PUT/DELETE and PARALLEL_WRITE == TRUE, no filters
+			//      * PUT/DELETE and PARALLEL_WRITE == FALSE, filters
+			//      * anything else, no filters
+			//    FILTER: add (`_metadata.creator`, <requester_id>) to filters
+		} else if rRole == auth.RoleAdmin {
+			// `admin` role:
+			//    no filter needed
+			c.Next()
+			return
+		}
+
+		// unknown role, cancel request
+		respondWithError(http.StatusForbidden, "unknown role", c)
+		return
+	}
+}
+
+// ProjectUserAuthzMiddleware authenticates the JWT and verifies the requesting user has access to this project. This middleware
+// requires that the `project` has been injected into the context.
 func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get project slug
 		// get project from context, inserted into context from subdomain
 		project := c.GetString("project")
-		if project == "" {
-			respondWithError(http.StatusUnauthorized, "invalid project", c)
-			return
-		}
 
 		// validate Authorization header
 		if values, _ := c.Request.Header["Authorization"]; len(values) > 0 {
@@ -159,6 +196,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			c.Set("authID", "anonymous")
 			c.Set("authRole", "anonymous")
 
+			c.Set("projectAuthn", false)
 			// project does not require authentication, carry on
 			c.Next()
 			return

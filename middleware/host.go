@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,11 @@ func SubDomainMiddleware() gin.HandlerFunc {
 		}
 
 		subDomain := hostParts[0]
+		if subDomain == "" {
+			respondWithError(http.StatusUnauthorized, "invalid project", c)
+			return
+		}
+
 		c.Set("project", subDomain)
 
 		c.Next()

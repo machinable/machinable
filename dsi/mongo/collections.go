@@ -12,10 +12,12 @@ import (
 )
 
 // AddCollection creates a new project collection
-func (d *Datastore) AddCollection(project, name string) *errors.DatastoreError {
+func (d *Datastore) AddCollection(project string, newCol *models.Collection) *errors.DatastoreError {
 	// Create document
 	resourceElements := make([]*bson.Element, 0)
-	resourceElements = append(resourceElements, bson.EC.String("name", name))
+	resourceElements = append(resourceElements, bson.EC.String("name", newCol.Name))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", newCol.ParallelRead))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", newCol.ParallelWrite))
 	resourceElements = append(resourceElements, bson.EC.Time("created", time.Now()))
 
 	// Get a connection and insert the new document
@@ -29,9 +31,10 @@ func (d *Datastore) AddCollection(project, name string) *errors.DatastoreError {
 }
 
 // GetCollection retrieves a collection by name, confirming the collection exists
-func (d *Datastore) GetCollection(project, name string) (string, *errors.DatastoreError) {
+func (d *Datastore) GetCollection(project, name string) (*models.Collection, *errors.DatastoreError) {
 	collection := d.db.CollectionNames(project)
 	doc := bson.Document{}
+	colModel := &models.Collection{}
 
 	// Find the resource definition for this object
 	err := collection.FindOne(
@@ -42,7 +45,18 @@ func (d *Datastore) GetCollection(project, name string) (string, *errors.Datasto
 		nil,
 	).Decode(&doc)
 
-	return name, errors.New(errors.UnknownError, err)
+	if err != nil {
+		colModel = &models.Collection{
+			Name:          doc.Lookup("name").StringValue(),
+			ID:            doc.Lookup("_id").ObjectID().Hex(),
+			ParallelRead:  doc.Lookup("parallel_read").Boolean(),
+			ParallelWrite: doc.Lookup("parallel_write").Boolean(),
+			Created:       doc.Lookup("created").Time(),
+			Items:         0,
+		}
+	}
+
+	return colModel, errors.New(errors.UnknownError, err)
 }
 
 // GetCollections retrieves the full list of collections, by name, for a project. Each item has the count of documents within the collection.
@@ -73,10 +87,12 @@ func (d *Datastore) GetCollections(project string) ([]*models.Collection, *error
 
 		collections = append(collections,
 			&models.Collection{
-				Name:    doc.Lookup("name").StringValue(),
-				ID:      doc.Lookup("_id").ObjectID().Hex(),
-				Created: doc.Lookup("created").Time(),
-				Items:   cnt,
+				Name:          doc.Lookup("name").StringValue(),
+				ID:            doc.Lookup("_id").ObjectID().Hex(),
+				ParallelRead:  doc.Lookup("parallel_read").Boolean(),
+				ParallelWrite: doc.Lookup("parallel_write").Boolean(),
+				Created:       doc.Lookup("created").Time(),
+				Items:         cnt,
 			})
 	}
 

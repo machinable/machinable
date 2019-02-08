@@ -8,8 +8,8 @@ import (
 // CollectionsDatastore exposes functions to collections
 type CollectionsDatastore interface {
 	// Project collections
-	AddCollection(project, name string) *errors.DatastoreError
-	GetCollection(project, name string) (string, *errors.DatastoreError)
+	AddCollection(project string, collection *models.Collection) *errors.DatastoreError
+	GetCollection(project, name string) (*models.Collection, *errors.DatastoreError)
 	GetCollections(project string) ([]*models.Collection, *errors.DatastoreError)
 	DeleteCollection(project, name string) *errors.DatastoreError
 
