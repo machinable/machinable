@@ -15,6 +15,8 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	api := engine.Group("/api")
 	api.Use(middleware.ProjectLoggingMiddleware(datastore))
 	api.Use(middleware.ProjectUserAuthzMiddleware(datastore))
+	api.Use(middleware.ProjectAuthzBuildFiltersMiddleware(datastore))
+
 	api.POST("/:resourcePathName", handler.AddObject)
 	api.GET("/:resourcePathName", handler.ListObjects)
 	api.GET("/:resourcePathName/:resourceID", handler.GetObject)

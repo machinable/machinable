@@ -27,18 +27,29 @@ var APIKEY = "apikey"
 func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		_, projectAuthn := c.Get("projectAuthn")
+		verb := c.Request.Method
 		// if the projectAuthn key exists, this project does not require authn or authz
-		if projectAuthn {
+		// if the requester is doing a POST, just continue
+		if projectAuthn || verb == "POST" {
 			c.Next()
 			return
 		}
 
-		rRole := c.GetString("authnRole")
+		rRole := c.GetString("authRole")
 		// rID := c.GetString("authnID")
+
+		params := strings.Split(c.Request.URL.Path, "/")
+
+		if len(params) < 2 {
+			respondWithError(http.StatusBadRequest, "malformed request", c)
+			return
+		}
+
+		storeType := params[0]
+		collectionName := params[1]
 
 		// based on the requester's role and collection/resource access policies, build filters
 		if rRole == auth.RoleUser {
-			fmt.Sprintln(c.Request.URL.Path)
 			// `user` role:
 			//	  > Load collection/resource access policies
 			//	  > Compare PARALLEL_READ/PARALLEL_WRITE to request VERB.
@@ -48,6 +59,8 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 			//      * PUT/DELETE and PARALLEL_WRITE == FALSE, filters
 			//      * anything else, no filters
 			//    FILTER: add (`_metadata.creator`, <requester_id>) to filters
+			c.Next()
+			return
 		} else if rRole == auth.RoleAdmin {
 			// `admin` role:
 			//    no filter needed
@@ -55,6 +68,8 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 			return
 		}
 
+		fmt.Println(c.Request.URL.Path)
+		fmt.Println(rRole)
 		// unknown role, cancel request
 		respondWithError(http.StatusForbidden, "unknown role", c)
 		return

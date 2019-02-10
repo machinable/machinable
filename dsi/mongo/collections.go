@@ -45,7 +45,7 @@ func (d *Datastore) GetCollection(project, name string) (*models.Collection, *er
 		nil,
 	).Decode(&doc)
 
-	if err != nil {
+	if err == nil {
 		colModel = &models.Collection{
 			Name:          doc.Lookup("name").StringValue(),
 			ID:            doc.Lookup("_id").ObjectID().Hex(),

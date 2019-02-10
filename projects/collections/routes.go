@@ -16,6 +16,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 
 	collections.Use(middleware.ProjectLoggingMiddleware(datastore))
 	collections.Use(middleware.ProjectUserAuthzMiddleware(datastore))
+	collections.Use(middleware.ProjectAuthzBuildFiltersMiddleware(datastore))
 
 	collections.GET("/", handler.GetCollections)
 	collections.POST("/", handler.AddCollection)
