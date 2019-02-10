@@ -121,6 +121,8 @@ func AppUserJwtAuthzMiddleware() gin.HandlerFunc {
 
 				c.Set("authType", "admin")
 				c.Set("authString", user["name"])
+				// empty filters so handler does not explode
+				c.Set("filters", map[string]interface{}{})
 
 				c.Next()
 				return

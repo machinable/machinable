@@ -36,16 +36,20 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 		project := c.GetString("project")
 		_, projectAuthn := c.Get("projectAuthn")
 		verb := c.Request.Method
+		filters := map[string]interface{}{}
 		// if the projectAuthn key exists, this project does not require authn or authz
 		// if the requester is doing a POST, just continue
 		if projectAuthn || verb == "POST" {
+			c.Set("filters", filters)
 			c.Next()
 			return
 		}
 
 		rRole := c.GetString("authRole")
 		rID := c.GetString("authID")
-		filters := map[string]interface{}{}
+
+		// fmt.Println(c.Request.URL.Path)
+		// fmt.Println(rRole)
 
 		// based on the requester's role and collection/resource access policies, build filters
 		if rRole == auth.RoleUser {
@@ -103,9 +107,14 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 			c.Next()
 			return
 		}
+		// else if rRole == auth.RoleAnon {
+		// 	// `anon` role:
+		// 	//    no filter needed, trust that the previous middleware checked the project policy
 
-		fmt.Println(c.Request.URL.Path)
-		fmt.Println(rRole)
+		// 	c.Next()
+		// 	return
+		// }
+
 		// unknown role, cancel request
 		respondWithError(http.StatusForbidden, "unknown role", c)
 		return
