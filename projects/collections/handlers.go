@@ -155,6 +155,7 @@ func (h *Collections) AddObjectToCollection(c *gin.Context) {
 func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")
 	projectSlug := c.MustGet("project").(string)
+	authFilters := c.MustGet("filters").(map[string]interface{})
 	if collectionName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
 		return
@@ -175,6 +176,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	}
 
 	// Clear reserved query parameters
+	// TODO?
 
 	// Format query parameters
 	filter := make(map[string]interface{})
@@ -212,6 +214,11 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	if (iLimit+iOffset) > pageMax && iOffset >= docCount && docCount != 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page"})
 		return
+	}
+
+	// Apply authorization filters
+	for k, v := range authFilters {
+		filter[k] = v
 	}
 
 	// Retrieve documents for the page

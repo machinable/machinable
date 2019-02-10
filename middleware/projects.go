@@ -15,6 +15,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Collection is the constant value for the URL parameter
+var Collections = "collections"
+
+// Resources is the constant value for the URL parameter
+var Resources = "resources"
+
 // BEARER is the key for the bearer authorization token
 var BEARER = "bearer"
 
@@ -26,6 +32,8 @@ var APIKEY = "apikey"
 // the context.
 func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// get project from context, inserted into context from subdomain
+		project := c.GetString("project")
 		_, projectAuthn := c.Get("projectAuthn")
 		verb := c.Request.Method
 		// if the projectAuthn key exists, this project does not require authn or authz
@@ -36,22 +44,41 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 		}
 
 		rRole := c.GetString("authRole")
-		// rID := c.GetString("authnID")
-
-		params := strings.Split(c.Request.URL.Path, "/")
-
-		if len(params) < 2 {
-			respondWithError(http.StatusBadRequest, "malformed request", c)
-			return
-		}
-
-		storeType := params[0]
-		collectionName := params[1]
+		rID := c.GetString("authID")
+		filters := map[string]interface{}{}
 
 		// based on the requester's role and collection/resource access policies, build filters
 		if rRole == auth.RoleUser {
 			// `user` role:
 			//	  > Load collection/resource access policies
+			params := strings.Split(c.Request.URL.Path, "/")
+
+			if len(params) < 3 {
+				respondWithError(http.StatusBadRequest, "malformed request - invalid params", c)
+				return
+			}
+
+			storeType := params[1]
+			collectionName := params[2]
+			parallelRead, parallelWrite := false, false
+
+			if storeType == Collections {
+				col, err := store.GetCollection(project, collectionName)
+				if err != nil {
+					respondWithError(http.StatusInternalServerError, "error retrieving collection", c)
+					return
+				}
+				parallelRead = col.ParallelRead
+				parallelWrite = col.ParallelWrite
+			} else if storeType == Resources {
+				// TODO
+				fmt.Println("resources not supported")
+			} else {
+				respondWithError(http.StatusBadRequest, "malformed request - unknown path", c)
+				return
+			}
+
+			// apply filters
 			//	  > Compare PARALLEL_READ/PARALLEL_WRITE to request VERB.
 			//      * GET and PARALLEL_READ == TRUE, no filters
 			//		* GET and PARALLEL_READ == FALSE, filters
@@ -59,11 +86,20 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 			//      * PUT/DELETE and PARALLEL_WRITE == FALSE, filters
 			//      * anything else, no filters
 			//    FILTER: add (`_metadata.creator`, <requester_id>) to filters
+
+			if verb == "GET" && parallelRead == false {
+				filters["_metadata.creator"] = rID
+			} else if (verb == "PUT" || verb == "DELETE") && parallelWrite == false {
+				filters["_metadata.creator"] = rID
+			}
+
+			c.Set("filters", filters)
 			c.Next()
 			return
 		} else if rRole == auth.RoleAdmin {
 			// `admin` role:
 			//    no filter needed
+			c.Set("filters", filters)
 			c.Next()
 			return
 		}
