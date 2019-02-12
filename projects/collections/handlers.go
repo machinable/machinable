@@ -81,6 +81,7 @@ func (h *Collections) PutObjectInCollection(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
 	creator := c.MustGet("authID").(string)
 	creatorType := c.MustGet("authType").(string)
+	authFilters := c.MustGet("filters").(map[string]interface{})
 
 	bdoc := make(map[string]interface{})
 
@@ -100,7 +101,7 @@ func (h *Collections) PutObjectInCollection(c *gin.Context) {
 	meta := models.NewMetaData(creator, creatorType)
 
 	// updated the document
-	updateErr := h.store.UpdateCollectionDocument(projectSlug, collectionName, objectIDStr, bdoc, meta)
+	updateErr := h.store.UpdateCollectionDocument(projectSlug, collectionName, objectIDStr, bdoc, meta, authFilters)
 
 	if err != nil {
 		c.JSON(updateErr.Code(), gin.H{"error": err.Error()})
@@ -202,8 +203,8 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	}
 	iOffset := int64(io)
 
-	// Get the total count of documents for pagination
-	docCount, colErr := h.store.CountCollectionDocuments(projectSlug, collectionName)
+	// Get the total count of documents for pagination. Use injected auth filters to get accurate count relevant to the requester
+	docCount, colErr := h.store.CountCollectionDocuments(projectSlug, collectionName, authFilters)
 
 	if colErr != nil {
 		c.JSON(colErr.Code(), gin.H{"error": err.Error()})
@@ -239,8 +240,9 @@ func (h *Collections) GetObjectFromCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")
 	objectID := c.Param("objectID")
 	projectSlug := c.MustGet("project").(string)
+	authFilters := c.MustGet("filters").(map[string]interface{})
 
-	object, err := h.store.GetCollectionDocument(projectSlug, collectionName, objectID)
+	object, err := h.store.GetCollectionDocument(projectSlug, collectionName, objectID, authFilters)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -255,8 +257,9 @@ func (h *Collections) DeleteObjectFromCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")
 	objectID := c.Param("objectID")
 	projectSlug := c.MustGet("project").(string)
+	authFilters := c.MustGet("filters").(map[string]interface{})
 
-	err := h.store.DeleteCollectionDocument(projectSlug, collectionName, objectID)
+	err := h.store.DeleteCollectionDocument(projectSlug, collectionName, objectID, authFilters)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})

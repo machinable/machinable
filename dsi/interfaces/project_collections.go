@@ -15,10 +15,10 @@ type CollectionsDatastore interface {
 
 	// Project collection documents
 	AddCollectionDocument(project, collectionName string, document map[string]interface{}, metadata *models.MetaData) (map[string]interface{}, *errors.DatastoreError)
-	UpdateCollectionDocument(project, collectionName, documentID string, updatedDocumet map[string]interface{}, metadata *models.MetaData) *errors.DatastoreError
+	UpdateCollectionDocument(project, collectionName, documentID string, updatedDocument map[string]interface{}, metadata *models.MetaData, filter map[string]interface{}) *errors.DatastoreError
 	GetCollectionDocuments(project, collectionName string, limit, offset int64, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError)
-	GetCollectionDocument(project, collectionName, documentID string) (map[string]interface{}, *errors.DatastoreError)
-	CountCollectionDocuments(project, collectionName string) (int64, *errors.DatastoreError)
-	DeleteCollectionDocument(project, collectionName, documentID string) *errors.DatastoreError
+	GetCollectionDocument(project, collectionName, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError)
+	CountCollectionDocuments(project, collectionName string, filter map[string]interface{}) (int64, *errors.DatastoreError)
+	DeleteCollectionDocument(project, collectionName, documentID string, filter map[string]interface{}) *errors.DatastoreError
 	DropAllCollectionDocuments(project, collectionName string) *errors.DatastoreError
 }

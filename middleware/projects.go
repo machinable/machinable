@@ -76,7 +76,7 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 				parallelWrite = col.ParallelWrite
 			} else if storeType == Resources {
 				// TODO
-				fmt.Println("resources not supported")
+				fmt.Println("resource filters not supported")
 			} else {
 				respondWithError(http.StatusBadRequest, "malformed request - unknown path", c)
 				return

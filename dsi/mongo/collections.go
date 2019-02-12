@@ -83,7 +83,7 @@ func (d *Datastore) GetCollections(project string) ([]*models.Collection, *error
 		}
 		// get count
 		docName := doc.Lookup("name").StringValue()
-		cnt, _ := d.CountCollectionDocuments(project, docName)
+		cnt, _ := d.CountCollectionDocuments(project, docName, nil)
 
 		collections = append(collections,
 			&models.Collection{

@@ -43,11 +43,17 @@ func (d *Datastore) AddCollectionDocument(project, collectionName string, docume
 }
 
 // UpdateCollectionDocument updates the entire document for the documentID, removing any reserved fields with `dsi.ReservedField`
-func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID string, updatedDocument map[string]interface{}, metadata *models.MetaData) *errors.DatastoreError {
+func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID string, updatedDocument map[string]interface{}, metadata *models.MetaData, filter map[string]interface{}) *errors.DatastoreError {
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(documentID)
 	if err != nil || documentID == "" {
 		return errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
+	}
+
+	// TODO: copy metadata
+	_, err = d.GetCollectionDocument(project, collectionName, documentID, filter)
+	if err != nil || documentID == "" {
+		return errors.New(errors.NotFound, fmt.Errorf("object does not exist '%s'", documentID))
 	}
 
 	// iterate over root keys for reserved fields
@@ -64,8 +70,6 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 
 	// Append metadata
 	updatedElements = append(updatedElements, bson.EC.Interface("_metadata", metadata))
-
-	// TODO: retrieve the existing document to copy metadata
 
 	// Get a connection and update the document
 	collection := d.db.CollectionDocs(project, collectionName)
@@ -122,7 +126,7 @@ func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit
 }
 
 // GetCollectionDocument retrieves a single document from the collection
-func (d *Datastore) GetCollectionDocument(project, collectionName, documentID string) (map[string]interface{}, *errors.DatastoreError) {
+func (d *Datastore) GetCollectionDocument(project, collectionName, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(documentID)
 	if err != nil && documentID == "" {
@@ -131,13 +135,22 @@ func (d *Datastore) GetCollectionDocument(project, collectionName, documentID st
 
 	collection := d.db.CollectionDocs(project, collectionName)
 
+	filters := map[string]interface{}{
+		"_id": objectID,
+	}
+
+	// apply filters
+	if filter != nil {
+		for k, v := range filter {
+			filters[k] = v
+		}
+	}
+
 	// Find object based on ID and decode result into document
 	doc := bson.NewDocument()
 	err = collection.FindOne(
 		nil,
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", objectID),
-		),
+		filters,
 		nil,
 	).Decode(doc)
 
@@ -152,15 +165,15 @@ func (d *Datastore) GetCollectionDocument(project, collectionName, documentID st
 }
 
 // CountCollectionDocuments returns the count of all documents for a project collection
-func (d *Datastore) CountCollectionDocuments(project, collectionName string) (int64, *errors.DatastoreError) {
+func (d *Datastore) CountCollectionDocuments(project, collectionName string, filter map[string]interface{}) (int64, *errors.DatastoreError) {
 	collection := d.db.CollectionDocs(project, collectionName)
-	cnt, err := collection.CountDocuments(nil, nil, nil)
+	cnt, err := collection.CountDocuments(nil, filter, nil)
 
 	return cnt, errors.New(errors.UnknownError, err)
 }
 
 // DeleteCollectionDocument removes a single document from the provided collection by `ID`
-func (d *Datastore) DeleteCollectionDocument(project, collectionName, documentID string) *errors.DatastoreError {
+func (d *Datastore) DeleteCollectionDocument(project, collectionName, documentID string, filter map[string]interface{}) *errors.DatastoreError {
 	// Create object ID from resource ID string
 	objectID, err := objectid.FromHex(documentID)
 	if err != nil {
@@ -169,12 +182,21 @@ func (d *Datastore) DeleteCollectionDocument(project, collectionName, documentID
 
 	collection := d.db.CollectionDocs(project, collectionName)
 
+	filters := map[string]interface{}{
+		"_id": objectID,
+	}
+
+	// apply filters
+	if filter != nil {
+		for k, v := range filter {
+			filters[k] = v
+		}
+	}
+
 	// Delete the object
 	_, err = collection.DeleteOne(
 		context.Background(),
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", objectID),
-		),
+		filters,
 	)
 
 	return errors.New(errors.UnknownError, err)
