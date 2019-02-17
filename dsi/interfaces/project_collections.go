@@ -10,8 +10,9 @@ type CollectionsDatastore interface {
 	// Project collections
 	AddCollection(project string, collection *models.Collection) *errors.DatastoreError
 	GetCollection(project, name string) (*models.Collection, *errors.DatastoreError)
+	UpdateCollection(project, id string, read, write bool) *errors.DatastoreError
 	GetCollections(project string) ([]*models.Collection, *errors.DatastoreError)
-	DeleteCollection(project, name string) *errors.DatastoreError
+	DeleteCollection(project, id string) *errors.DatastoreError
 
 	// Project collection documents
 	AddCollectionDocument(project, collectionName string, document map[string]interface{}, metadata *models.MetaData) (map[string]interface{}, *errors.DatastoreError)

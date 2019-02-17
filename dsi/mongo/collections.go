@@ -59,6 +59,49 @@ func (d *Datastore) GetCollection(project, name string) (*models.Collection, *er
 	return colModel, errors.New(errors.UnknownError, err)
 }
 
+// UpdateCollection updates a collection by id
+func (d *Datastore) UpdateCollection(project, collectionID string, read, write bool) *errors.DatastoreError {
+	collection := d.db.CollectionNames(project)
+	// Get the object id for collection name
+	objectID, err := objectid.FromHex(collectionID)
+	if err != nil {
+		return errors.New(errors.BadParameter, err)
+	}
+
+	// Find object based on ID
+	// decode result into document
+	doc := bson.NewDocument()
+	err = collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		nil,
+	).Decode(doc)
+
+	if err != nil {
+		return errors.New(errors.NotFound, fmt.Errorf("collection not found, '%s'", collectionID))
+	}
+
+	resourceElements := make([]*bson.Element, 0)
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", read))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", write))
+
+	_, err = collection.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				resourceElements...,
+			),
+		),
+	)
+
+	return errors.New(errors.UnknownError, err)
+}
+
 // GetCollections retrieves the full list of collections, by name, for a project. Each item has the count of documents within the collection.
 func (d *Datastore) GetCollections(project string) ([]*models.Collection, *errors.DatastoreError) {
 	collections := make([]*models.Collection, 0)

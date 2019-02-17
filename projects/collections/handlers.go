@@ -45,6 +45,24 @@ func (h *Collections) AddCollection(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{})
 }
 
+// UpdateCollection updates the parallel_read and parallel_write operations of the collection
+func (h *Collections) UpdateCollection(c *gin.Context) {
+	projectSlug := c.MustGet("project").(string)
+	collectionID := c.Param("collectionName") // actually uses ID
+	var updatedCollection models.Collection
+	c.BindJSON(&updatedCollection)
+
+	// add collection and return error if anything goes wrong
+	err := h.store.UpdateCollection(projectSlug, collectionID, updatedCollection.ParallelRead, updatedCollection.ParallelWrite)
+	if err != nil {
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
+		return
+	}
+
+	// success
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 // GetCollections returns the list of collections for a user
 func (h *Collections) GetCollections(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)

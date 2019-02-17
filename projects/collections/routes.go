@@ -39,6 +39,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmtCollections.POST("/", handler.AddCollection)
 	mgmtCollections.POST("/:collectionName", handler.AddObjectToCollection)
 	mgmtCollections.GET("/:collectionName", handler.GetObjectsFromCollection)
+	mgmtCollections.PUT("/:collectionName", handler.UpdateCollection)    // this actually uses collection ID as the parameter, gin does not allow different wildcard names
 	mgmtCollections.DELETE("/:collectionName", handler.DeleteCollection) // this actually uses collection ID as the parameter, gin does not allow different wildcard names
 	mgmtCollections.GET("/:collectionName/:objectID", handler.GetObjectFromCollection)
 	mgmtCollections.DELETE("/:collectionName/:objectID", handler.DeleteObjectFromCollection)
