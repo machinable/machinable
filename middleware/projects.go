@@ -230,7 +230,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				}
 
 				// inject claims into context
-				c.Set("authType", "api key")
+				c.Set("authType", "apikey")
 				c.Set("authString", key.Description)
 				c.Set("authID", key.ID.Hex())
 				c.Set("authRole", key.Role)
@@ -295,18 +295,19 @@ func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		projectSlug := c.GetString("project")
 		authType := c.GetString("authType")
 		authString := c.GetString("authString")
+		authID := c.GetString("authID")
 
 		if authString == "" {
-			authString = "anonymous"
-		} else {
-			authType = authType + ":"
+			authString = "unknown"
 		}
 
 		plog := &models.Log{
-			Event:      fmt.Sprintf("%s %s", verb, path),
-			StatusCode: statusCode,
-			Created:    time.Now(),
-			Initiator:  fmt.Sprintf("%s %s", authType, authString),
+			Event:         fmt.Sprintf("%s %s", verb, path),
+			StatusCode:    statusCode,
+			Created:       time.Now(),
+			Initiator:     authString,
+			InitiatorType: authType,
+			InitiatorID:   authID,
 		}
 
 		// Get the logs collection
