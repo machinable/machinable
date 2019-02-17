@@ -27,7 +27,11 @@ func (l *Log) UnmarshalBSON(bytes []byte) error {
 	l.Event = doc.Lookup("event").StringValue()
 	l.StatusCode = int(doc.Lookup("statuscode").Int64())
 	l.Initiator = doc.Lookup("initiator").StringValue()
-	l.InitiatorType = doc.Lookup("initiator_type").StringValue()
+	initiatorType := ""
+	if i, err := doc.LookupErr("initiator_type"); err == nil {
+		initiatorType = i.StringValue()
+	}
+	l.InitiatorType = initiatorType
 	l.InitiatorID = doc.Lookup("initiatorid").StringValue()
 	l.TargetID = doc.Lookup("targetid").StringValue()
 
