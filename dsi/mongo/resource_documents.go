@@ -11,7 +11,7 @@ import (
 )
 
 // AddDefDocument creates a new document for the existing resource, specified by the path.
-func (d *Datastore) AddDefDocument(project, path string, fields map[string]interface{}, metadata *models.MetaData) (string, *errors.DatastoreError) {
+func (d *Datastore) AddDefDocument(project, path string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError) {
 	resDefCollection := d.db.ResourceDefinitions(project)
 	// Get field definitions for this resource
 	resourceDefinition, err := getDefinition(path, resDefCollection)
@@ -19,22 +19,20 @@ func (d *Datastore) AddDefDocument(project, path string, fields map[string]inter
 		return "", errors.New(errors.NotFound, fmt.Errorf("resource does not exist"))
 	}
 
-	// TODO: Create openAPI schema and validate submitted data against it
-
-	// Create document for this resource based on the field definitions
-	objectDocument, err := createPropertyDocument(fields, resourceDefinition.Properties, 0)
+	// validate schema
+	err = fields.Validate(resourceDefinition)
 	if err != nil {
 		return "", errors.New(errors.BadParameter, err)
 	}
 
 	// Append metadata
-	appendMetadata(objectDocument, metadata)
+	fields["_metadata"] = metadata.Map()
 
 	// Get the resources.{resourcePathName} collection
 	rc := d.db.ResourceDocs(project, path)
 	result, err := rc.InsertOne(
 		context.Background(),
-		objectDocument,
+		fields,
 	)
 
 	if err != nil {

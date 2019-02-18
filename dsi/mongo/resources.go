@@ -20,18 +20,12 @@ func (d *Datastore) AddDefinition(project string, def *models.ResourceDefinition
 		return "", errors.New(errors.BadParameter, fmt.Errorf("resource already exists"))
 	}
 
-	// Process the resource fields into bson
-	propertyElements, err := d.processProperties(def.Properties, 0)
-	if err != nil {
-		return "", errors.New(errors.BadParameter, err)
-	}
-
 	// Create document
 	resourceElements := make([]*bson.Element, 0)
 	resourceElements = append(resourceElements, bson.EC.String("title", def.Title))
 	resourceElements = append(resourceElements, bson.EC.String("path_name", def.PathName))
 	resourceElements = append(resourceElements, bson.EC.Time("created", time.Now()))
-	resourceElements = append(resourceElements, bson.EC.SubDocumentFromElements("properties", propertyElements...))
+	resourceElements = append(resourceElements, bson.EC.String("properties", def.Properties))
 
 	// Get a connection and insert the new document
 	collection := d.db.ResourceDefinitions(project)
@@ -149,61 +143,6 @@ func (d *Datastore) definitionExists(definition *models.ResourceDefinition, coll
 	}
 
 	return true
-}
-
-// processProperties processes a map[string]string to a slice of *bson.Element for storing in mongo
-func (d *Datastore) processProperties(properties map[string]models.Property, layer int) ([]*bson.Element, error) {
-	propertyElements := make([]*bson.Element, 0)
-
-	// this object goes deeper than supported
-	if layer > dsi.MaxRecursion {
-		return propertyElements, nil
-	}
-
-	for key, prop := range properties {
-		if !dsi.SupportedType(prop.Type) {
-			return nil, fmt.Errorf("'%s' is not a supported property type", prop.Type)
-		}
-		if dsi.ReservedField(key) {
-			return nil, fmt.Errorf("'%s' is a reserved property name", key)
-		}
-		itemsType := ""
-		if prop.Items != nil {
-			itemsType = prop.Items.Type
-			if !dsi.SupportedArrayType(itemsType) {
-				return nil, fmt.Errorf("'%s' is not a supported property items.type", itemsType)
-			}
-
-			// TODO: prop.Items.Type is 'object', process prop.Items.Properties (recursive)
-
-			// NOTE: how do we support arrays of arrays?
-		}
-
-		properties := make([]*bson.Element, 0)
-
-		if prop.Properties != nil {
-			// Process the resource fields into bson
-			var err error
-			properties, err = d.processProperties(prop.Properties, layer+1)
-			if err != nil {
-				return nil, fmt.Errorf("could not process property's properties")
-			}
-		}
-
-		propertyElements = append(
-			propertyElements,
-			bson.EC.SubDocument(key, bson.NewDocument(
-				bson.EC.String("type", prop.Type),
-				bson.EC.String("description", prop.Description),
-				bson.EC.String("format", prop.Format),
-				bson.EC.SubDocument("items", bson.NewDocument(
-					bson.EC.String("type", itemsType),
-				)),
-				bson.EC.SubDocumentFromElements("properties", properties...),
-			)))
-	}
-
-	return propertyElements, nil
 }
 
 // getDefinitionByID returns the *model.ResourceDefinition by resource definition ID

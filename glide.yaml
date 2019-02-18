@@ -6,4 +6,9 @@ import:
   - package: github.com/satori/go.uuid
   - package: github.com/gin-gonic/gin
   - package: github.com/dgrijalva/jwt-go
-  
+  - package: github.com/go-openapi/validate
+    version: v0.18.0
+  - package: github.com/go-openapi/strfmt
+    version: v0.18.0
+  - package: github.com/go-openapi/spec
+    version: v0.18.0

@@ -23,3 +23,7 @@ curl -H "Authorization: apikey ${ADMIN_R}" http://one.machinable.test:5001/colle
 
 curl -H "Authorization: apikey ${ADMIN_R}" "http://one.machinable.test:5001/collections/dogs?breed=Labrador" | jq "."
 ```
+
+```sh
+curl -d '{"firstName":"Nick", "lastName":"Sjostrom", "age":28}' -X POST http://one.machinable.test:5001/api/people | jq "."
+```

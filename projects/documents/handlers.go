@@ -27,15 +27,19 @@ func (h *Documents) AddObject(c *gin.Context) {
 	creator := c.MustGet("authID").(string)
 	creatorType := c.MustGet("authType").(string)
 
-	fieldValues := make(map[string]interface{})
+	fieldValues := models.ResourceObject{}
 
-	c.BindJSON(&fieldValues)
+	err := c.BindJSON(&fieldValues)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
 	meta := models.NewMetaData(creator, creatorType)
 
-	newID, err := h.store.AddDefDocument(projectSlug, resourcePathName, fieldValues, meta)
-	if err != nil {
-		c.JSON(err.Code(), gin.H{"error": err.Error()})
+	newID, dsiErr := h.store.AddDefDocument(projectSlug, resourcePathName, fieldValues, meta)
+	if dsiErr != nil {
+		c.JSON(dsiErr.Code(), gin.H{"error": err.Error()})
 		return
 	}
 
