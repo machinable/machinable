@@ -20,9 +20,9 @@ func (d *Datastore) AddDefDocument(project, path string, fields models.ResourceO
 	}
 
 	// validate schema
-	err = fields.Validate(resourceDefinition)
-	if err != nil {
-		return "", errors.New(errors.BadParameter, err)
+	schemaErr := fields.Validate(resourceDefinition)
+	if schemaErr != nil {
+		return "", errors.New(errors.BadParameter, schemaErr)
 	}
 
 	// Append metadata

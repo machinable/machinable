@@ -3,6 +3,8 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/spec"
@@ -16,8 +18,9 @@ type ResourceObject map[string]interface{}
 // Validate validates that the object matches the schema
 func (obj *ResourceObject) Validate(definition *ResourceDefinition) error {
 	schema := new(spec.Schema)
+	properties := fmt.Sprintf(`{"properties": %s }`, definition.Properties)
 
-	err := json.Unmarshal([]byte(definition.Properties), schema)
+	err := json.Unmarshal([]byte(properties), schema)
 	if err != nil {
 		return err
 	}
@@ -27,8 +30,16 @@ func (obj *ResourceObject) Validate(definition *ResourceDefinition) error {
 		data[key] = val
 	}
 
-	// validate object against schema
-	return validate.AgainstSchema(schema, data, strfmt.Default)
+	// validate data against schema
+	res := validate.NewSchemaValidator(schema, nil, "", strfmt.Default).Validate(data)
+	if res.HasErrors() {
+		errs := []string{}
+		for _, e := range res.Errors {
+			errs = append(errs, e.Error())
+		}
+		return errors.New(strings.Join(errs, ","))
+	}
+	return nil
 }
 
 // ResourceDefinition defines an API resource

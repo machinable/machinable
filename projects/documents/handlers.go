@@ -2,6 +2,7 @@ package documents
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
@@ -39,7 +40,7 @@ func (h *Documents) AddObject(c *gin.Context) {
 
 	newID, dsiErr := h.store.AddDefDocument(projectSlug, resourcePathName, fieldValues, meta)
 	if dsiErr != nil {
-		c.JSON(dsiErr.Code(), gin.H{"error": err.Error()})
+		c.JSON(dsiErr.Code(), gin.H{"error": "failed to save " + resourcePathName, "errors": strings.Split(dsiErr.Error(), ",")})
 		return
 	}
 
