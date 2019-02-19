@@ -175,6 +175,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	collectionName := c.Param("collectionName")
 	projectSlug := c.MustGet("project").(string)
 	authFilters := c.MustGet("filters").(map[string]interface{})
+
 	if collectionName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
 		return
@@ -225,7 +226,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	docCount, colErr := h.store.CountCollectionDocuments(projectSlug, collectionName, authFilters)
 
 	if colErr != nil {
-		c.JSON(colErr.Code(), gin.H{"error": err.Error()})
+		c.JSON(colErr.Code(), gin.H{"error": colErr.Error()})
 		return
 	}
 

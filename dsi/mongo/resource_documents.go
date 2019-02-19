@@ -8,6 +8,7 @@ import (
 	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
+	"github.com/mongodb/mongo-go-driver/mongo/findopt"
 )
 
 // AddDefDocument creates a new document for the existing resource, specified by the path.
@@ -44,20 +45,26 @@ func (d *Datastore) AddDefDocument(project, path string, fields models.ResourceO
 
 // ListDefDocuments retrieves all definition documents for the give project and path
 // TODO pagination and filtering
-func (d *Datastore) ListDefDocuments(project, path string, limit, offset int, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError) {
+func (d *Datastore) ListDefDocuments(project, path string, limit, offset int64, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError) {
 	collection := d.db.ResourceDocs(project, path)
-	documents := make([]map[string]interface{}, 0)
+
+	limitOpt := findopt.Limit(limit)
+	offsetOpt := findopt.Skip(offset)
 
 	// Find all objects for this resource
 	cursor, err := collection.Find(
 		context.Background(),
-		bson.NewDocument(),
+		filter,
+		limitOpt,
+		offsetOpt,
 	)
+
 	if err != nil {
 		return nil, errors.New(errors.UnknownError, err)
 	}
 
 	// Create response from documents
+	documents := make([]map[string]interface{}, 0)
 	doc := bson.NewDocument()
 	for cursor.Next(context.Background()) {
 		doc.Reset()
@@ -118,6 +125,14 @@ func (d *Datastore) GetDefDocument(project, path, documentID string) (map[string
 	}
 
 	return object, nil
+}
+
+// CountDefDocuments returns the count of all documents for a project resource
+func (d *Datastore) CountDefDocuments(project, path string, filter map[string]interface{}) (int64, *errors.DatastoreError) {
+	collection := d.db.ResourceDocs(project, path)
+	cnt, err := collection.CountDocuments(nil, filter, nil)
+
+	return cnt, errors.New(errors.UnknownError, err)
 }
 
 // DeleteDefDocument deletes a single document

@@ -34,7 +34,11 @@ func NewLinks(r *http.Request, limit, offset, max int64) *Links {
 	}
 
 	if offset > 0 {
-		prevLink = fmt.Sprintf(fullURL, limit, offset-limit)
+		prevOffset := offset - limit
+		if prevOffset < 0 {
+			prevOffset = 0
+		}
+		prevLink = fmt.Sprintf(fullURL, limit, prevOffset)
 	}
 
 	links := &Links{
@@ -42,9 +46,6 @@ func NewLinks(r *http.Request, limit, offset, max int64) *Links {
 		Next: nextLink,
 		Prev: prevLink,
 	}
-	// links := &Links{
-	// 	Self: fullURL,
-	// }
 
 	return links
 }

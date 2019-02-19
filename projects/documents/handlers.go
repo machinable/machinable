@@ -2,10 +2,12 @@ package documents
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
+	localModels "github.com/anothrnick/machinable/projects/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -54,15 +56,83 @@ func (h *Documents) AddObject(c *gin.Context) {
 func (h *Documents) ListObjects(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
 	projectSlug := c.MustGet("project").(string)
+	authFilters := c.MustGet("filters").(map[string]interface{})
 
-	documents, err := h.store.ListDefDocuments(projectSlug, resourcePathName, 0, 0, nil)
-
-	if err != nil {
-		c.JSON(err.Code(), gin.H{"error": err.Error()})
+	if resourcePathName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "resource cannot be empty"})
 		return
 	}
 
-	c.IndentedJSON(http.StatusOK, gin.H{"items": documents, "count": len(documents)})
+	// Get pagination parameters
+	values := c.Request.URL.Query()
+	limit := values.Get("_limit")
+	offset := values.Get("_offset")
+
+	// Set defaults if necessary
+	if limit == "" {
+		limit = localModels.Limit
+	}
+
+	if offset == "" {
+		offset = "0"
+	}
+
+	// Clear reserved query parameters
+	// TODO?
+
+	// Format query parameters
+	filter := make(map[string]interface{})
+
+	for k, v := range values {
+		if k == "_limit" || k == "_offset" {
+			continue
+		}
+		filter[k] = v[0]
+	}
+
+	// Parse and validate pagination
+	il, err := strconv.Atoi(limit)
+	if err != nil || il > localModels.MaxLimit || il < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
+		return
+	}
+	iLimit := int64(il)
+	io, err := strconv.Atoi(offset)
+	if err != nil || io < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid offset"})
+		return
+	}
+	iOffset := int64(io)
+
+	// get accurate count based on auth filters
+	docCount, countErr := h.store.CountDefDocuments(projectSlug, resourcePathName, authFilters)
+
+	if countErr != nil {
+		c.JSON(countErr.Code(), gin.H{"error": countErr.Error()})
+		return
+	}
+
+	pageMax := (docCount % iLimit) + docCount
+	if (iLimit+iOffset) > pageMax && iOffset >= docCount && docCount != 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page"})
+		return
+	}
+
+	// Apply authorization filters
+	for k, v := range authFilters {
+		filter[k] = v
+	}
+
+	documents, dsiErr := h.store.ListDefDocuments(projectSlug, resourcePathName, iLimit, iOffset, filter)
+
+	if dsiErr != nil {
+		c.JSON(dsiErr.Code(), gin.H{"error": dsiErr.Error()})
+		return
+	}
+
+	links := localModels.NewLinks(c.Request, iLimit, iOffset, docCount)
+
+	c.PureJSON(http.StatusOK, gin.H{"items": documents, "links": links, "count": docCount})
 }
 
 // GetObject returns a single object with the resourceID for this resource
