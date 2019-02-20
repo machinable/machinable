@@ -19,7 +19,7 @@ import (
 var Collections = "collections"
 
 // Resources is the constant value for the URL parameter
-var Resources = "resources"
+var Resources = "api"
 
 // BEARER is the key for the bearer authorization token
 var BEARER = "bearer"
