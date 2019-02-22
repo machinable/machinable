@@ -34,6 +34,11 @@ func (h *Collections) AddCollection(c *gin.Context) {
 		return
 	}
 
+	if err := newCollection.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// add collection and return error if anything goes wrong
 	err := h.store.AddCollection(projectSlug, &newCollection)
 	if err != nil {
@@ -136,15 +141,21 @@ func (h *Collections) AddObjectToCollection(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
 	creator := c.MustGet("authID").(string)
 	creatorType := c.MustGet("authType").(string)
+	requestedCollection := &models.Collection{Name: collectionName}
 
 	if collectionName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
 		return
 	}
 
+	if err := requestedCollection.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// get or create the project collection
 	if _, err := h.store.GetCollection(projectSlug, collectionName); err != nil {
-		if err := h.store.AddCollection(projectSlug, &models.Collection{Name: collectionName}); err != nil {
+		if err := h.store.AddCollection(projectSlug, requestedCollection); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get collection"})
 			return
 		}

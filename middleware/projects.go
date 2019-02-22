@@ -48,9 +48,6 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 		rRole := c.GetString("authRole")
 		rID := c.GetString("authID")
 
-		// fmt.Println(c.Request.URL.Path)
-		// fmt.Println(rRole)
-
 		// based on the requester's role and collection/resource access policies, build filters
 		if rRole == auth.RoleUser {
 			// `user` role:
@@ -75,22 +72,18 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 				parallelRead = col.ParallelRead
 				parallelWrite = col.ParallelWrite
 			} else if storeType == Resources {
-				// def, err := store.GetDefinition(project, )
-				// TODO
+				def, err := store.GetDefinitionByPathName(project, collectionName)
+				if err != nil {
+					respondWithError(http.StatusInternalServerError, "error retrieving resource", c)
+					return
+				}
+				parallelRead = def.ParallelRead
+				parallelWrite = def.ParallelWrite
 				fmt.Println("resource filters not supported")
 			} else {
 				respondWithError(http.StatusBadRequest, "malformed request - unknown path", c)
 				return
 			}
-
-			// apply filters
-			//	  > Compare PARALLEL_READ/PARALLEL_WRITE to request VERB.
-			//      * GET and PARALLEL_READ == TRUE, no filters
-			//		* GET and PARALLEL_READ == FALSE, filters
-			//      * PUT/DELETE and PARALLEL_WRITE == TRUE, no filters
-			//      * PUT/DELETE and PARALLEL_WRITE == FALSE, filters
-			//      * anything else, no filters
-			//    FILTER: add (`_metadata.creator`, <requester_id>) to filters
 
 			if verb == "GET" && parallelRead == false {
 				filters["_metadata.creator"] = rID
@@ -129,6 +122,15 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		// get project slug
 		// get project from context, inserted into context from subdomain
 		project := c.GetString("project")
+
+		// load the project and check the authn policy
+		prj, err := store.GetProjectBySlug(project)
+		if err != nil {
+			respondWithError(http.StatusNotFound, "project not found", c)
+			return
+		}
+
+		c.Set("projectAuthn", prj.Authn)
 
 		// validate Authorization header
 		if values, _ := c.Request.Header["Authorization"]; len(values) > 0 {
@@ -243,21 +245,14 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			respondWithError(http.StatusUnauthorized, "invalid access token", c)
 			return
 		}
+
 		// if no Authorization header is present, load the project and check the authn policy
-
-		prj, err := store.GetProjectBySlug(project)
-		if err != nil {
-			respondWithError(http.StatusNotFound, "project not found", c)
-			return
-		}
-
 		if !prj.Authn {
 			c.Set("authType", "anonymous")
 			c.Set("authString", "anonymous")
 			c.Set("authID", "anonymous")
 			c.Set("authRole", "anonymous")
 
-			c.Set("projectAuthn", false)
 			// project does not require authentication, carry on
 			c.Next()
 			return

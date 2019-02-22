@@ -83,6 +83,33 @@ func (d *Datastore) GetDefinition(project, definitionID string) (*models.Resourc
 	return def, nil
 }
 
+// GetDefinitionByPathName returns a definition based on `PathName`
+func (d *Datastore) GetDefinitionByPathName(project, pathName string) (*models.ResourceDefinition, *errors.DatastoreError) {
+	resDefCollection := d.db.ResourceDefinitions(project)
+	// Find the resource definition for this object
+	// Decode result into document
+	doc := bson.Document{}
+	err := resDefCollection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.String("path_name", pathName),
+		),
+		nil,
+	).Decode(&doc)
+
+	if err != nil {
+		return nil, errors.New(errors.NotFound, fmt.Errorf("resource not found"))
+	}
+
+	// Lookup field definitions for this resource
+	resourceDefinition, err := parseDefinition(&doc)
+	if err != nil {
+		return nil, errors.New(errors.UnknownError, err)
+	}
+
+	return resourceDefinition, nil
+}
+
 // UpdateDefinition updates the PARALLEL_READ and PARALLEL_WRITE fields of a definition
 func (d *Datastore) UpdateDefinition(project, definitionID string, read, write bool) *errors.DatastoreError {
 	resDefCollection := d.db.ResourceDefinitions(project)

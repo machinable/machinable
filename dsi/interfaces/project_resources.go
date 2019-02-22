@@ -20,5 +20,6 @@ type ResourcesDatastore interface {
 	UpdateDefinition(project, definitionID string, read, write bool) *errors.DatastoreError
 	ListDefinitions(project string) ([]*models.ResourceDefinition, *errors.DatastoreError)
 	GetDefinition(project, definitionID string) (*models.ResourceDefinition, *errors.DatastoreError)
+	GetDefinitionByPathName(project, pathName string) (*models.ResourceDefinition, *errors.DatastoreError)
 	DeleteDefinition(project, definitionID string) *errors.DatastoreError
 }

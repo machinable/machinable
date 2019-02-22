@@ -2,6 +2,8 @@ package projects
 
 import (
 	"errors"
+
+	"github.com/anothrnick/machinable/dsi"
 )
 
 // reservedProjectSlugs is a list of project slugs that are not allowed to be used, partially so
@@ -9,10 +11,17 @@ import (
 var reservedProjectSlugs = map[string]bool{
 	"management": true,
 	"manage":     true,
+	"mgmt":       true,
 	"users":      true,
 	"projects":   true,
 	"sessions":   true,
 	"machinable": true,
+	"www":        true,
+	"ww":         true,
+	"w":          true,
+	"app":        true,
+	"api":        true,
+	"mchbl":      true,
 }
 
 // ProjectBody is used to unmarshal the JSON body of an incoming request
@@ -30,6 +39,11 @@ func (pb *ProjectBody) Validate() error {
 	if pb.UserID == "" || pb.Slug == "" || pb.Name == "" || pb.Icon == "" {
 		return errors.New("invalid project parameters")
 	}
+
+	if !dsi.ValidPathFormat.MatchString(pb.Slug) {
+		return errors.New("invalid project slug: only alphanumeric, dashes, and underscores allowed")
+	}
+
 	return nil
 }
 

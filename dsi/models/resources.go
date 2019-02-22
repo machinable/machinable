@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/anothrnick/machinable/dsi"
 	"github.com/go-openapi/spec"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
@@ -113,6 +114,8 @@ func (def *ResourceDefinition) Validate() error {
 		return errors.New("resource path_name cannot be empty")
 	} else if def.Properties == "" {
 		return errors.New("resource properties cannot be empty")
+	} else if !dsi.ValidPathFormat.MatchString(def.PathName) {
+		return errors.New("invalid path name: only alphanumeric, dashes, and underscores allowed")
 	}
 
 	schema := new(spec.Schema)
