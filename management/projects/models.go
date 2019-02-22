@@ -9,19 +9,22 @@ import (
 // reservedProjectSlugs is a list of project slugs that are not allowed to be used, partially so
 // we can have reserved sub domains, also so don't muck up our db schema in any way.
 var reservedProjectSlugs = map[string]bool{
-	"management": true,
-	"manage":     true,
-	"mgmt":       true,
-	"users":      true,
-	"projects":   true,
-	"sessions":   true,
-	"machinable": true,
-	"www":        true,
-	"ww":         true,
-	"w":          true,
-	"app":        true,
-	"api":        true,
-	"mchbl":      true,
+	"management":    true,
+	"manage":        true,
+	"mgmt":          true,
+	"users":         true,
+	"projects":      true,
+	"sessions":      true,
+	"machinable":    true,
+	"settings":      true,
+	"www":           true,
+	"ww":            true,
+	"w":             true,
+	"app":           true,
+	"api":           true,
+	"mchbl":         true,
+	"docs":          true,
+	"documentation": true,
 }
 
 // ProjectBody is used to unmarshal the JSON body of an incoming request

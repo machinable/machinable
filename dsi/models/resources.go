@@ -18,6 +18,10 @@ type ResourceObject map[string]interface{}
 
 // Validate validates that the object matches the schema
 func (obj *ResourceObject) Validate(definition *ResourceDefinition) error {
+	if err := dsi.ContainsReservedField(*obj); err != nil {
+		return err
+	}
+
 	schema := new(spec.Schema)
 	properties := fmt.Sprintf(`{"properties": %s }`, definition.Properties)
 
@@ -118,9 +122,15 @@ func (def *ResourceDefinition) Validate() error {
 		return errors.New("invalid path name: only alphanumeric, dashes, and underscores allowed")
 	}
 
+	props := map[string]interface{}{}
+	err := json.Unmarshal([]byte(def.Properties), &props)
+	if err := dsi.ContainsReservedField(props); err != nil {
+		return err
+	}
+
 	schema := new(spec.Schema)
 
-	err := json.Unmarshal([]byte(def.Properties), schema)
+	err = json.Unmarshal([]byte(def.Properties), schema)
 
 	return err
 }

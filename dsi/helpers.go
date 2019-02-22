@@ -1,6 +1,9 @@
 package dsi
 
-import "regexp"
+import (
+	"fmt"
+	"regexp"
+)
 
 const (
 	// JSONIDKey is the key of the id returned in the JSON response
@@ -35,4 +38,14 @@ func ReservedField(a string) bool {
 		}
 	}
 	return false
+}
+
+// ContainsReservedField checks for reserved fields in a map[string]whatever
+func ContainsReservedField(doc map[string]interface{}) error {
+	for key := range doc {
+		if ReservedField(key) {
+			return fmt.Errorf("'%s' is a reserved field", key)
+		}
+	}
+	return nil
 }

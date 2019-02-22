@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/anothrnick/machinable/dsi"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
 	localModels "github.com/anothrnick/machinable/projects/models"
@@ -143,6 +144,19 @@ func (h *Collections) AddObjectToCollection(c *gin.Context) {
 	creatorType := c.MustGet("authType").(string)
 	requestedCollection := &models.Collection{Name: collectionName}
 
+	bdoc := make(map[string]interface{})
+
+	err := c.BindJSON(&bdoc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := dsi.ContainsReservedField(bdoc); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	if collectionName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
 		return
@@ -159,14 +173,6 @@ func (h *Collections) AddObjectToCollection(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get collection"})
 			return
 		}
-	}
-
-	bdoc := make(map[string]interface{})
-
-	err := c.BindJSON(&bdoc)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
 	}
 
 	meta := models.NewMetaData(creator, creatorType)
