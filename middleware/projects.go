@@ -75,6 +75,7 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 				parallelRead = col.ParallelRead
 				parallelWrite = col.ParallelWrite
 			} else if storeType == Resources {
+				// def, err := store.GetDefinition(project, )
 				// TODO
 				fmt.Println("resource filters not supported")
 			} else {

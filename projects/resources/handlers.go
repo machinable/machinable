@@ -73,6 +73,24 @@ func (h *Resources) GetResourceDefinition(c *gin.Context) {
 	c.JSON(http.StatusOK, def)
 }
 
+// UpdateResourceDefinition updates the parallel_read and parallel_write operations of the definition
+func (h *Resources) UpdateResourceDefinition(c *gin.Context) {
+	projectSlug := c.MustGet("project").(string)
+	resourceDefinitionID := c.Param("resourceDefinitionID") // actually uses ID
+	var updatedDefinition models.ResourceDefinition
+	c.BindJSON(&updatedDefinition)
+
+	// add collection and return error if anything goes wrong
+	err := h.store.UpdateDefinition(projectSlug, resourceDefinitionID, updatedDefinition.ParallelRead, updatedDefinition.ParallelWrite)
+	if err != nil {
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
+		return
+	}
+
+	// success
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 // DeleteResourceDefinition deletes the definition and drops the resource collection
 func (h *Resources) DeleteResourceDefinition(c *gin.Context) {
 	resourceID := c.Param("resourceDefinitionID")

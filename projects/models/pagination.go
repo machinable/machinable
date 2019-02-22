@@ -7,9 +7,12 @@ import (
 )
 
 const (
-	Limit    = "10"
+	// Limit is the default pagination limit
+	Limit = "10"
+	// MaxLimit is the maximum allowed page size
 	MaxLimit = 100
-	Scheme   = "http"
+	// Scheme is used to create the links... this should be in a config file
+	Scheme = "http"
 )
 
 // NewLinks creates the pagination links

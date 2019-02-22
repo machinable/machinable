@@ -44,11 +44,13 @@ func (obj *ResourceObject) Validate(definition *ResourceDefinition) error {
 
 // ResourceDefinition defines an API resource
 type ResourceDefinition struct {
-	ID         string    `json:"id"`         // ID is the unique identifier for this resource definition
-	Title      string    `json:"title"`      // Title of this resource
-	PathName   string    `json:"path_name"`  // PathName is the name that will appear in the URL path
-	Created    time.Time `json:"created"`    // Created is the timestamp the resource was created
-	Properties string    `json:"properties"` // Properties is the string representation of the JSON schema properties
+	ID            string    `json:"id"`        // ID is the unique identifier for this resource definition
+	Title         string    `json:"title"`     // Title of this resource
+	PathName      string    `json:"path_name"` // PathName is the name that will appear in the URL path
+	ParallelRead  bool      `json:"parallel_read"`
+	ParallelWrite bool      `json:"parallel_write"`
+	Created       time.Time `json:"created"`    // Created is the timestamp the resource was created
+	Properties    string    `json:"properties"` // Properties is the string representation of the JSON schema properties
 }
 
 // MarshalJSON custom marshaller to marshall properties to json
@@ -60,26 +62,32 @@ func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(&struct {
-		ID         string                 `json:"id"`         // ID is the unique identifier for this resource definition
-		Title      string                 `json:"title"`      // Title of this resource
-		PathName   string                 `json:"path_name"`  // PathName is the name that will appear in the URL path
-		Created    time.Time              `json:"created"`    // Created is the timestamp the resource was created
-		Properties map[string]interface{} `json:"properties"` // Properties is the string representation of the JSON schema properties
+		ID            string                 `json:"id"`        // ID is the unique identifier for this resource definition
+		Title         string                 `json:"title"`     // Title of this resource
+		PathName      string                 `json:"path_name"` // PathName is the name that will appear in the URL path
+		ParallelRead  bool                   `json:"parallel_read"`
+		ParallelWrite bool                   `json:"parallel_write"`
+		Created       time.Time              `json:"created"`    // Created is the timestamp the resource was created
+		Properties    map[string]interface{} `json:"properties"` // Properties is the string representation of the JSON schema properties
 	}{
-		ID:         def.ID,
-		Title:      def.Title,
-		PathName:   def.PathName,
-		Created:    def.Created,
-		Properties: properties,
+		ID:            def.ID,
+		Title:         def.Title,
+		PathName:      def.PathName,
+		ParallelRead:  def.ParallelRead,
+		ParallelWrite: def.ParallelWrite,
+		Created:       def.Created,
+		Properties:    properties,
 	})
 }
 
 // UnmarshalJSON is a custom unmarshaller
 func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 	payload := struct {
-		Title      string          `json:"title"`      // Title of this resource
-		PathName   string          `json:"path_name"`  // PathName is the name that will appear in the URL path
-		Properties json.RawMessage `json:"properties"` // Properties is the string representation of the JSON schema properties
+		Title         string          `json:"title"`      // Title of this resource
+		PathName      string          `json:"path_name"`  // PathName is the name that will appear in the URL path
+		Properties    json.RawMessage `json:"properties"` // Properties is the string representation of the JSON schema properties
+		ParallelRead  bool            `json:"parallel_read"`
+		ParallelWrite bool            `json:"parallel_write"`
 	}{}
 
 	err := json.Unmarshal(b, &payload)
@@ -91,6 +99,8 @@ func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 	def.Title = payload.Title
 	def.PathName = payload.PathName
 	def.Properties = string(payload.Properties)
+	def.ParallelRead = payload.ParallelRead
+	def.ParallelWrite = payload.ParallelWrite
 
 	return nil
 }

@@ -20,6 +20,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	resources.POST("/", handler.AddResourceDefinition)
 	resources.GET("/", handler.ListResourceDefinitions)
 	resources.GET("/:resourceDefinitionID", handler.GetResourceDefinition)
+	resources.PUT("/:resourceDefinitionID", handler.UpdateResourceDefinition)
 	resources.DELETE("/:resourceDefinitionID", handler.DeleteResourceDefinition)
 
 	return nil

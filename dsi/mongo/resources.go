@@ -24,6 +24,8 @@ func (d *Datastore) AddDefinition(project string, def *models.ResourceDefinition
 	resourceElements := make([]*bson.Element, 0)
 	resourceElements = append(resourceElements, bson.EC.String("title", def.Title))
 	resourceElements = append(resourceElements, bson.EC.String("path_name", def.PathName))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", def.ParallelRead))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", def.ParallelWrite))
 	resourceElements = append(resourceElements, bson.EC.Time("created", time.Now()))
 	resourceElements = append(resourceElements, bson.EC.String("properties", def.Properties))
 
@@ -79,6 +81,50 @@ func (d *Datastore) GetDefinition(project, definitionID string) (*models.Resourc
 	}
 
 	return def, nil
+}
+
+// UpdateDefinition updates the PARALLEL_READ and PARALLEL_WRITE fields of a definition
+func (d *Datastore) UpdateDefinition(project, definitionID string, read, write bool) *errors.DatastoreError {
+	resDefCollection := d.db.ResourceDefinitions(project)
+
+	// Get the object id for collection name
+	objectID, err := objectid.FromHex(definitionID)
+	if err != nil {
+		return errors.New(errors.BadParameter, err)
+	}
+
+	// Find object based on ID
+	// decode result into document
+	doc := bson.NewDocument()
+	err = resDefCollection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		nil,
+	).Decode(doc)
+
+	if err != nil {
+		return errors.New(errors.NotFound, fmt.Errorf("resource not found, '%s'", definitionID))
+	}
+
+	resourceElements := make([]*bson.Element, 0)
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", read))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", write))
+
+	_, err = resDefCollection.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				resourceElements...,
+			),
+		),
+	)
+
+	return errors.New(errors.UnknownError, err)
 }
 
 // DeleteDefinition deletes a definition as well as any data stored for that definition
