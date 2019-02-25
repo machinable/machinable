@@ -47,6 +47,11 @@ func (obj *ResourceObject) Validate(definition *ResourceDefinition) error {
 	return nil
 }
 
+// Property is a simplified representation of a JSON Schema property
+type Property struct {
+	Type string `json:"type"`
+}
+
 // ResourceDefinition defines an API resource
 type ResourceDefinition struct {
 	ID            string    `json:"id"`        // ID is the unique identifier for this resource definition
@@ -56,6 +61,14 @@ type ResourceDefinition struct {
 	ParallelWrite bool      `json:"parallel_write"`
 	Created       time.Time `json:"created"`    // Created is the timestamp the resource was created
 	Properties    string    `json:"properties"` // Properties is the string representation of the JSON schema properties
+}
+
+// GetProperties returns the properties as a `Properties` object
+func (def *ResourceDefinition) GetProperties() (map[string]Property, error) {
+	properties := map[string]Property{}
+	err := json.Unmarshal([]byte(def.Properties), &properties)
+
+	return properties, err
 }
 
 // MarshalJSON custom marshaller to marshall properties to json

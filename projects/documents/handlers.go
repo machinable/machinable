@@ -1,10 +1,12 @@
 package documents
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/anothrnick/machinable/dsi"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
 	localModels "github.com/anothrnick/machinable/projects/models"
@@ -77,22 +79,9 @@ func (h *Documents) ListObjects(c *gin.Context) {
 		offset = "0"
 	}
 
-	// Clear reserved query parameters
-	// TODO?
-
-	// Format query parameters
-	filter := make(map[string]interface{})
-
-	for k, v := range values {
-		if k == "_limit" || k == "_offset" {
-			continue
-		}
-		filter[k] = v[0]
-	}
-
 	// Parse and validate pagination
 	il, err := strconv.Atoi(limit)
-	if err != nil || il > localModels.MaxLimit || il < 0 {
+	if err != nil || il > localModels.MaxLimit || il <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
 		return
 	}
@@ -103,6 +92,49 @@ func (h *Documents) ListObjects(c *gin.Context) {
 		return
 	}
 	iOffset := int64(io)
+
+	// Format query parameters
+	filter := make(map[string]interface{})
+
+	var resourceDefinition *models.ResourceDefinition
+	validProperties := map[string]models.Property{}
+	for k, v := range values {
+		if k == "_limit" || k == "_offset" {
+			continue
+		}
+
+		if resourceDefinition == nil || validProperties == nil {
+			// get resource definition if we do not already have it
+			resourceDefinition, err := h.store.GetDefinitionByPathName(projectSlug, resourcePathName)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "could not retrieve resource definition to validate query parameters"})
+				return
+			}
+
+			// get property types
+			var pErr error
+			validProperties, pErr = resourceDefinition.GetProperties()
+			if pErr != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting property types"})
+				return
+			}
+		}
+
+		prop, ok := validProperties[k]
+		if !ok {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("unable to filter on '%s', field does not exist", k)})
+			return
+		}
+
+		// cast filters to their actual types, based on definition
+		trueValue, err := dsi.CastInterfaceToType(prop.Type, v[0])
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		filter[k] = trueValue
+	}
 
 	// get accurate count based on auth filters
 	docCount, countErr := h.store.CountDefDocuments(projectSlug, resourcePathName, authFilters)

@@ -1,8 +1,10 @@
 package dsi
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 )
 
 const (
@@ -48,4 +50,31 @@ func ContainsReservedField(doc map[string]interface{}) error {
 		}
 	}
 	return nil
+}
+
+// CastInterfaceToType returns the interface with a proper type
+func CastInterfaceToType(typ string, value string) (interface{}, error) {
+	switch typ {
+	case "string":
+		return value, nil
+	case "integer":
+		i, err := strconv.ParseInt(value, 10, 64)
+		return i, cleanParseError(err)
+	case "number":
+		f, err := strconv.ParseFloat(value, 64)
+		return f, cleanParseError(err)
+	case "boolean":
+		b, err := strconv.ParseBool(value)
+		return b, cleanParseError(err)
+	default:
+		return value, errors.New("unable to filter on type")
+	}
+}
+
+func cleanParseError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	return errors.New("error parsing value, invalid format")
 }

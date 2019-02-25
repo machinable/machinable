@@ -212,9 +212,6 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 		offset = "0"
 	}
 
-	// Clear reserved query parameters
-	// TODO?
-
 	// Format query parameters
 	filter := make(map[string]interface{})
 
@@ -227,7 +224,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 
 	// Parse and validate pagination
 	il, err := strconv.Atoi(limit)
-	if err != nil || il > localModels.MaxLimit {
+	if err != nil || il > localModels.MaxLimit || il <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
 		return
 	}

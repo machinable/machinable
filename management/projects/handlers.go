@@ -109,4 +109,5 @@ func (p *Projects) DeleteUserProject(c *gin.Context) {
 	// delete project keys
 	// delete project logs
 	// delete project usage
+	c.JSON(http.StatusNoContent, gin.H{})
 }
