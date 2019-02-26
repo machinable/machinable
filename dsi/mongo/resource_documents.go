@@ -57,7 +57,6 @@ func (d *Datastore) UpdateDefDocument(project, path, documentID string, updatedF
 	collection := d.db.ResourceDocs(project, path)
 	_, derr := d.getDefinitionDocument(objectID, collection)
 	if derr != nil {
-		fmt.Println(derr)
 		return errors.New(errors.NotFound, fmt.Errorf("object does not exist '%s'", documentID))
 	}
 
