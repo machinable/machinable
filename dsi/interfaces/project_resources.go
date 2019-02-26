@@ -9,7 +9,7 @@ import (
 type ResourcesDatastore interface {
 	// Project definition documents
 	AddDefDocument(project, path string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError)
-	ListDefDocuments(project, path string, limit, offset int64, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError)
+	ListDefDocuments(project, path string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError)
 	GetDefDocument(project, path, documentID string) (map[string]interface{}, *errors.DatastoreError)
 	CountDefDocuments(project, path string, filter map[string]interface{}) (int64, *errors.DatastoreError)
 	DeleteDefDocument(project, path, documentID string) *errors.DatastoreError

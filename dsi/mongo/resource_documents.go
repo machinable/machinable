@@ -45,11 +45,12 @@ func (d *Datastore) AddDefDocument(project, path string, fields models.ResourceO
 
 // ListDefDocuments retrieves all definition documents for the give project and path
 // TODO pagination and filtering
-func (d *Datastore) ListDefDocuments(project, path string, limit, offset int64, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError) {
+func (d *Datastore) ListDefDocuments(project, path string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError) {
 	collection := d.db.ResourceDocs(project, path)
 
 	limitOpt := findopt.Limit(limit)
 	offsetOpt := findopt.Skip(offset)
+	sortOpt := findopt.Sort(sort)
 
 	// Find all objects for this resource
 	cursor, err := collection.Find(
@@ -57,6 +58,7 @@ func (d *Datastore) ListDefDocuments(project, path string, limit, offset int64, 
 		filter,
 		limitOpt,
 		offsetOpt,
+		sortOpt,
 	)
 
 	if err != nil {

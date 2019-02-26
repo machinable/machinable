@@ -16,6 +16,8 @@ const (
 	LimitKey = "_limit"
 	// OffsetKey is used for paginating HTTP requests
 	OffsetKey = "_offset"
+	// SortKey is used for sorting the query by a field
+	SortKey = "_sort"
 	// MetadataKey is the key used to store internal metadata for an object
 	MetadataKey         = "_metadata"
 	MetadataCreated     = "_metadata.created"

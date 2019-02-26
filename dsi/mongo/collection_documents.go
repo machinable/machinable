@@ -89,19 +89,19 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 }
 
 // GetCollectionDocuments retrieves the entire list of documents for a collection
-func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit, offset int64, filter map[string]interface{}) ([]map[string]interface{}, *errors.DatastoreError) {
+func (d *Datastore) GetCollectionDocuments(project, collectionName string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError) {
 	collection := d.db.CollectionDocs(project, collectionName)
 
 	limitOpt := findopt.Limit(limit)
 	offsetOpt := findopt.Skip(offset)
+	sortOpt := findopt.Sort(sort)
 
-	// filter = make(map[string]interface{})
-	// filter["name"] = "Murphy"
 	cursor, err := collection.Find(
 		context.Background(),
 		filter,
 		limitOpt,
 		offsetOpt,
+		sortOpt,
 	)
 
 	if err != nil {

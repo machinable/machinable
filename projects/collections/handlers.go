@@ -214,9 +214,22 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 
 	// Format query parameters
 	filter := make(map[string]interface{})
+	sort := make(map[string]int)
 
 	for k, v := range values {
-		if k == "_limit" || k == "_offset" {
+		if k == dsi.LimitKey || k == dsi.OffsetKey {
+			continue
+		}
+
+		if k == dsi.SortKey {
+			sortField := v[0]
+			firstChar := string(sortField[0])
+			order := 1
+			if firstChar == "-" {
+				order = -1
+				sortField = sortField[1:]
+			}
+			sort[sortField] = order
 			continue
 		}
 		filter[k] = v[0]
@@ -256,7 +269,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	}
 
 	// Retrieve documents for the page
-	documents, colErr := h.store.GetCollectionDocuments(projectSlug, collectionName, iLimit, iOffset, filter)
+	documents, colErr := h.store.GetCollectionDocuments(projectSlug, collectionName, iLimit, iOffset, filter, sort)
 
 	if colErr != nil {
 		c.JSON(colErr.Code(), gin.H{"error": err.Error()})

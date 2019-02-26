@@ -95,11 +95,24 @@ func (h *Documents) ListObjects(c *gin.Context) {
 
 	// Format query parameters
 	filter := make(map[string]interface{})
+	sort := make(map[string]int)
 
 	var resourceDefinition *models.ResourceDefinition
 	validProperties := map[string]models.Property{}
 	for k, v := range values {
-		if k == "_limit" || k == "_offset" {
+		if k == dsi.LimitKey || k == dsi.OffsetKey {
+			continue
+		}
+
+		if k == dsi.SortKey {
+			sortField := v[0]
+			firstChar := string(sortField[0])
+			order := 1
+			if firstChar == "-" {
+				order = -1
+				sortField = sortField[1:]
+			}
+			sort[sortField] = order
 			continue
 		}
 
@@ -155,7 +168,7 @@ func (h *Documents) ListObjects(c *gin.Context) {
 		filter[k] = v
 	}
 
-	documents, dsiErr := h.store.ListDefDocuments(projectSlug, resourcePathName, iLimit, iOffset, filter)
+	documents, dsiErr := h.store.ListDefDocuments(projectSlug, resourcePathName, iLimit, iOffset, filter, sort)
 
 	if dsiErr != nil {
 		c.JSON(dsiErr.Code(), gin.H{"error": dsiErr.Error()})

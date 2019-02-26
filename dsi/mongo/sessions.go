@@ -1,4 +1,3 @@
-// A stored Session is really a reference to a refresh token
 package mongo
 
 import (
