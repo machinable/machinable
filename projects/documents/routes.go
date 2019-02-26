@@ -20,6 +20,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	api.POST("/:resourcePathName", handler.AddObject)
 	api.GET("/:resourcePathName", handler.ListObjects)
 	api.GET("/:resourcePathName/:resourceID", handler.GetObject)
+	api.PUT("/:resourcePathName/:resourceID", handler.PutObject)
 	api.DELETE("/:resourcePathName/:resourceID", handler.DeleteObject)
 
 	// App mgmt routes with different authz policy
@@ -32,6 +33,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmtAPI.POST("/:resourcePathName", handler.AddObject)
 	mgmtAPI.GET("/:resourcePathName", handler.ListObjects)
 	mgmtAPI.GET("/:resourcePathName/:resourceID", handler.GetObject)
+	mgmtAPI.PUT("/:resourcePathName/:resourceID", handler.PutObject)
 	mgmtAPI.DELETE("/:resourcePathName/:resourceID", handler.DeleteObject)
 
 	return nil

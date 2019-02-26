@@ -50,9 +50,9 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 		return errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
 	}
 
-	// TODO: copy metadata
+	// get object, copy metadata
 	_, err = d.GetCollectionDocument(project, collectionName, documentID, filter)
-	if err != nil || documentID == "" {
+	if err != nil {
 		return errors.New(errors.NotFound, fmt.Errorf("object does not exist '%s'", documentID))
 	}
 
@@ -68,8 +68,7 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 		}
 	}
 
-	// Append metadata
-	updatedElements = append(updatedElements, bson.EC.Interface("_metadata", metadata))
+	// TODO update meta data with last updated
 
 	// Get a connection and update the document
 	collection := d.db.CollectionDocs(project, collectionName)

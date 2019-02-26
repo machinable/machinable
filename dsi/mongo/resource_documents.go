@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/anothrnick/machinable/dsi"
 	"github.com/anothrnick/machinable/dsi/errors"
 	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
+	"github.com/mongodb/mongo-go-driver/mongo"
 	"github.com/mongodb/mongo-go-driver/mongo/findopt"
 )
 
@@ -43,11 +45,69 @@ func (d *Datastore) AddDefDocument(project, path string, fields models.ResourceO
 	return result.InsertedID.(objectid.ObjectID).Hex(), nil
 }
 
+// UpdateDefDocument updates an existing document if it exists
+func (d *Datastore) UpdateDefDocument(project, path, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) *errors.DatastoreError {
+	// create object ID from resource ID string
+	objectID, err := objectid.FromHex(documentID)
+	if err != nil || documentID == "" {
+		return errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
+	}
+
+	// get existing object
+	collection := d.db.ResourceDocs(project, path)
+	_, derr := d.getDefinitionDocument(objectID, collection)
+	if derr != nil {
+		fmt.Println(derr)
+		return errors.New(errors.NotFound, fmt.Errorf("object does not exist '%s'", documentID))
+	}
+
+	// get definition
+	resDefCollection := d.db.ResourceDefinitions(project)
+	// get field definitions for this resource
+	resourceDefinition, err := getDefinition(path, resDefCollection)
+	if err != nil {
+		return errors.New(errors.NotFound, fmt.Errorf("resource does not exist"))
+	}
+
+	// validate schema
+	schemaErr := updatedFields.Validate(resourceDefinition)
+	if schemaErr != nil {
+		return errors.New(errors.BadParameter, schemaErr)
+	}
+
+	// create updated elements
+	updatedElements := make([]*bson.Element, 0)
+	for key := range updatedFields {
+		if dsi.ReservedField(key) {
+			// remove field for PUT
+			delete(updatedFields, key)
+		} else {
+			// append to element slice
+			updatedElements = append(updatedElements, bson.EC.Interface(key, updatedFields[key]))
+		}
+	}
+
+	// TODO update meta data with last updated
+
+	// Get the resources.{resourcePathName} collection
+	_, err = collection.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				updatedElements...,
+			),
+		),
+	)
+
+	return errors.New(errors.UnknownError, err)
+}
+
 // ListDefDocuments retrieves all definition documents for the give project and path
-// TODO pagination and filtering
 func (d *Datastore) ListDefDocuments(project, path string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError) {
 	collection := d.db.ResourceDocs(project, path)
-
 	limitOpt := findopt.Limit(limit)
 	offsetOpt := findopt.Skip(offset)
 	sortOpt := findopt.Sort(sort)
@@ -107,14 +167,7 @@ func (d *Datastore) GetDefDocument(project, path, documentID string) (map[string
 
 	// Find object based on ID
 	// Decode result into document
-	doc := bson.NewDocument()
-	err = collection.FindOne(
-		nil,
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", objectID),
-		),
-		nil,
-	).Decode(doc)
+	doc, err := d.getDefinitionDocument(objectID, collection)
 
 	if err != nil {
 		return nil, errors.New(errors.NotFound, fmt.Errorf("object does not exist, '%s'", documentID))
@@ -164,4 +217,19 @@ func (d *Datastore) DeleteDefDocument(project, path, documentID string) *errors.
 // DropAllDefDocuments drops the entire collection of documents
 func (d *Datastore) DropAllDefDocuments(project, path string) *errors.DatastoreError {
 	return nil
+}
+
+func (d *Datastore) getDefinitionDocument(objectID objectid.ObjectID, collection *mongo.Collection) (*bson.Document, error) {
+	// Find object based on ID
+	// Decode result into document
+	doc := bson.NewDocument()
+	err := collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		nil,
+	).Decode(doc)
+
+	return doc, err
 }

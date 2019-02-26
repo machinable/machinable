@@ -54,6 +54,32 @@ func (h *Documents) AddObject(c *gin.Context) {
 	c.JSON(http.StatusCreated, fieldValues)
 }
 
+// PutObject updates an existing document of the resource definition
+func (h *Documents) PutObject(c *gin.Context) {
+	resourcePathName := c.Param("resourcePathName")
+	resourceID := c.Param("resourceID")
+	projectSlug := c.MustGet("project").(string)
+	// creator := c.MustGet("authID").(string)
+	// creatorType := c.MustGet("authType").(string)
+	authFilters := c.MustGet("filters").(map[string]interface{})
+
+	fieldValues := models.ResourceObject{}
+
+	err := c.BindJSON(&fieldValues)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	dsiErr := h.store.UpdateDefDocument(projectSlug, resourcePathName, resourceID, fieldValues, authFilters)
+	if dsiErr != nil {
+		c.JSON(dsiErr.Code(), gin.H{"error": "failed to save " + resourcePathName, "errors": strings.Split(dsiErr.Error(), ",")})
+		return
+	}
+
+	c.JSON(http.StatusOK, fieldValues)
+}
+
 // ListObjects returns the list of objects for a resource
 func (h *Documents) ListObjects(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
