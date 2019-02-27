@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 
+	"github.com/anothrnick/machinable/config"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,6 +24,6 @@ func CompareHashAndPassword(hash, password string) bool {
 // Used for api keys
 func SHA1(text string) string {
 	algorithm := sha1.New()
-	algorithm.Write([]byte(text + SecretKey)) // salt
+	algorithm.Write([]byte(text + config.AppSecret)) // salt
 	return hex.EncodeToString(algorithm.Sum(nil))
 }

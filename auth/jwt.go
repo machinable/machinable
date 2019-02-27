@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/anothrnick/machinable/config"
 	"github.com/dgrijalva/jwt-go"
 )
 
 const (
-	// SecretKey used for JWT signing. This should be a config or environment variable.
-	SecretKey = "YmQzYTNkYzExMTVmZTc1YzY0NzY0NGU4"
 	// AccessTokenExpiry is how long access tokens last.
 	AccessTokenExpiry = 15 // 15 minutes
 	// RefreshTokenExpiry is the period of time that refresh tokens are valid.
@@ -22,7 +21,7 @@ func TokenLookup(token *jwt.Token) (interface{}, error) {
 		return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 	}
 
-	return []byte(SecretKey), nil
+	return []byte(config.AppSecret), nil
 }
 
 // CreateRefreshToken creates a new JWT to be used as the refresh token. The refresh token can be used to retrieve a new access token.
@@ -49,7 +48,7 @@ func CreateJWT(claims jwt.MapClaims, expiry int64) (string, error) {
 	// create access jwt
 	token := jwt.New(jwt.GetSigningMethod("HS256"))
 	token.Claims = claims
-	tokenString, err := token.SignedString([]byte(SecretKey))
+	tokenString, err := token.SignedString([]byte(config.AppSecret))
 
 	return tokenString, err
 }
