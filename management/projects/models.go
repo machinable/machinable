@@ -23,8 +23,11 @@ var reservedProjectSlugs = map[string]bool{
 	"app":           true,
 	"api":           true,
 	"mchbl":         true,
+	"data":          true,
 	"docs":          true,
 	"documentation": true,
+	"http":          true,
+	"https":         true,
 }
 
 // ProjectBody is used to unmarshal the JSON body of an incoming request
