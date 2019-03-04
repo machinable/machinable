@@ -3,13 +3,12 @@ package documents
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/anothrnick/machinable/dsi"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
-	localModels "github.com/anothrnick/machinable/projects/models"
+	"github.com/anothrnick/machinable/query"
 	"github.com/gin-gonic/gin"
 )
 
@@ -93,31 +92,17 @@ func (h *Documents) ListObjects(c *gin.Context) {
 
 	// Get pagination parameters
 	values := c.Request.URL.Query()
-	limit := values.Get("_limit")
-	offset := values.Get("_offset")
 
-	// Set defaults if necessary
-	if limit == "" {
-		limit = localModels.Limit
-	}
-
-	if offset == "" {
-		offset = "0"
-	}
-
-	// Parse and validate pagination
-	il, err := strconv.Atoi(limit)
-	if err != nil || il > localModels.MaxLimit || il <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
+	iLimit, err := query.GetLimit(&values)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	iLimit := int64(il)
-	io, err := strconv.Atoi(offset)
-	if err != nil || io < 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid offset"})
+	iOffset, err := query.GetOffset(&values)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	iOffset := int64(io)
 
 	// Format query parameters
 	filter := make(map[string]interface{})
@@ -201,7 +186,7 @@ func (h *Documents) ListObjects(c *gin.Context) {
 		return
 	}
 
-	links := localModels.NewLinks(c.Request, iLimit, iOffset, docCount)
+	links := query.NewLinks(c.Request, iLimit, iOffset, docCount)
 
 	c.PureJSON(http.StatusOK, gin.H{"items": documents, "links": links, "count": docCount})
 }

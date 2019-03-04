@@ -10,6 +10,22 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo"
 )
 
+// filtersToDocument creates a bson document from a `Filters` model
+func filtersToDocument(filters *models.Filters) (doc *bson.Document, err error) {
+	els := []*bson.Element{}
+	for key, val := range *filters {
+		ops := []*bson.Element{}
+		for op, i := range val {
+			ops = append(ops, bson.EC.Interface(string(op), i))
+		}
+		els = append(els, bson.EC.SubDocumentFromElements(key, ops...))
+	}
+
+	filterDoc := bson.NewDocument(els...)
+
+	return filterDoc, nil
+}
+
 func appendMetadata(doc *bson.Document, metadata *models.MetaData) {
 	md := bson.NewDocument(
 		bson.EC.String("creator", metadata.Creator),

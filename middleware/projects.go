@@ -300,7 +300,7 @@ func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		plog := &models.Log{
 			Event:         fmt.Sprintf("%s %s", verb, path),
 			StatusCode:    statusCode,
-			Created:       time.Now(),
+			Created:       time.Now().Unix(),
 			Initiator:     authString,
 			InitiatorType: authType,
 			InitiatorID:   authID,

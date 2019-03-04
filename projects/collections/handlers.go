@@ -2,12 +2,11 @@ package collections
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/anothrnick/machinable/dsi"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
-	localModels "github.com/anothrnick/machinable/projects/models"
+	"github.com/anothrnick/machinable/query"
 	"github.com/gin-gonic/gin"
 )
 
@@ -200,16 +199,16 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 
 	// Get pagination parameters
 	values := c.Request.URL.Query()
-	limit := values.Get("_limit")
-	offset := values.Get("_offset")
 
-	// Set defaults if necessary
-	if limit == "" {
-		limit = localModels.Limit
+	iLimit, err := query.GetLimit(&values)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
-
-	if offset == "" {
-		offset = "0"
+	iOffset, err := query.GetOffset(&values)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	// Format query parameters
@@ -234,20 +233,6 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 		}
 		filter[k] = v[0]
 	}
-
-	// Parse and validate pagination
-	il, err := strconv.Atoi(limit)
-	if err != nil || il > localModels.MaxLimit || il <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid limit"})
-		return
-	}
-	iLimit := int64(il)
-	io, err := strconv.Atoi(offset)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid offset"})
-		return
-	}
-	iOffset := int64(io)
 
 	// Get the total count of documents for pagination. Use injected auth filters to get accurate count relevant to the requester
 	docCount, colErr := h.store.CountCollectionDocuments(projectSlug, collectionName, authFilters)
@@ -276,7 +261,7 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 		return
 	}
 
-	links := localModels.NewLinks(c.Request, iLimit, iOffset, docCount)
+	links := query.NewLinks(c.Request, iLimit, iOffset, docCount)
 
 	c.PureJSON(http.StatusOK, gin.H{"items": documents, "links": links, "count": docCount})
 }

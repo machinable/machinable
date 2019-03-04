@@ -2,10 +2,8 @@ package mongo
 
 import (
 	"context"
-	"time"
 
 	"github.com/anothrnick/machinable/dsi/models"
-	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/mongo/findopt"
 )
 
@@ -21,30 +19,38 @@ func (d *Datastore) AddProjectLog(project string, log *models.Log) error {
 	return err
 }
 
-// GetProjectLogsForLastHours retrieves all logs for a project within the last x `hours`
-func (d *Datastore) GetProjectLogsForLastHours(project string, hours int) ([]*models.Log, error) {
+// CountProjectLogs returns the count of logs for a project
+func (d *Datastore) CountProjectLogs(project string, filter *models.Filters) (int64, error) {
+	collection := d.db.LogDocs(project)
+	filterOpt, err := filtersToDocument(filter)
+	if err != nil {
+		return 0, err
+	}
+	cnt, err := collection.CountDocuments(nil, filterOpt, nil)
+
+	return cnt, err
+}
+
+// ListProjectLogs retrieves logs based on the limit, offset, filter, and sort parameters
+func (d *Datastore) ListProjectLogs(project string, limit, offset int64, filter *models.Filters, sort map[string]int) ([]*models.Log, error) {
 	logs := make([]*models.Log, 0)
 
 	// get project log collection
 	collection := d.db.LogDocs(project)
 
-	// sort by created, descending
-	sortOpt := findopt.Sort(bson.NewDocument(
-		bson.EC.Int32("created", -1),
-	))
+	limitOpt := findopt.Limit(limit)
+	offsetOpt := findopt.Skip(offset)
+	sortOpt := findopt.Sort(sort)
+	filterOpt, err := filtersToDocument(filter)
+	if err != nil {
+		return logs, err
+	}
 
-	// filter anything within x hours
-	old := time.Now().Add(-time.Hour * time.Duration(hours))
-	filterOpt := bson.NewDocument(
-		bson.EC.SubDocumentFromElements("created",
-			bson.EC.DateTime("$gte", old.UnixNano()/int64(time.Millisecond)),
-		),
-	)
-
-	// Find logs
 	cursor, err := collection.Find(
 		context.Background(),
 		filterOpt,
+		limitOpt,
+		offsetOpt,
 		sortOpt,
 	)
 

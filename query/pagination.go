@@ -1,9 +1,11 @@
-package models
+package query
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 const (
@@ -14,6 +16,50 @@ const (
 	// Scheme is used to create the links... this should be in a config file
 	Scheme = "http"
 )
+
+// Links are the pagination links to a response
+type Links struct {
+	Self string `json:"self,omitempty"`
+	Next string `json:"next,omitempty"`
+	Prev string `json:"prev,omitempty"`
+}
+
+// GetOffset retrieves the `_offset` query parameter and parses it
+func GetOffset(values *url.Values) (int64, error) {
+	// get pagination parameters
+	offset := values.Get("_offset")
+
+	if offset == "" {
+		offset = "0"
+	}
+
+	io, err := strconv.Atoi(offset)
+	if err != nil {
+		return 0, errors.New("invalid offset")
+	}
+	iOffset := int64(io)
+
+	return iOffset, nil
+}
+
+// GetLimit retrieves the `_limit` query parameter
+func GetLimit(values *url.Values) (int64, error) {
+	limit := values.Get("_limit")
+
+	// Set defaults if necessary
+	if limit == "" {
+		limit = Limit
+	}
+
+	// Parse and validate pagination
+	il, err := strconv.Atoi(limit)
+	if err != nil || il > MaxLimit || il <= 0 {
+		return 0, errors.New("invalid limit")
+	}
+	iLimit := int64(il)
+
+	return iLimit, nil
+}
 
 // NewLinks creates the pagination links
 func NewLinks(r *http.Request, limit, offset, max int64) *Links {
@@ -51,11 +97,4 @@ func NewLinks(r *http.Request, limit, offset, max int64) *Links {
 	}
 
 	return links
-}
-
-// Links are the pagination links to a response
-type Links struct {
-	Self string `json:"self,omitempty"`
-	Next string `json:"next,omitempty"`
-	Prev string `json:"prev,omitempty"`
 }

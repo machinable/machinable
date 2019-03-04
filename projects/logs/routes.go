@@ -14,7 +14,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	logs := engine.Group("/logs")
 	logs.Use(middleware.AppUserJwtAuthzMiddleware())
 	logs.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
-	logs.GET("/", handler.GetProjectLogs)
+	logs.GET("/", handler.ListProjectLogs)
 
 	return nil
 }
