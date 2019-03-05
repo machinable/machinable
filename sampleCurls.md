@@ -1,4 +1,4 @@
-*Local Test API Keys:*
+**Local Test API Keys:**
 
 ```
 export USER_RW=fa10ca02-f45d-4f4f-bd2f-406735e4fc9c
@@ -26,4 +26,11 @@ curl -H "Authorization: apikey ${ADMIN_R}" "http://one.machinable.test:5001/coll
 
 ```sh
 curl -d '{"firstName":"Nick", "lastName":"Sjostrom", "age":28}' -X POST http://one.machinable.test:5001/api/people | jq "."
+```
+
+**Local Test Project Users:**
+
+```sh
+$ BASIC=$(echo "$USERNAME:$PASSWORD" | base64)
+$ curl -X POST -H "Authorization: basic $BASIC" https://one.machinable.io/sessions/
 ```

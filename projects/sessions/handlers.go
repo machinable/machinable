@@ -61,7 +61,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 	}
 	authzHeader := strings.SplitN(authorizationHeader[0], " ", 2)
 
-	if len(authzHeader) != 2 || authzHeader[0] != "Basic" {
+	if len(authzHeader) != 2 || strings.ToLower(authzHeader[0]) != "basic" {
 		c.JSON(http.StatusUnauthorized, gin.H{"message": "malformed authorization header"})
 		return
 	}
@@ -105,6 +105,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 			"active": true,
 			"read":   user.Read,
 			"write":  user.Write,
+			"role":   user.Role,
 			"type":   "project",
 		},
 	}

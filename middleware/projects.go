@@ -39,7 +39,7 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 		filters := map[string]interface{}{}
 		// if the projectAuthn key exists, this project does not require authn or authz
 		// if the requester is doing a POST, just continue
-		if projectAuthn || verb == "POST" {
+		if !projectAuthn || verb == "POST" {
 			c.Set("filters", filters)
 			c.Next()
 			return
@@ -207,6 +207,10 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				}
 			} else if authType == APIKEY {
 				// authenticate api key
+				if len(vals) < 2 {
+					respondWithError(http.StatusNotFound, "invalid key", c)
+					return
+				}
 				apiKey := vals[1]
 				hashedKey := auth.SHA1(apiKey)
 
