@@ -1,9 +1,11 @@
 package logs
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/anothrnick/machinable/dsi"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/anothrnick/machinable/query"
@@ -41,9 +43,9 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 	}
 
 	// sort by created, descending
-	sort := map[string]int{
-		"created": -1,
-	}
+	// sort := map[string]int{
+	// 	"created": -1,
+	// }
 
 	// filter anything within x hours
 	old := time.Now().Add(-time.Hour * time.Duration(24))
@@ -51,6 +53,39 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 		"created": models.Value{
 			models.GTE: old.Unix(),
 		},
+	}
+	sort := make(map[string]int)
+	for k, v := range values {
+		if k == dsi.LimitKey || k == dsi.OffsetKey {
+			continue
+		}
+
+		if k == dsi.SortKey {
+			sortField := v[0]
+			firstChar := string(sortField[0])
+			order := 1
+			if firstChar == "-" {
+				order = -1
+				sortField = sortField[1:]
+			}
+			sort[sortField] = order
+			continue
+		}
+
+		// validate field exists
+		if models.IsValidLogField(k) {
+			value, err := models.FieldAsTypedInterface(k, v[0])
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("invalid value for field '%s'", k)})
+				return
+			}
+			filter.AddFilter(k, models.Value{
+				models.EQ: value,
+			})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("'%s' is not a valid field", k)})
+			return
+		}
 	}
 
 	// TODO: should have total count and filtered count..

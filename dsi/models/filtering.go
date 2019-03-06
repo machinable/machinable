@@ -20,5 +20,10 @@ type Op string
 // Filters is the map of query filters
 type Filters map[string]Value
 
+// AddFilter adds a filter
+func (f *Filters) AddFilter(field string, value Value) {
+	(*f)[field] = value
+}
+
 // Value is a map of `Op` to a value interface
 type Value map[Op]interface{}

@@ -7,13 +7,33 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo/findopt"
 )
 
+type MongoLog struct {
+	Event         string `bson:"event"`
+	StatusCode    int    `bson:"status_code"`
+	Created       int64  `bson:"created"`
+	Initiator     string `bson:"initiator"`
+	InitiatorType string `bson:"initiator_type"`
+	InitiatorID   string `bson:"initiator_id"`
+	TargetID      string `bson:"target_id"`
+}
+
 // AddProjectLog saves a new log for a project
 func (d *Datastore) AddProjectLog(project string, log *models.Log) error {
+	mongoLog := &MongoLog{
+		Event:         log.Event,
+		StatusCode:    log.StatusCode,
+		Created:       log.Created,
+		Initiator:     log.Initiator,
+		InitiatorType: log.InitiatorType,
+		InitiatorID:   log.InitiatorID,
+		TargetID:      log.TargetID,
+	}
+
 	// Get the logs collection
 	col := d.db.LogDocs(project)
 	_, err := col.InsertOne(
 		context.Background(),
-		log,
+		mongoLog,
 	)
 
 	return err
@@ -59,12 +79,20 @@ func (d *Datastore) ListProjectLogs(project string, limit, offset int64, filter 
 	}
 
 	for cursor.Next(context.Background()) {
-		var log models.Log
+		var log MongoLog
 		err := cursor.Decode(&log)
 		if err != nil {
 			return logs, err
 		}
-		logs = append(logs, &log)
+		logs = append(logs, &models.Log{
+			Event:         log.Event,
+			StatusCode:    log.StatusCode,
+			Created:       log.Created,
+			Initiator:     log.Initiator,
+			InitiatorType: log.InitiatorType,
+			InitiatorID:   log.InitiatorID,
+			TargetID:      log.TargetID,
+		})
 	}
 
 	return logs, nil

@@ -34,12 +34,12 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 	return func(c *gin.Context) {
 		// get project from context, inserted into context from subdomain
 		project := c.GetString("project")
-		_, projectAuthn := c.Get("projectAuthn")
+		projectAuthn := c.GetBool("projectAuthn")
 		verb := c.Request.Method
 		filters := map[string]interface{}{}
 		// if the projectAuthn key exists, this project does not require authn or authz
 		// if the requester is doing a POST, just continue
-		if !projectAuthn || verb == "POST" {
+		if projectAuthn == false || verb == "POST" {
 			c.Set("filters", filters)
 			c.Next()
 			return
