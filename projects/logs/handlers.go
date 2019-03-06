@@ -88,7 +88,7 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 		}
 	}
 
-	// TODO: should have total count and filtered count..
+	// get count for pagination
 	logCount, err := l.store.CountProjectLogs(projectSlug, filter)
 
 	pageMax := (logCount % iLimit) + logCount

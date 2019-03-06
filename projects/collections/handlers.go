@@ -234,9 +234,13 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 		filter[k] = v[0]
 	}
 
-	// Get the total count of documents for pagination. Use injected auth filters to get accurate count relevant to the requester
-	docCount, colErr := h.store.CountCollectionDocuments(projectSlug, collectionName, authFilters)
+	// Apply authorization filters
+	for k, v := range authFilters {
+		filter[k] = v
+	}
 
+	// Get the total count of documents for pagination. Use injected auth filters and query filters to get accurate count relevant to the requester
+	docCount, colErr := h.store.CountCollectionDocuments(projectSlug, collectionName, filter)
 	if colErr != nil {
 		c.JSON(colErr.Code(), gin.H{"error": colErr.Error()})
 		return
@@ -246,11 +250,6 @@ func (h *Collections) GetObjectsFromCollection(c *gin.Context) {
 	if (iLimit+iOffset) > pageMax && iOffset >= docCount && docCount != 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page"})
 		return
-	}
-
-	// Apply authorization filters
-	for k, v := range authFilters {
-		filter[k] = v
 	}
 
 	// Retrieve documents for the page

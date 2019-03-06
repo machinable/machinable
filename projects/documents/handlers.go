@@ -160,8 +160,13 @@ func (h *Documents) ListObjects(c *gin.Context) {
 		filter[k] = trueValue
 	}
 
-	// get accurate count based on auth filters
-	docCount, countErr := h.store.CountDefDocuments(projectSlug, resourcePathName, authFilters)
+	// Apply authorization filters
+	for k, v := range authFilters {
+		filter[k] = v
+	}
+
+	// get accurate count based on auth filters and query filters
+	docCount, countErr := h.store.CountDefDocuments(projectSlug, resourcePathName, filter)
 
 	if countErr != nil {
 		c.JSON(countErr.Code(), gin.H{"error": countErr.Error()})
@@ -172,11 +177,6 @@ func (h *Documents) ListObjects(c *gin.Context) {
 	if (iLimit+iOffset) > pageMax && iOffset >= docCount && docCount != 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid page"})
 		return
-	}
-
-	// Apply authorization filters
-	for k, v := range authFilters {
-		filter[k] = v
 	}
 
 	documents, dsiErr := h.store.ListDefDocuments(projectSlug, resourcePathName, iLimit, iOffset, filter, sort)
