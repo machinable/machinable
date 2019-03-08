@@ -185,3 +185,24 @@ func (d *Datastore) DeleteCollection(project, collectionID string) *errors.Datas
 
 	return dropErr
 }
+
+// DropProjectCollections deletes all project collections and their data
+func (d *Datastore) DropProjectCollections(project string) *errors.DatastoreError {
+	collections, err := d.GetCollections(project)
+	if err != nil {
+		return err
+	}
+
+	for _, collection := range collections {
+		err := d.DeleteCollection(project, collection.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// drop collection
+	collection := d.db.CollectionNames(project)
+
+	dropErr := collection.Drop(nil, nil)
+	return errors.New(errors.UnknownError, dropErr)
+}

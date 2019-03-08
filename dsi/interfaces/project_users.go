@@ -8,4 +8,5 @@ type ProjectUsersDatastore interface {
 	CreateUser(project string, user *models.ProjectUser) error
 	ListUsers(project string) ([]*models.ProjectUser, error)
 	DeleteUser(project, userID string) error
+	DropProjectUsers(project string) error
 }

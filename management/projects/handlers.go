@@ -8,7 +8,7 @@ import (
 )
 
 // New returns a pointer to a new `Projects`
-func New(db interfaces.ProjectsDatastore) *Projects {
+func New(db interfaces.Datastore) *Projects {
 	return &Projects{
 		store: db,
 	}
@@ -16,7 +16,7 @@ func New(db interfaces.ProjectsDatastore) *Projects {
 
 // Projects contains the datastore and any HTTP handlers needed for application projects
 type Projects struct {
-	store interfaces.ProjectsDatastore
+	store interfaces.Datastore
 }
 
 // UpdateProject updates the project settings, specifically the authn value
@@ -100,14 +100,52 @@ func (p *Projects) ListUserProjects(c *gin.Context) {
 
 // DeleteUserProject completely deletes an application user's project, including all related DB collections.
 func (p *Projects) DeleteUserProject(c *gin.Context) {
-	// TODO
-	// delete from projects
-	// delete project collections
-	// delete project resources
-	// delete project resource data
-	// delete project users
-	// delete project keys
-	// delete project logs
-	// delete project usage
+	projectSlug := c.Param("projectSlug")
+	// grab user id from request context
+	userID := c.MustGet("user_id").(string)
+
+	// be sure this user owns the project
+	_, err := p.store.GetProjectBySlugAndUserID(projectSlug, userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "project does not exist"})
+		return
+	}
+
+	logErr := p.store.DropProjectLogs(projectSlug)
+	if logErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project logs"})
+		return
+	}
+	keyErr := p.store.DropProjectKeys(projectSlug)
+	if keyErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project api keys"})
+		return
+	}
+	usersErr := p.store.DropProjectUsers(projectSlug)
+	if usersErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project users"})
+		return
+	}
+	sessionsErr := p.store.DropProjectSessions(projectSlug)
+	if sessionsErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project sessions"})
+		return
+	}
+	colErr := p.store.DropProjectCollections(projectSlug)
+	if colErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project collections"})
+		return
+	}
+	resourceErr := p.store.DropProjectResources(projectSlug)
+	if resourceErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project resources"})
+		return
+	}
+	projectErr := p.store.DeleteProject(projectSlug)
+	if projectErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project"})
+		return
+	}
+
 	c.JSON(http.StatusNoContent, gin.H{})
 }

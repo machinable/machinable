@@ -8,4 +8,5 @@ type ProjectSessionsDatastore interface {
 	GetSession(project, sessionID string) (*models.Session, error)
 	ListSessions(project string) ([]*models.Session, error)
 	DeleteSession(project, sessionID string) error
+	DropProjectSessions(project string) error
 }

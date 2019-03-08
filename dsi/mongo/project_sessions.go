@@ -70,3 +70,13 @@ func (d *Datastore) DeleteSession(project, sessionID string) error {
 
 	return err
 }
+
+// DropProjectSessions drops the collection of this project's user sessions
+func (d *Datastore) DropProjectSessions(project string) error {
+	// drop collection storage
+	collection := d.db.SessionDocs(project)
+
+	err := collection.Drop(nil, nil)
+
+	return err
+}

@@ -14,6 +14,7 @@ type ResourcesDatastore interface {
 	GetDefinition(project, definitionID string) (*models.ResourceDefinition, *errors.DatastoreError)
 	GetDefinitionByPathName(project, pathName string) (*models.ResourceDefinition, *errors.DatastoreError)
 	DeleteDefinition(project, definitionID string) *errors.DatastoreError
+	DropProjectResources(project string) *errors.DatastoreError
 
 	// Project definition documents
 	AddDefDocument(project, path string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError)

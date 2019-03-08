@@ -100,3 +100,12 @@ func (d *Datastore) DeleteUser(project, userID string) error {
 
 	return err
 }
+
+// DropProjectUsers drops the mongo collection of this project's users
+func (d *Datastore) DropProjectUsers(project string) error {
+	collection := d.db.UserDocs(project)
+
+	err := collection.Drop(nil, nil)
+
+	return err
+}

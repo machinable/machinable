@@ -7,7 +7,8 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo/findopt"
 )
 
-type MongoLog struct {
+// MLog wraps the bson serialization for mongo
+type MLog struct {
 	Event         string `bson:"event"`
 	StatusCode    int    `bson:"status_code"`
 	Created       int64  `bson:"created"`
@@ -19,7 +20,7 @@ type MongoLog struct {
 
 // AddProjectLog saves a new log for a project
 func (d *Datastore) AddProjectLog(project string, log *models.Log) error {
-	mongoLog := &MongoLog{
+	mongoLog := &MLog{
 		Event:         log.Event,
 		StatusCode:    log.StatusCode,
 		Created:       log.Created,
@@ -79,7 +80,7 @@ func (d *Datastore) ListProjectLogs(project string, limit, offset int64, filter 
 	}
 
 	for cursor.Next(context.Background()) {
-		var log MongoLog
+		var log MLog
 		err := cursor.Decode(&log)
 		if err != nil {
 			return logs, err
@@ -96,4 +97,14 @@ func (d *Datastore) ListProjectLogs(project string, limit, offset int64, filter 
 	}
 
 	return logs, nil
+}
+
+// DropProjectLogs drops the collection for this project's logs
+func (d *Datastore) DropProjectLogs(project string) error {
+	// drop log storage
+	collection := d.db.LogDocs(project)
+
+	err := collection.Drop(nil, nil)
+
+	return err
 }

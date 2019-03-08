@@ -2,7 +2,6 @@ package mongo
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/anothrnick/machinable/dsi/models"
@@ -154,5 +153,16 @@ func (d *Datastore) ListUserProjects(userID string) ([]*models.Project, error) {
 
 // DeleteProject permanently removes a project based on project slug
 func (d *Datastore) DeleteProject(slug string) error {
-	return errors.New("not implemented")
+	// connect to project collection
+	collection := d.db.Projects()
+
+	// delete the collection
+	_, err := collection.DeleteOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.String("slug", slug),
+		),
+	)
+
+	return err
 }

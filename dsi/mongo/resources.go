@@ -190,6 +190,28 @@ func (d *Datastore) DeleteDefinition(project, definitionID string) *errors.Datas
 	return nil
 }
 
+// DropProjectResources drops all resource data as well as the definition
+func (d *Datastore) DropProjectResources(project string) *errors.DatastoreError {
+	defs, err := d.ListDefinitions(project)
+	if err != nil {
+		return err
+	}
+
+	for _, def := range defs {
+		err := d.DeleteDefinition(project, def.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// drop definition storage
+	collection := d.db.ResourceDefinitions(project)
+
+	dropErr := collection.Drop(nil, nil)
+
+	return errors.New(errors.UnknownError, dropErr)
+}
+
 // definitionExists returns true if a definition already exists with path_name or name
 func (d *Datastore) definitionExists(definition *models.ResourceDefinition, collection *mongo.Collection) bool {
 	// Find the resource definition for this object

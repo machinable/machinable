@@ -98,3 +98,12 @@ func (d *Datastore) DeleteAPIKey(project, keyID string) error {
 
 	return err
 }
+
+// DropProjectKeys drops the key collection for this project
+func (d *Datastore) DropProjectKeys(project string) error {
+	collection := d.db.KeyDocs(project)
+
+	err := collection.Drop(nil, nil)
+
+	return err
+}
