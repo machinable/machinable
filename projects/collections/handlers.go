@@ -126,7 +126,7 @@ func (h *Collections) PutObjectInCollection(c *gin.Context) {
 	// updated the document
 	updateErr := h.store.UpdateCollectionDocument(projectSlug, collectionName, objectIDStr, bdoc, meta, authFilters)
 
-	if err != nil {
+	if updateErr != nil {
 		c.JSON(updateErr.Code(), gin.H{"error": err.Error()})
 		return
 	}

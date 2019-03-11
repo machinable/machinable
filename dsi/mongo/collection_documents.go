@@ -51,8 +51,8 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 	}
 
 	// get object, copy metadata
-	_, err = d.GetCollectionDocument(project, collectionName, documentID, filter)
-	if err != nil {
+	_, getErr := d.GetCollectionDocument(project, collectionName, documentID, filter)
+	if getErr != nil {
 		return errors.New(errors.NotFound, fmt.Errorf("object does not exist '%s'", documentID))
 	}
 
@@ -72,7 +72,7 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 
 	// Get a connection and update the document
 	collection := d.db.CollectionDocs(project, collectionName)
-	_, err = collection.UpdateOne(
+	_, updateErr := collection.UpdateOne(
 		context.Background(),
 		bson.NewDocument(
 			bson.EC.ObjectID("_id", objectID),
@@ -84,7 +84,7 @@ func (d *Datastore) UpdateCollectionDocument(project, collectionName, documentID
 		),
 	)
 
-	return errors.New(errors.UnknownError, err)
+	return errors.New(errors.UnknownError, updateErr)
 }
 
 // GetCollectionDocuments retrieves the entire list of documents for a collection
