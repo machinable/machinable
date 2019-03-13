@@ -16,10 +16,11 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	keys.Use(middleware.AppUserJwtAuthzMiddleware())
 	keys.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
-	keys.GET("/generate", handler.GenerateKey) // get list of api keys for this project
+	keys.GET("/generate", handler.GenerateKey) // generate a valid uuid for a potential api key
 	keys.GET("/", handler.ListKeys)            // get list of api keys for this project
 	keys.POST("/", handler.AddKey)             // create a new api key for this project
-	keys.DELETE("/:keyID", handler.DeleteKey)  // get list of api keys for this project
+	keys.DELETE("/:keyID", handler.DeleteKey)  // delete an api key
+	keys.PUT("/:keyID", handler.UpdateKey)     // update an api key
 
 	return nil
 }
