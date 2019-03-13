@@ -34,6 +34,9 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
+	mgmtStats := mgmt.Group("/collectionUsage")
+	mgmtStats.GET("/stats", handler.GetStats)
+
 	mgmtCollections := mgmt.Group("/collections")
 	mgmtCollections.GET("/", handler.GetCollections)
 	mgmtCollections.POST("/", handler.AddCollection)

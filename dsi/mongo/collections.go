@@ -11,6 +11,32 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
+// GetCollectionStats returns stats for a collection
+func (d *Datastore) GetCollectionStats(project, name string) (*models.Stats, *errors.DatastoreError) {
+	collection := d.db.CollectionDocs(project, name)
+
+	reader, err := d.db.GetMongoDatabase().RunCommand(nil, bson.NewDocument(bson.EC.String("collStats", collection.Name())))
+
+	if err != nil {
+		return nil, errors.New(errors.UnknownError, err)
+	}
+
+	stats := &struct {
+		Size  int64 `bson:"size"`
+		Count int64 `bson:"count"`
+	}{}
+
+	err = bson.Unmarshal(reader, stats)
+	if err != nil {
+		return nil, errors.New(errors.UnknownError, err)
+	}
+
+	return &models.Stats{
+		Size:  stats.Size,
+		Count: stats.Count,
+	}, nil
+}
+
 // AddCollection creates a new project collection
 func (d *Datastore) AddCollection(project string, newCol *models.Collection) *errors.DatastoreError {
 	// Create document

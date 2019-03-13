@@ -18,6 +18,7 @@ const (
 	tokenCollection     = "project.%s.keys"
 	sessionCollection   = "project.%s.sessions"
 	logCollection       = "project.%s.logs"
+	usageCollection     = "project.%s.usage"
 
 	usersCollection    = "users"
 	sessionsCollection = "sessions"
@@ -46,6 +47,8 @@ func createConnection() *mongo.Database {
 // Connect returns a *mongo.Database connection
 func Connect() *Database {
 	mongoDatabase := createConnection()
+	//db.runCommand({collStats:"project.one.collections.dogs", scale: 1024})
+	//r, _ := mongoDatabase.RunCommand(nil, bson.NewDocument(bson.EC.String("collStats", "project.one.collections.dogs")))
 
 	return &Database{db: mongoDatabase}
 }
@@ -53,6 +56,11 @@ func Connect() *Database {
 // Database wraps the mongo database connection and provides helper functions for collections
 type Database struct {
 	db *mongo.Database
+}
+
+// GetMongoDatabase returns the mongo database connection
+func (d *Database) GetMongoDatabase() *mongo.Database {
+	return d.db
 }
 
 // Projects returns the app projects collection
@@ -68,6 +76,11 @@ func (d *Database) Users() *mongo.Collection {
 // Sessions returns the app sessions collection
 func (d *Database) Sessions() *mongo.Collection {
 	return d.db.Collection(sessionsCollection)
+}
+
+// UsageDocs the collection of project usage
+func (d *Database) UsageDocs(projectSlug string) *mongo.Collection {
+	return d.db.Collection(fmt.Sprintf(usageCollection, projectSlug))
 }
 
 // LogDocs the collection of project logs

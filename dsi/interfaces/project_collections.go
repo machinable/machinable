@@ -10,6 +10,7 @@ type CollectionsDatastore interface {
 	// Project collections
 	AddCollection(project string, collection *models.Collection) *errors.DatastoreError
 	GetCollection(project, name string) (*models.Collection, *errors.DatastoreError)
+	GetCollectionStats(project, name string) (*models.Stats, *errors.DatastoreError)
 	UpdateCollection(project, id string, read, write bool) *errors.DatastoreError
 	GetCollections(project string) ([]*models.Collection, *errors.DatastoreError)
 	DeleteCollection(project, id string) *errors.DatastoreError
