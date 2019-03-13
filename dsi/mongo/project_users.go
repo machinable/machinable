@@ -8,6 +8,30 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
+// GetUserByID retrieves a project user by user _id
+func (d *Datastore) GetUserByID(project, userID string) (*models.ProjectUser, error) {
+	// Create object ID from resource ID string
+	userObjectID, err := objectid.FromHex(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// get the users collection
+	collection := d.db.UserDocs(project)
+
+	// look up the user
+	user := &models.ProjectUser{}
+	err = collection.FindOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", userObjectID),
+		),
+		nil,
+	).Decode(user)
+
+	return user, err
+}
+
 // GetUserByUsername retrieves a project user by the user's username
 func (d *Datastore) GetUserByUsername(project, userName string) (*models.ProjectUser, error) {
 	// get the users collection

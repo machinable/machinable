@@ -169,5 +169,65 @@ func (s *Sessions) RevokeSession(c *gin.Context) {
 
 // RefreshSession uses the refresh token to generate a new access token
 func (s *Sessions) RefreshSession(c *gin.Context) {
+	projectSlug := c.MustGet("project").(string)
+	// get session and user id from context, should have been injected by ValidateRefreshToken
+	sessionID, ok := c.MustGet("session_id").(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no session"})
+		return
+	}
 
+	userID, ok := c.MustGet("user_id").(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no user"})
+		return
+	}
+
+	// load session to update last accessed
+
+	// verify session exists
+	_, err := s.store.GetSession(projectSlug, sessionID)
+
+	if err != nil {
+		// no documents in result, user does not exist
+		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
+		return
+	}
+
+	// verify user exists
+	user, err := s.store.GetUserByID(projectSlug, userID)
+	if err != nil {
+		// no documents in result, user does not exist
+		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
+		return
+	}
+
+	// create access token
+	claims := jwt.MapClaims{
+		"projects": map[string]interface{}{
+			projectSlug: true,
+		},
+		"user": map[string]interface{}{
+			"id":     user.ID.Hex(),
+			"name":   user.Username,
+			"active": true,
+			"read":   user.Read,
+			"write":  user.Write,
+			"role":   user.Role,
+			"type":   "project",
+		},
+	}
+
+	accessToken, err := auth.CreateAccessToken(claims)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create the access token"})
+		return
+	}
+
+	// update session `last_accessed` time
+	err = s.store.UpdateProjectSessionLastAccessed(projectSlug, sessionID, time.Now())
+
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": accessToken,
+	})
 }

@@ -2,11 +2,38 @@ package mongo
 
 import (
 	"context"
+	"time"
 
 	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/mongodb/mongo-go-driver/bson"
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
+
+// UpdateProjectSessionLastAccessed update session last accessed
+func (d *Datastore) UpdateProjectSessionLastAccessed(project, sessionID string, lastAccessed time.Time) error {
+	col := d.db.SessionDocs(project)
+
+	sessionObjectID, err := objectid.FromHex(sessionID)
+
+	if err != nil {
+		return err
+	}
+
+	// update session `last_accessed` time
+	_, err = col.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", sessionObjectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				bson.EC.Time("last_accessed", lastAccessed),
+			),
+		),
+	)
+
+	return err
+}
 
 // CreateSession creates a new session for a project user
 func (d *Datastore) CreateSession(project string, session *models.Session) error {

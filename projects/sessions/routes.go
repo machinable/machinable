@@ -14,8 +14,9 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	// sessions have a mixed authz policy so there is a route here and at /mgmt/sessions
 	sessions := engine.Group("/sessions")
 	sessions.Use(middleware.ProjectLoggingMiddleware(datastore))
-	sessions.POST("/", handler.CreateSession)             // create a new session
-	sessions.DELETE("/:sessionID", handler.RevokeSession) // delete this user's session TODO: AUTH
+	sessions.POST("/", handler.CreateSession)                                                               // create a new session
+	sessions.DELETE("/:sessionID", middleware.ProjectUserAuthzMiddleware(datastore), handler.RevokeSession) // delete this user's session TODO: AUTH
+	sessions.POST("/refresh", middleware.ValidateRefreshToken(), handler.RefreshSession)
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
