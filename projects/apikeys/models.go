@@ -36,6 +36,11 @@ func (u *NewProjectKey) Validate() error {
 		return errors.New("invalid key")
 	}
 
+	return u.ValidateRoleAccess()
+}
+
+// ValidateRoleAccess validates the role and access fields
+func (u *NewProjectKey) ValidateRoleAccess() error {
 	// Set default role
 	if u.Role == "" {
 		u.Role = auth.RoleUser

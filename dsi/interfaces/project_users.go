@@ -6,6 +6,7 @@ import "github.com/anothrnick/machinable/dsi/models"
 type ProjectUsersDatastore interface {
 	GetUserByUsername(project, userName string) (*models.ProjectUser, error)
 	CreateUser(project string, user *models.ProjectUser) error
+	UpdateUser(project, userID string, user *models.ProjectUser) error
 	ListUsers(project string) ([]*models.ProjectUser, error)
 	DeleteUser(project, userID string) error
 	DropProjectUsers(project string) error

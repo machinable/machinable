@@ -23,6 +23,38 @@ type Users struct {
 	store interfaces.ProjectUsersDatastore
 }
 
+// UpdateUser updates the role and access of a project user
+func (u *Users) UpdateUser(c *gin.Context) {
+	var newUser NewProjectUser
+	userID := c.Param("userID")
+	projectSlug := c.MustGet("project").(string)
+
+	c.BindJSON(&newUser)
+
+	// validate user access and role
+	err := newUser.ValidateAccessRole()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// update project user object
+	user := &models.ProjectUser{
+		Read:  newUser.Read,
+		Write: newUser.Write,
+		Role:  newUser.Role,
+	}
+
+	u.store.UpdateUser(projectSlug, userID, user)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 // AddUser creates a new user for this project
 func (u *Users) AddUser(c *gin.Context) {
 	var newUser NewProjectUser

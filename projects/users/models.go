@@ -31,6 +31,11 @@ func (u *NewProjectUser) Validate() error {
 		return errors.New("invalid username or password")
 	}
 
+	return u.ValidateAccessRole()
+}
+
+// ValidateAccessRole validates the user's access and role
+func (u *NewProjectUser) ValidateAccessRole() error {
 	// Set default role
 	if u.Role == "" {
 		u.Role = auth.RoleUser

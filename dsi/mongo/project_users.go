@@ -29,6 +29,35 @@ func (d *Datastore) GetUserByUsername(project, userName string) (*models.Project
 	return user, err
 }
 
+// UpdateUser updates the project user's access and role
+func (d *Datastore) UpdateUser(project, userID string, user *models.ProjectUser) error {
+	// Create object ID from resource ID string
+	userObjectID, err := objectid.FromHex(userID)
+	if err != nil {
+		return err
+	}
+
+	// get the users collection
+	col := d.db.UserDocs(project)
+
+	// only updated role and access
+	_, err = col.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", userObjectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				bson.EC.Boolean("read", user.Read),
+				bson.EC.Boolean("write", user.Write),
+				bson.EC.String("role", user.Role),
+			),
+		),
+	)
+
+	return err
+}
+
 // CreateUser creates a new project user for the project
 func (d *Datastore) CreateUser(project string, user *models.ProjectUser) error {
 	// get the users collection

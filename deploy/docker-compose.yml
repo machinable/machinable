@@ -16,5 +16,6 @@ services:
       - '127.0.0.1:5002:5001'
     environment:
       - MONGO_HOST=mongo
+      - SCHEME=https
 volumes:
   mongo:

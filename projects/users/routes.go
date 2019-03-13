@@ -20,6 +20,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	users.POST("/", handler.AddUser)             // create a new user of this project
 	users.GET("/:userID", handler.GetUser)       // get a single user of this project
 	users.DELETE("/:userID", handler.DeleteUser) // delete a user of this project
+	users.PUT("/:userID", handler.UpdateUser)    // delete a user of this project
 
 	return nil
 }

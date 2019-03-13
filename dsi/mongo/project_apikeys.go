@@ -77,9 +77,38 @@ func (d *Datastore) ListAPIKeys(project string) ([]*models.ProjectAPIKey, error)
 	return keys, err
 }
 
+// UpdateAPIKey updates the role and access of an API key
+func (d *Datastore) UpdateAPIKey(project, keyID string, read, write bool, role string) error {
+	// Create object ID from key ID string
+	objectID, err := objectid.FromHex(keyID)
+	if err != nil {
+		return err
+	}
+
+	// get the keys collection
+	col := d.db.KeyDocs(project)
+
+	// only updated `authn` value
+	_, err = col.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", objectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				bson.EC.Boolean("read", read),
+				bson.EC.Boolean("write", write),
+				bson.EC.String("role", role),
+			),
+		),
+	)
+
+	return err
+}
+
 // DeleteAPIKey removes a project api key permanently
 func (d *Datastore) DeleteAPIKey(project, keyID string) error {
-	// Create object ID from resource ID string
+	// Create object ID from key ID string
 	objectID, err := objectid.FromHex(keyID)
 	if err != nil {
 		return err

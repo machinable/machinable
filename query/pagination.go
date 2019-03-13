@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 )
 
@@ -13,8 +14,11 @@ const (
 	Limit = "10"
 	// MaxLimit is the maximum allowed page size
 	MaxLimit = 100
+)
+
+var (
 	// Scheme is used to create the links... this should be in a config file
-	Scheme = "http"
+	Scheme = os.Getenv("SCHEME")
 )
 
 // Links are the pagination links to a response
@@ -63,6 +67,10 @@ func GetLimit(values *url.Values) (int64, error) {
 
 // NewLinks creates the pagination links
 func NewLinks(r *http.Request, limit, offset, max int64) *Links {
+	if Scheme == "" {
+		Scheme = "http"
+	}
+
 	fqdn := Scheme + "://" + r.Host + r.RequestURI
 	req, _ := http.NewRequest("GET", fqdn, nil)
 

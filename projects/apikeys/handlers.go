@@ -21,6 +21,36 @@ type APIKeys struct {
 	store interfaces.ProjectAPIKeysDatastore
 }
 
+// UpdateKey updates api key role and access
+func (k *APIKeys) UpdateKey(c *gin.Context) {
+	var newKey NewProjectKey
+	keyID := c.Param("keyID")
+	projectSlug := c.MustGet("project").(string)
+
+	c.BindJSON(&newKey)
+
+	err := newKey.ValidateRoleAccess()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = k.store.UpdateAPIKey(
+		projectSlug,
+		keyID,
+		newKey.Read,
+		newKey.Write,
+		newKey.Role,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}
+
 // AddKey creates a new api key for this project
 func (k *APIKeys) AddKey(c *gin.Context) {
 	var newKey NewProjectKey

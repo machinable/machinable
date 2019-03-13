@@ -6,6 +6,7 @@ import "github.com/anothrnick/machinable/dsi/models"
 type ProjectAPIKeysDatastore interface {
 	GetAPIKeyByKey(project, hash string) (*models.ProjectAPIKey, error)
 	CreateAPIKey(project, hash, description string, read, write bool, role string) (*models.ProjectAPIKey, error)
+	UpdateAPIKey(project, keyID string, read, write bool, role string) error
 	ListAPIKeys(project string) ([]*models.ProjectAPIKey, error)
 	DeleteAPIKey(project, keyID string) error
 	DropProjectKeys(project string) error
