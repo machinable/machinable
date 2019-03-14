@@ -11,7 +11,7 @@ import (
 )
 
 // New returns a pointer to a new `Collections`
-func New(db interfaces.CollectionsDatastore) *Collections {
+func New(db interfaces.Datastore) *Collections {
 	return &Collections{
 		store: db,
 	}
@@ -19,7 +19,7 @@ func New(db interfaces.CollectionsDatastore) *Collections {
 
 // Collections contains the datastore and any HTTP handlers to collections
 type Collections struct {
-	store interfaces.CollectionsDatastore
+	store interfaces.Datastore
 }
 
 // AddCollection creates a new collection

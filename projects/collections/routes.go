@@ -30,14 +30,18 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 
 	// admin routes with different authz policy
 	mgmt := engine.Group("/mgmt")
-	mgmt.Use(middleware.ProjectLoggingMiddleware(datastore))
-	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
 	mgmtStats := mgmt.Group("/collectionUsage")
+	mgmtStats.Use(middleware.AppUserJwtAuthzMiddleware())
+	mgmtStats.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 	mgmtStats.GET("/stats", handler.GetStats)
+	mgmtStats.GET("/responseTimes", handler.ListResponseTimes)
+	mgmtStats.GET("/statusCodes", handler.ListStatusCodes)
 
 	mgmtCollections := mgmt.Group("/collections")
+	mgmtCollections.Use(middleware.ProjectLoggingMiddleware(datastore))
+	mgmtCollections.Use(middleware.AppUserJwtAuthzMiddleware())
+	mgmtCollections.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 	mgmtCollections.GET("/", handler.GetCollections)
 	mgmtCollections.POST("/", handler.AddCollection)
 	mgmtCollections.POST("/:collectionName", handler.AddObjectToCollection)

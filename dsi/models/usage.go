@@ -8,8 +8,8 @@ type Stats struct {
 
 // ResponseTiming is a single request
 type ResponseTiming struct {
-	Timestamp    int64 `json:"timestamp"`     // timestamp in unix time, i.e. number of seconds elapsed since January 1, 1970 UTC
-	ResponseTime int64 `json:"response_time"` // milliseconds
+	Timestamp    int64   `json:"timestamp"`     // timestamp in unix time, i.e. number of seconds elapsed since January 1, 1970 UTC
+	ResponseTime float64 `json:"response_time"` // milliseconds
 }
 
 // ResponseTimes records the response times of requests to collections and api resources over a 5 minute interval
