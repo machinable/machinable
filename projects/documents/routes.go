@@ -13,6 +13,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 
 	// project/user routes
 	api := engine.Group("/api")
+	api.Use(middleware.ResourceStatsMiddleware(datastore))
 	api.Use(middleware.ProjectLoggingMiddleware(datastore))
 	api.Use(middleware.ProjectUserAuthzMiddleware(datastore))
 	api.Use(middleware.ProjectAuthzBuildFiltersMiddleware(datastore))
@@ -25,16 +26,24 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
+
+	mgmtStats := mgmt.Group("/resourceUsage")
+	mgmtStats.Use(middleware.AppUserJwtAuthzMiddleware())
+	mgmtStats.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+	mgmtStats.GET("/stats", handler.GetStats)
+	mgmtStats.GET("/responseTimes", handler.ListResponseTimes)
+	mgmtStats.GET("/statusCodes", handler.ListStatusCodes)
+
 	mgmt.Use(middleware.ProjectLoggingMiddleware(datastore))
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
 	mgmtAPI := mgmt.Group("/api")
-	mgmtAPI.POST("/:resourcePathName", handler.AddObject)
+	// mgmtAPI.POST("/:resourcePathName", handler.AddObject)
 	mgmtAPI.GET("/:resourcePathName", handler.ListObjects)
-	mgmtAPI.GET("/:resourcePathName/:resourceID", handler.GetObject)
-	mgmtAPI.PUT("/:resourcePathName/:resourceID", handler.PutObject)
-	mgmtAPI.DELETE("/:resourcePathName/:resourceID", handler.DeleteObject)
+	// mgmtAPI.GET("/:resourcePathName/:resourceID", handler.GetObject)
+	// mgmtAPI.PUT("/:resourcePathName/:resourceID", handler.PutObject)
+	// mgmtAPI.DELETE("/:resourcePathName/:resourceID", handler.DeleteObject)
 
 	return nil
 }

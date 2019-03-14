@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -285,16 +284,8 @@ func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		lw := &logWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
 		c.Writer = lw
 
-		// response time
-		requestStart := time.Now()
-		// get aligned time by 5 minute interval
-		alignedStart := AlignTime(requestStart, 5)
-
 		// continue handler chain
 		c.Next()
-
-		// response time in ms
-		responseTime := time.Now().Sub(requestStart).Seconds() * 1000
 
 		// get status code
 		statusCode := c.Writer.Status()
@@ -310,41 +301,6 @@ func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			authString = "unknown"
 		}
 
-		// save response time
-		err := store.SaveResponseTimes(
-			projectSlug,
-			alignedStart.Unix(),
-			&models.ResponseTimes{
-				Timestamp: alignedStart.Unix(),
-				ResponseTimes: []models.ResponseTiming{
-					{
-						Timestamp:    requestStart.Unix(),
-						ResponseTime: responseTime,
-					},
-				},
-			},
-		)
-		if err != nil {
-			log.Println("an error occured trying to save the response time")
-			log.Println(err.Error())
-		}
-
-		// save status code
-		err = store.SaveStatusCode(
-			projectSlug,
-			alignedStart.Unix(),
-			&models.StatusCode{
-				Timestamp: alignedStart.Unix(),
-				Codes: map[string]int64{
-					strconv.Itoa(statusCode): 1,
-				},
-			},
-		)
-		if err != nil {
-			log.Println("an error occured trying to save the status code")
-			log.Println(err.Error())
-		}
-
 		// save project log
 		plog := &models.Log{
 			Event:         fmt.Sprintf("%s %s", verb, path),
@@ -356,19 +312,11 @@ func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		}
 
 		// Get the logs collection
-		err = store.AddProjectLog(projectSlug, plog)
+		err := store.AddProjectLog(projectSlug, plog)
 
 		if err != nil {
 			log.Println("an error occured trying to save the log")
 			log.Println(err.Error())
 		}
 	}
-}
-
-// AlignTime returns the aligned `time.Time` based on the `unaligned` parameter and the `interval` to align with (in minutes)
-func AlignTime(unaligned time.Time, interval int) time.Time {
-	timeToAlign := unaligned.Truncate(time.Minute)
-	timeOffset := (timeToAlign.Minute() % interval)
-	timeAligned := timeToAlign.Add(-time.Duration(timeOffset) * time.Minute)
-	return timeAligned
 }

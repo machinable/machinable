@@ -13,6 +13,36 @@ import (
 	"github.com/mongodb/mongo-go-driver/mongo"
 )
 
+// GetResourceStats returns stats for a resource collectiond
+func (d *Datastore) GetResourceStats(project, name string) (*models.Stats, *errors.DatastoreError) {
+	collection := d.db.ResourceDocs(project, name)
+
+	reader, err := d.db.GetMongoDatabase().RunCommand(nil, bson.NewDocument(bson.EC.String("collStats", collection.Name())))
+
+	if err != nil {
+		// log error, collection does not exist yet
+		return &models.Stats{
+			Size:  0,
+			Count: 0,
+		}, nil
+	}
+
+	stats := &struct {
+		Size  int64 `bson:"size"`
+		Count int64 `bson:"count"`
+	}{}
+
+	err = bson.Unmarshal(reader, stats)
+	if err != nil {
+		return nil, errors.New(errors.UnknownError, err)
+	}
+
+	return &models.Stats{
+		Size:  stats.Size,
+		Count: stats.Count,
+	}, nil
+}
+
 // AddDefinition creates a new definition
 func (d *Datastore) AddDefinition(project string, def *models.ResourceDefinition) (string, *errors.DatastoreError) {
 	resDefCollection := d.db.ResourceDefinitions(project)

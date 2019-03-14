@@ -1,4 +1,4 @@
-package collections
+package documents
 
 import (
 	"net/http"
@@ -9,7 +9,7 @@ import (
 )
 
 // ListResponseTimes returns HTTP response times for collections for the last 1 hour
-func (h *Collections) ListResponseTimes(c *gin.Context) {
+func (d *Documents) ListResponseTimes(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
 
 	old := time.Now().Add(-time.Hour * time.Duration(1))
@@ -19,7 +19,7 @@ func (h *Collections) ListResponseTimes(c *gin.Context) {
 		},
 	}
 
-	responseTimes, err := h.store.ListCollectionResponseTimes(projectSlug, filter)
+	responseTimes, err := d.store.ListResourceResponseTimes(projectSlug, filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -29,7 +29,7 @@ func (h *Collections) ListResponseTimes(c *gin.Context) {
 }
 
 // ListStatusCodes returns HTTP response status codes for collections for the last 1 hour
-func (h *Collections) ListStatusCodes(c *gin.Context) {
+func (d *Documents) ListStatusCodes(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
 
 	old := time.Now().Add(-time.Hour * time.Duration(1))
@@ -39,7 +39,7 @@ func (h *Collections) ListStatusCodes(c *gin.Context) {
 		},
 	}
 
-	statusCodes, err := h.store.ListCollectionStatusCode(projectSlug, filter)
+	statusCodes, err := d.store.ListResourceStatusCode(projectSlug, filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -49,11 +49,11 @@ func (h *Collections) ListStatusCodes(c *gin.Context) {
 }
 
 // GetStats returns the size of the collections
-func (h *Collections) GetStats(c *gin.Context) {
+func (d *Documents) GetStats(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
 
-	// retrieve the list of collections
-	collections, err := h.store.GetCollections(projectSlug)
+	// retrieve the list of resources
+	collections, err := d.store.ListDefinitions(projectSlug)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -61,18 +61,18 @@ func (h *Collections) GetStats(c *gin.Context) {
 	}
 
 	totalStats := &models.Stats{}
-	collectionStats := map[string]*models.Stats{}
+	resourceStats := map[string]*models.Stats{}
 	for _, col := range collections {
-		stats, err := h.store.GetCollectionStats(projectSlug, col.Name)
+		stats, err := d.store.GetResourceStats(projectSlug, col.PathName)
 		if err != nil {
 			c.JSON(err.Code(), gin.H{"error": err.Error()})
 			return
 		}
 
-		collectionStats[col.Name] = stats
+		resourceStats[col.PathName] = stats
 		totalStats.Size += stats.Size
 		totalStats.Count += stats.Count
 	}
 
-	c.JSON(http.StatusOK, gin.H{"total": totalStats, "collections": collectionStats})
+	c.JSON(http.StatusOK, gin.H{"total": totalStats, "resources": resourceStats})
 }

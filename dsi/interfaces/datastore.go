@@ -17,8 +17,10 @@ type Datastore interface {
 	ProjectLogsDatastore
 	// Project sessions
 	ProjectSessionsDatastore
-	// Project usage
+	// Project collection usage
 	ProjectCollectionUsageDatastore
+	// Project resource usage
+	ProjectResourceUsageDatastore
 	// Projects
 	ProjectsDatastore
 	// Users

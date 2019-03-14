@@ -15,11 +15,12 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	collections := engine.Group("/collections")
 
 	collections.Use(middleware.ProjectLoggingMiddleware(datastore))
+	collections.Use(middleware.CollectionStatsMiddleware(datastore))
 	collections.Use(middleware.ProjectUserAuthzMiddleware(datastore))
 	collections.Use(middleware.ProjectAuthzBuildFiltersMiddleware(datastore))
 
-	collections.GET("/", handler.GetCollections)
-	collections.POST("/", handler.AddCollection)
+	// collections.GET("/", handler.GetCollections)
+	// collections.POST("/", handler.AddCollection)
 	collections.POST("/:collectionName", handler.AddObjectToCollection)
 	collections.GET("/:collectionName", handler.GetObjectsFromCollection)
 	collections.GET("/:collectionName/:objectID", handler.GetObjectFromCollection)
@@ -44,12 +45,12 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmtCollections.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 	mgmtCollections.GET("/", handler.GetCollections)
 	mgmtCollections.POST("/", handler.AddCollection)
-	mgmtCollections.POST("/:collectionName", handler.AddObjectToCollection)
+	// mgmtCollections.POST("/:collectionName", handler.AddObjectToCollection)
 	mgmtCollections.GET("/:collectionName", handler.GetObjectsFromCollection)
 	mgmtCollections.PUT("/:collectionName", handler.UpdateCollection)    // this actually uses collection ID as the parameter, gin does not allow different wildcard names
 	mgmtCollections.DELETE("/:collectionName", handler.DeleteCollection) // this actually uses collection ID as the parameter, gin does not allow different wildcard names
-	mgmtCollections.GET("/:collectionName/:objectID", handler.GetObjectFromCollection)
-	mgmtCollections.DELETE("/:collectionName/:objectID", handler.DeleteObjectFromCollection)
+	// mgmtCollections.GET("/:collectionName/:objectID", handler.GetObjectFromCollection)
+	// mgmtCollections.DELETE("/:collectionName/:objectID", handler.DeleteObjectFromCollection)
 
 	return nil
 }
