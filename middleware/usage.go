@@ -3,7 +3,6 @@ package middleware
 import (
 	"bytes"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/anothrnick/machinable/dsi/interfaces"
@@ -13,66 +12,15 @@ import (
 
 // CollectionStatsMiddleware logs collection stats for reporting
 func CollectionStatsMiddleware(store interfaces.Datastore) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// inject custom writer
-		lw := &logWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
-		c.Writer = lw
-
-		// response time
-		requestStart := time.Now()
-		// get aligned time by 5 minute interval
-		alignedStart := AlignTime(requestStart, 5)
-
-		// continue handler chain
-		c.Next()
-
-		// response time in ms
-		responseTime := time.Now().Sub(requestStart).Seconds() * 1000
-
-		// get status code
-		statusCode := c.Writer.Status()
-
-		projectSlug := c.GetString("project")
-
-		// save response time
-		err := store.SaveCollectionResponseTimes(
-			projectSlug,
-			alignedStart.Unix(),
-			&models.ResponseTimes{
-				Timestamp: alignedStart.Unix(),
-				ResponseTimes: []models.ResponseTiming{
-					{
-						Timestamp:    requestStart.Unix(),
-						ResponseTime: responseTime,
-					},
-				},
-			},
-		)
-		if err != nil {
-			log.Println("an error occured trying to save the response time")
-			log.Println(err.Error())
-		}
-
-		// save status code
-		err = store.SaveCollectionStatusCode(
-			projectSlug,
-			alignedStart.Unix(),
-			&models.StatusCode{
-				Timestamp: alignedStart.Unix(),
-				Codes: map[string]int64{
-					strconv.Itoa(statusCode): 1,
-				},
-			},
-		)
-		if err != nil {
-			log.Println("an error occured trying to save the status code")
-			log.Println(err.Error())
-		}
-	}
+	return loggingMiddleware(store, models.EndpointCollection)
 }
 
-// ResourceStatsMiddleware logs resource stats for reporting
+// ResourceStatsMiddleware logs resource stats and logging for reporting
 func ResourceStatsMiddleware(store interfaces.Datastore) gin.HandlerFunc {
+	return loggingMiddleware(store, models.EndpointResource)
+}
+
+func loggingMiddleware(store interfaces.Datastore, endpointType string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// inject custom writer
 		lw := &logWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
@@ -92,40 +40,37 @@ func ResourceStatsMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		// get status code
 		statusCode := c.Writer.Status()
 
-		projectSlug := c.GetString("project")
+		verb := c.Request.Method
+		path := c.Request.URL.Path
 
-		// save response time
-		err := store.SaveResourceResponseTimes(
-			projectSlug,
-			alignedStart.Unix(),
-			&models.ResponseTimes{
-				Timestamp: alignedStart.Unix(),
-				ResponseTimes: []models.ResponseTiming{
-					{
-						Timestamp:    requestStart.Unix(),
-						ResponseTime: responseTime,
-					},
-				},
-			},
-		)
-		if err != nil {
-			log.Println("an error occured trying to save the response time")
-			log.Println(err.Error())
+		projectSlug := c.GetString("project")
+		authType := c.GetString("authType")
+		authString := c.GetString("authString")
+		authID := c.GetString("authID")
+
+		if authString == "" {
+			authString = "unknown"
 		}
 
-		// save status code
-		err = store.SaveResourceStatusCode(
-			projectSlug,
-			alignedStart.Unix(),
-			&models.StatusCode{
-				Timestamp: alignedStart.Unix(),
-				Codes: map[string]int64{
-					strconv.Itoa(statusCode): 1,
-				},
-			},
-		)
+		// save project log
+		plog := &models.Log{
+			EndpointType:   endpointType,
+			Verb:           verb,
+			Path:           path,
+			StatusCode:     statusCode,
+			Created:        time.Now().Unix(),
+			AlignedCreated: alignedStart.Unix(),
+			ResponseTime:   int64(responseTime),
+			Initiator:      authString,
+			InitiatorType:  authType,
+			InitiatorID:    authID,
+		}
+
+		// save the log
+		err := store.AddProjectLog(projectSlug, plog)
+
 		if err != nil {
-			log.Println("an error occured trying to save the status code")
+			log.Println("an error occured trying to save the log")
 			log.Println(err.Error())
 		}
 	}

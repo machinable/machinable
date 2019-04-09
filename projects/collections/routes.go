@@ -35,6 +35,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmtStats := mgmt.Group("/collectionUsage")
 	mgmtStats.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmtStats.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+	mgmtStats.GET("/", handler.ListCollectionUsage)
 	mgmtStats.GET("/stats", handler.GetStats)
 	mgmtStats.GET("/responseTimes", handler.ListResponseTimes)
 	mgmtStats.GET("/statusCodes", handler.ListStatusCodes)
@@ -45,12 +46,9 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmtCollections.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 	mgmtCollections.GET("/", handler.GetCollections)
 	mgmtCollections.POST("/", handler.AddCollection)
-	// mgmtCollections.POST("/:collectionName", handler.AddObjectToCollection)
 	mgmtCollections.GET("/:collectionName", handler.GetObjectsFromCollection)
 	mgmtCollections.PUT("/:collectionName", handler.UpdateCollection)    // this actually uses collection ID as the parameter, gin does not allow different wildcard names
 	mgmtCollections.DELETE("/:collectionName", handler.DeleteCollection) // this actually uses collection ID as the parameter, gin does not allow different wildcard names
-	// mgmtCollections.GET("/:collectionName/:objectID", handler.GetObjectFromCollection)
-	// mgmtCollections.DELETE("/:collectionName/:objectID", handler.DeleteObjectFromCollection)
 
 	return nil
 }

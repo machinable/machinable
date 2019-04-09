@@ -42,11 +42,6 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 		return
 	}
 
-	// sort by created, descending
-	// sort := map[string]int{
-	// 	"created": -1,
-	// }
-
 	// filter anything within x hours
 	old := time.Now().Add(-time.Hour * time.Duration(24))
 	filter := &models.Filters{
@@ -60,6 +55,7 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 			continue
 		}
 
+		// check for the order of the sort
 		if k == dsi.SortKey {
 			sortField := v[0]
 			firstChar := string(sortField[0])

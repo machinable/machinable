@@ -3,14 +3,11 @@ package middleware
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/anothrnick/machinable/auth"
 	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
@@ -280,43 +277,7 @@ func (w logWriter) Write(b []byte) (int, error) {
 // ProjectLoggingMiddleware logs the request
 func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// inject custom writer
-		lw := &logWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
-		c.Writer = lw
-
 		// continue handler chain
 		c.Next()
-
-		// get status code
-		statusCode := c.Writer.Status()
-		verb := c.Request.Method
-		path := c.Request.URL.Path
-
-		projectSlug := c.GetString("project")
-		authType := c.GetString("authType")
-		authString := c.GetString("authString")
-		authID := c.GetString("authID")
-
-		if authString == "" {
-			authString = "unknown"
-		}
-
-		// save project log
-		plog := &models.Log{
-			Event:         fmt.Sprintf("%s %s", verb, path),
-			StatusCode:    statusCode,
-			Created:       time.Now().Unix(),
-			Initiator:     authString,
-			InitiatorType: authType,
-			InitiatorID:   authID,
-		}
-
-		// Get the logs collection
-		err := store.AddProjectLog(projectSlug, plog)
-
-		if err != nil {
-			log.Println("an error occured trying to save the log")
-			log.Println(err.Error())
-		}
 	}
 }

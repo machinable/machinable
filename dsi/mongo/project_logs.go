@@ -9,25 +9,33 @@ import (
 
 // MLog wraps the bson serialization for mongo
 type MLog struct {
-	Event         string `bson:"event"`
-	StatusCode    int    `bson:"status_code"`
-	Created       int64  `bson:"created"`
-	Initiator     string `bson:"initiator"`
-	InitiatorType string `bson:"initiator_type"`
-	InitiatorID   string `bson:"initiator_id"`
-	TargetID      string `bson:"target_id"`
+	EndpointType   string `bson:"endpoint_type"`
+	Verb           string `bson:"verb"`
+	Path           string `bson:"path"`
+	StatusCode     int    `bson:"status_code"`
+	Created        int64  `bson:"created"`
+	AlignedCreated int64  `bson:"aligned"`
+	ResponseTime   int64  `bson:"response_time"`
+	Initiator      string `bson:"initiator"`
+	InitiatorType  string `bson:"initiator_type"`
+	InitiatorID    string `bson:"initiator_id"`
+	TargetID       string `bson:"target_id"`
 }
 
 // AddProjectLog saves a new log for a project
 func (d *Datastore) AddProjectLog(project string, log *models.Log) error {
 	mongoLog := &MLog{
-		Event:         log.Event,
-		StatusCode:    log.StatusCode,
-		Created:       log.Created,
-		Initiator:     log.Initiator,
-		InitiatorType: log.InitiatorType,
-		InitiatorID:   log.InitiatorID,
-		TargetID:      log.TargetID,
+		EndpointType:   log.EndpointType,
+		Verb:           log.Verb,
+		Path:           log.Path,
+		StatusCode:     log.StatusCode,
+		Created:        log.Created,
+		AlignedCreated: log.AlignedCreated,
+		ResponseTime:   log.ResponseTime,
+		Initiator:      log.Initiator,
+		InitiatorType:  log.InitiatorType,
+		InitiatorID:    log.InitiatorID,
+		TargetID:       log.TargetID,
 	}
 
 	// Get the logs collection
@@ -86,13 +94,17 @@ func (d *Datastore) ListProjectLogs(project string, limit, offset int64, filter 
 			return logs, err
 		}
 		logs = append(logs, &models.Log{
-			Event:         log.Event,
-			StatusCode:    log.StatusCode,
-			Created:       log.Created,
-			Initiator:     log.Initiator,
-			InitiatorType: log.InitiatorType,
-			InitiatorID:   log.InitiatorID,
-			TargetID:      log.TargetID,
+			EndpointType:   log.EndpointType,
+			Verb:           log.Verb,
+			Path:           log.Path,
+			StatusCode:     log.StatusCode,
+			Created:        log.Created,
+			AlignedCreated: log.AlignedCreated,
+			ResponseTime:   log.ResponseTime,
+			Initiator:      log.Initiator,
+			InitiatorType:  log.InitiatorType,
+			InitiatorID:    log.InitiatorID,
+			TargetID:       log.TargetID,
 		})
 	}
 
