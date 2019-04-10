@@ -30,9 +30,8 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmtStats := mgmt.Group("/resourceUsage")
 	mgmtStats.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmtStats.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+	mgmtStats.GET("/", handler.ListCollectionUsage)
 	mgmtStats.GET("/stats", handler.GetStats)
-	mgmtStats.GET("/responseTimes", handler.ListResponseTimes)
-	mgmtStats.GET("/statusCodes", handler.ListStatusCodes)
 
 	mgmt.Use(middleware.ProjectLoggingMiddleware(datastore))
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())

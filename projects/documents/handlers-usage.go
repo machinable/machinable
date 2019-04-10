@@ -8,44 +8,64 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ListResponseTimes returns HTTP response times for collections for the last 1 hour
-func (d *Documents) ListResponseTimes(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
-
-	old := time.Now().Add(-time.Hour * time.Duration(1))
-	filter := &models.Filters{
-		"timestamp": models.Value{
-			models.GTE: old.Unix(),
-		},
-	}
-
-	responseTimes, err := d.store.ListResourceResponseTimes(projectSlug, filter)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"response_times": responseTimes})
+type Usage struct {
+	RequestCount      int64         `json:"request_count"`
+	TotalResponseTime int64         `json:"-"`
+	AvgResponse       int64         `json:"avg_response"`
+	StatusCodes       map[int]int64 `json:"status_codes"`
 }
 
-// ListStatusCodes returns HTTP response status codes for collections for the last 1 hour
-func (d *Documents) ListStatusCodes(c *gin.Context) {
+// ListCollectionUsage returns the list of activity logs for a project
+func (d *Documents) ListCollectionUsage(c *gin.Context) {
 	projectSlug := c.MustGet("project").(string)
 
+	// filter anything within x hours
 	old := time.Now().Add(-time.Hour * time.Duration(1))
 	filter := &models.Filters{
-		"timestamp": models.Value{
+		"created": models.Value{
 			models.GTE: old.Unix(),
+		},
+		"endpoint_type": models.Value{
+			models.EQ: models.EndpointResource,
 		},
 	}
 
-	statusCodes, err := d.store.ListResourceStatusCode(projectSlug, filter)
+	// TODO: base this on the api limit for the customer tier
+	iLimit := int64(10000)
+	logs, err := d.store.ListProjectLogs(projectSlug, iLimit, 0, filter, nil)
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status_codes": statusCodes})
+	response := make(map[int64]Usage)
+
+	// transform logs
+	for _, log := range logs {
+		aligned := log.AlignedCreated
+
+		data, ok := response[aligned]
+		if !ok {
+			data = Usage{
+				StatusCodes: make(map[int]int64),
+			}
+		}
+
+		data.RequestCount++
+		data.TotalResponseTime += log.ResponseTime
+		data.StatusCodes[log.StatusCode]++
+
+		response[aligned] = data
+	}
+
+	// get average response time
+	for key, usage := range response {
+		usage.AvgResponse = (usage.TotalResponseTime / usage.RequestCount)
+		response[key] = usage
+	}
+
+	c.PureJSON(http.StatusOK, gin.H{"items": response})
 }
 
 // GetStats returns the size of the collections

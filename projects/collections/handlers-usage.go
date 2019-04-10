@@ -9,7 +9,7 @@ import (
 )
 
 type Usage struct {
-	RequestCount      int64         `json:"-"`
+	RequestCount      int64         `json:"request_count"`
 	TotalResponseTime int64         `json:"-"`
 	AvgResponse       int64         `json:"avg_response"`
 	StatusCodes       map[int]int64 `json:"status_codes"`
@@ -55,55 +55,17 @@ func (h *Collections) ListCollectionUsage(c *gin.Context) {
 		data.RequestCount++
 		data.TotalResponseTime += log.ResponseTime
 		data.StatusCodes[log.StatusCode]++
+
+		response[aligned] = data
 	}
 
 	// get average response time
 	for key, usage := range response {
-		usage.AvgResponse = (usage.RequestCount / usage.TotalResponseTime)
+		usage.AvgResponse = (usage.TotalResponseTime / usage.RequestCount)
 		response[key] = usage
 	}
 
 	c.PureJSON(http.StatusOK, gin.H{"items": response})
-}
-
-// ListResponseTimes returns HTTP response times for collections for the last 1 hour
-func (h *Collections) ListResponseTimes(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
-
-	old := time.Now().Add(-time.Hour * time.Duration(1))
-	filter := &models.Filters{
-		"timestamp": models.Value{
-			models.GTE: old.Unix(),
-		},
-	}
-
-	responseTimes, err := h.store.ListCollectionResponseTimes(projectSlug, filter)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"response_times": responseTimes})
-}
-
-// ListStatusCodes returns HTTP response status codes for collections for the last 1 hour
-func (h *Collections) ListStatusCodes(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
-
-	old := time.Now().Add(-time.Hour * time.Duration(1))
-	filter := &models.Filters{
-		"timestamp": models.Value{
-			models.GTE: old.Unix(),
-		},
-	}
-
-	statusCodes, err := h.store.ListCollectionStatusCode(projectSlug, filter)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"status_codes": statusCodes})
 }
 
 // GetStats returns the size of the collections

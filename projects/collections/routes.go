@@ -37,8 +37,6 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmtStats.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 	mgmtStats.GET("/", handler.ListCollectionUsage)
 	mgmtStats.GET("/stats", handler.GetStats)
-	mgmtStats.GET("/responseTimes", handler.ListResponseTimes)
-	mgmtStats.GET("/statusCodes", handler.ListStatusCodes)
 
 	mgmtCollections := mgmt.Group("/collections")
 	mgmtCollections.Use(middleware.ProjectLoggingMiddleware(datastore))
