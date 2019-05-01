@@ -56,6 +56,10 @@ func (d *Datastore) AddDefinition(project string, def *models.ResourceDefinition
 	resourceElements = append(resourceElements, bson.EC.String("path_name", def.PathName))
 	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", def.ParallelRead))
 	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", def.ParallelWrite))
+	resourceElements = append(resourceElements, bson.EC.Boolean("create", def.Create))
+	resourceElements = append(resourceElements, bson.EC.Boolean("read", def.Read))
+	resourceElements = append(resourceElements, bson.EC.Boolean("update", def.Update))
+	resourceElements = append(resourceElements, bson.EC.Boolean("delete", def.Delete))
 	resourceElements = append(resourceElements, bson.EC.Time("created", time.Now()))
 	resourceElements = append(resourceElements, bson.EC.String("properties", def.Properties))
 
@@ -141,7 +145,7 @@ func (d *Datastore) GetDefinitionByPathName(project, pathName string) (*models.R
 }
 
 // UpdateDefinition updates the PARALLEL_READ and PARALLEL_WRITE fields of a definition
-func (d *Datastore) UpdateDefinition(project, definitionID string, read, write bool) *errors.DatastoreError {
+func (d *Datastore) UpdateDefinition(project, definitionID string, def *models.ResourceDefinition) *errors.DatastoreError {
 	resDefCollection := d.db.ResourceDefinitions(project)
 
 	// Get the object id for collection name
@@ -166,8 +170,12 @@ func (d *Datastore) UpdateDefinition(project, definitionID string, read, write b
 	}
 
 	resourceElements := make([]*bson.Element, 0)
-	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", read))
-	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", write))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", def.ParallelRead))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", def.ParallelWrite))
+	resourceElements = append(resourceElements, bson.EC.Boolean("create", def.Create))
+	resourceElements = append(resourceElements, bson.EC.Boolean("read", def.Read))
+	resourceElements = append(resourceElements, bson.EC.Boolean("update", def.Update))
+	resourceElements = append(resourceElements, bson.EC.Boolean("delete", def.Delete))
 
 	_, err = resDefCollection.UpdateOne(
 		context.Background(),

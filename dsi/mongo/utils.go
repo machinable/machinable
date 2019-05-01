@@ -92,6 +92,10 @@ func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
 	def.PathName = doc.Lookup("path_name").StringValue()
 	def.ParallelRead, _ = doc.Lookup("parallel_read").BooleanOK()
 	def.ParallelWrite, _ = doc.Lookup("parallel_write").BooleanOK()
+	def.Create, _ = doc.Lookup("create").BooleanOK()
+	def.Read, _ = doc.Lookup("read").BooleanOK()
+	def.Update, _ = doc.Lookup("update").BooleanOK()
+	def.Delete, _ = doc.Lookup("delete").BooleanOK()
 	def.Properties = doc.Lookup("properties").StringValue()
 
 	return &def, nil

@@ -44,6 +44,10 @@ func (d *Datastore) AddCollection(project string, newCol *models.Collection) *er
 	resourceElements = append(resourceElements, bson.EC.String("name", newCol.Name))
 	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", newCol.ParallelRead))
 	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", newCol.ParallelWrite))
+	resourceElements = append(resourceElements, bson.EC.Boolean("create", newCol.Create))
+	resourceElements = append(resourceElements, bson.EC.Boolean("read", newCol.Read))
+	resourceElements = append(resourceElements, bson.EC.Boolean("update", newCol.Update))
+	resourceElements = append(resourceElements, bson.EC.Boolean("delete", newCol.Delete))
 	resourceElements = append(resourceElements, bson.EC.Time("created", time.Now()))
 
 	// Get a connection and insert the new document
@@ -77,6 +81,10 @@ func (d *Datastore) GetCollection(project, name string) (*models.Collection, *er
 			ID:            doc.Lookup("_id").ObjectID().Hex(),
 			ParallelRead:  doc.Lookup("parallel_read").Boolean(),
 			ParallelWrite: doc.Lookup("parallel_write").Boolean(),
+			Create:        doc.Lookup("create").Boolean(),
+			Read:          doc.Lookup("read").Boolean(),
+			Update:        doc.Lookup("update").Boolean(),
+			Delete:        doc.Lookup("delete").Boolean(),
 			Created:       doc.Lookup("created").Time(),
 			Items:         0,
 		}
@@ -86,7 +94,7 @@ func (d *Datastore) GetCollection(project, name string) (*models.Collection, *er
 }
 
 // UpdateCollection updates a collection by id
-func (d *Datastore) UpdateCollection(project, collectionID string, read, write bool) *errors.DatastoreError {
+func (d *Datastore) UpdateCollection(project, collectionID string, col *models.Collection) *errors.DatastoreError {
 	collection := d.db.CollectionNames(project)
 	// Get the object id for collection name
 	objectID, err := objectid.FromHex(collectionID)
@@ -110,8 +118,12 @@ func (d *Datastore) UpdateCollection(project, collectionID string, read, write b
 	}
 
 	resourceElements := make([]*bson.Element, 0)
-	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", read))
-	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", write))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_read", col.ParallelRead))
+	resourceElements = append(resourceElements, bson.EC.Boolean("parallel_write", col.ParallelWrite))
+	resourceElements = append(resourceElements, bson.EC.Boolean("create", col.Create))
+	resourceElements = append(resourceElements, bson.EC.Boolean("read", col.Read))
+	resourceElements = append(resourceElements, bson.EC.Boolean("update", col.Update))
+	resourceElements = append(resourceElements, bson.EC.Boolean("delete", col.Delete))
 
 	_, err = collection.UpdateOne(
 		context.Background(),
@@ -160,6 +172,10 @@ func (d *Datastore) GetCollections(project string) ([]*models.Collection, *error
 				ID:            doc.Lookup("_id").ObjectID().Hex(),
 				ParallelRead:  doc.Lookup("parallel_read").Boolean(),
 				ParallelWrite: doc.Lookup("parallel_write").Boolean(),
+				Create:        doc.Lookup("create").Boolean(),
+				Read:          doc.Lookup("read").Boolean(),
+				Update:        doc.Lookup("update").Boolean(),
+				Delete:        doc.Lookup("delete").Boolean(),
 				Created:       doc.Lookup("created").Time(),
 				Items:         cnt,
 			})

@@ -27,6 +27,12 @@ func (h *Resources) AddResourceDefinition(c *gin.Context) {
 	var resourceDefinition models.ResourceDefinition
 	c.BindJSON(&resourceDefinition)
 
+	// set authentication required for now
+	resourceDefinition.Create = true
+	resourceDefinition.Read = true
+	resourceDefinition.Update = true
+	resourceDefinition.Delete = true
+
 	// Validate the definition
 	if err := resourceDefinition.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -81,7 +87,7 @@ func (h *Resources) UpdateResourceDefinition(c *gin.Context) {
 	c.BindJSON(&updatedDefinition)
 
 	// add collection and return error if anything goes wrong
-	err := h.store.UpdateDefinition(projectSlug, resourceDefinitionID, updatedDefinition.ParallelRead, updatedDefinition.ParallelWrite)
+	err := h.store.UpdateDefinition(projectSlug, resourceDefinitionID, &updatedDefinition)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return

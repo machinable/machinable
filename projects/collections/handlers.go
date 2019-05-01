@@ -28,6 +28,12 @@ func (h *Collections) AddCollection(c *gin.Context) {
 	var newCollection models.Collection
 	c.BindJSON(&newCollection)
 
+	// set authentication required for now
+	newCollection.Create = true
+	newCollection.Read = true
+	newCollection.Update = true
+	newCollection.Delete = true
+
 	// validate collection name
 	if newCollection.Name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name cannot be empty"})
@@ -58,7 +64,7 @@ func (h *Collections) UpdateCollection(c *gin.Context) {
 	c.BindJSON(&updatedCollection)
 
 	// add collection and return error if anything goes wrong
-	err := h.store.UpdateCollection(projectSlug, collectionID, updatedCollection.ParallelRead, updatedCollection.ParallelWrite)
+	err := h.store.UpdateCollection(projectSlug, collectionID, &updatedCollection)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return

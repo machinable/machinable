@@ -59,6 +59,10 @@ type ResourceDefinition struct {
 	PathName      string    `json:"path_name"` // PathName is the name that will appear in the URL path
 	ParallelRead  bool      `json:"parallel_read"`
 	ParallelWrite bool      `json:"parallel_write"`
+	Create        bool      `json:"create"`
+	Read          bool      `json:"read"`
+	Update        bool      `json:"update"`
+	Delete        bool      `json:"delete"`
 	Created       time.Time `json:"created"`    // Created is the timestamp the resource was created
 	Properties    string    `json:"properties"` // Properties is the string representation of the JSON schema properties
 }
@@ -85,6 +89,10 @@ func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
 		PathName      string                 `json:"path_name"` // PathName is the name that will appear in the URL path
 		ParallelRead  bool                   `json:"parallel_read"`
 		ParallelWrite bool                   `json:"parallel_write"`
+		Create        bool                   `json:"create"`
+		Read          bool                   `json:"read"`
+		Update        bool                   `json:"update"`
+		Delete        bool                   `json:"delete"`
 		Created       time.Time              `json:"created"`    // Created is the timestamp the resource was created
 		Properties    map[string]interface{} `json:"properties"` // Properties is the string representation of the JSON schema properties
 	}{
@@ -106,6 +114,10 @@ func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 		Properties    json.RawMessage `json:"properties"` // Properties is the string representation of the JSON schema properties
 		ParallelRead  bool            `json:"parallel_read"`
 		ParallelWrite bool            `json:"parallel_write"`
+		Create        bool            `json:"create"`
+		Read          bool            `json:"read"`
+		Update        bool            `json:"update"`
+		Delete        bool            `json:"delete"`
 	}{}
 
 	err := json.Unmarshal(b, &payload)
@@ -119,6 +131,10 @@ func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 	def.Properties = string(payload.Properties)
 	def.ParallelRead = payload.ParallelRead
 	def.ParallelWrite = payload.ParallelWrite
+	def.Create = payload.Create
+	def.Read = payload.Read
+	def.Update = payload.Update
+	def.Delete = payload.Delete
 
 	return nil
 }

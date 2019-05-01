@@ -14,6 +14,10 @@ type Collection struct {
 	Name          string    `json:"name"`
 	ParallelRead  bool      `json:"parallel_read"`
 	ParallelWrite bool      `json:"parallel_write"`
+	Create        bool      `json:"create"`
+	Read          bool      `json:"read"`
+	Update        bool      `json:"update"`
+	Delete        bool      `json:"delete"`
 	Created       time.Time `json:"created"`
 	Items         int64     `json:"items"`
 }

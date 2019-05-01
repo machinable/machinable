@@ -16,19 +16,23 @@ var reservedProjectSlugs = map[string]bool{
 	"projects":      true,
 	"sessions":      true,
 	"machinable":    true,
+	"mchbl":         true,
+	"mchnbl":        true,
 	"settings":      true,
 	"www":           true,
 	"ww":            true,
 	"w":             true,
 	"app":           true,
 	"api":           true,
-	"mchbl":         true,
 	"data":          true,
 	"docs":          true,
 	"documentation": true,
 	"http":          true,
 	"https":         true,
 }
+
+const MaxSlugLength = 12
+const MaxNameLength = 32
 
 // ProjectBody is used to unmarshal the JSON body of an incoming request
 type ProjectBody struct {
@@ -44,6 +48,14 @@ type ProjectBody struct {
 func (pb *ProjectBody) Validate() error {
 	if pb.UserID == "" || pb.Slug == "" || pb.Name == "" || pb.Icon == "" {
 		return errors.New("invalid project parameters")
+	}
+
+	if len(pb.Slug) > MaxSlugLength {
+		return errors.New("slug can not be more than 12 characters")
+	}
+
+	if len(pb.Name) > MaxNameLength {
+		return errors.New("name can not be more than 32 characters")
 	}
 
 	if !dsi.ValidPathFormat.MatchString(pb.Slug) {

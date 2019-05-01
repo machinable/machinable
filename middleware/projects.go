@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -24,19 +25,58 @@ var BEARER = "bearer"
 // APIKEY is the key for the apikey authorization token
 var APIKEY = "apikey"
 
+// StoreConfig holds the middleware-relevant config for a collection/resource
+type StoreConfig struct {
+	Create        bool
+	Read          bool
+	Update        bool
+	Delete        bool
+	ParallelRead  bool
+	ParallelWrite bool
+	Headers       map[string]string
+}
+
+// VerbRequiresAuthn returns if the provided HTTP Verb requires authentication for this endpoint
+func (s *StoreConfig) VerbRequiresAuthn(verb string) (bool, error) {
+	switch verb {
+	case "POST":
+		return s.Create, nil
+	case "GET":
+		return s.Read, nil
+	case "PUT":
+		return s.Update, nil
+	case "DELETE":
+		return s.Delete, nil
+	default:
+		return false, errors.New("invalid verb")
+	}
+}
+
 // ProjectAuthzBuildFiltersMiddleware builds the necessary filters based on the requester's role, permissions, as well as
 // the collection/resource's access policies. This middleware requires that the requester `role` has been injected into
 // the context.
 func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// get project from context, inserted into context from subdomain
-		project := c.GetString("project")
-		projectAuthn := c.GetBool("projectAuthn")
 		verb := c.Request.Method
 		filters := map[string]interface{}{}
+
+		// get store config
+		storei, exists := c.Get("storeConfig")
+		if !exists {
+			respondWithError(http.StatusBadRequest, "malformed request - invalid store", c)
+			return
+		}
+		store := storei.(StoreConfig)
+
 		// if the projectAuthn key exists, this project does not require authn or authz
 		// if the requester is doing a POST, just continue
-		if projectAuthn == false || verb == "POST" {
+		requiresAuthn, err := store.VerbRequiresAuthn(verb)
+		if err != nil {
+			respondWithError(http.StatusInternalServerError, "unexpected verb when checking for authentication", c)
+			return
+		}
+		if !requiresAuthn || verb == "POST" {
 			c.Set("filters", filters)
 			c.Next()
 			return
@@ -47,44 +87,9 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 
 		// based on the requester's role and collection/resource access policies, build filters
 		if rRole == auth.RoleUser {
-			// `user` role:
-			//	  > Load collection/resource access policies
-			params := strings.Split(c.Request.URL.Path, "/")
-
-			if len(params) < 3 {
-				respondWithError(http.StatusBadRequest, "malformed request - invalid params", c)
-				return
-			}
-
-			storeType := params[1]
-			collectionName := params[2]
-			parallelRead, parallelWrite := false, false
-
-			if storeType == Collections {
-				col, err := store.GetCollection(project, collectionName)
-				if err != nil {
-					respondWithError(http.StatusInternalServerError, "error retrieving collection", c)
-					return
-				}
-				parallelRead = col.ParallelRead
-				parallelWrite = col.ParallelWrite
-			} else if storeType == Resources {
-				def, err := store.GetDefinitionByPathName(project, collectionName)
-				if err != nil {
-					respondWithError(http.StatusInternalServerError, "error retrieving resource", c)
-					return
-				}
-				parallelRead = def.ParallelRead
-				parallelWrite = def.ParallelWrite
-				fmt.Println("resource filters not supported")
-			} else {
-				respondWithError(http.StatusBadRequest, "malformed request - unknown path", c)
-				return
-			}
-
-			if verb == "GET" && parallelRead == false {
+			if verb == "GET" && store.ParallelRead == false {
 				filters["_metadata.creator"] = rID
-			} else if (verb == "PUT" || verb == "DELETE") && parallelWrite == false {
+			} else if (verb == "PUT" || verb == "DELETE") && store.ParallelWrite == false {
 				filters["_metadata.creator"] = rID
 			}
 
@@ -116,6 +121,8 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 // requires that the `project` has been injected into the context.
 func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// get request method
+		verb := c.Request.Method
 		// get project slug
 		// get project from context, inserted into context from subdomain
 		project := c.GetString("project")
@@ -128,6 +135,49 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		}
 
 		c.Set("projectAuthn", prj.Authn)
+
+		//	  > Load collection/resource access policies
+		params := strings.Split(c.Request.URL.Path, "/")
+
+		if len(params) < 3 {
+			respondWithError(http.StatusBadRequest, "malformed request - invalid params", c)
+			return
+		}
+
+		storeType := params[1]
+		collectionName := params[2]
+
+		storeConfig := StoreConfig{}
+
+		// check store type, load store and get config for access policies
+		if storeType == Collections {
+			col, err := store.GetCollection(project, collectionName)
+			if err != nil {
+				respondWithError(http.StatusInternalServerError, "error retrieving collection", c)
+				return
+			}
+			storeConfig.Create = col.Create
+			storeConfig.Read = col.Read
+			storeConfig.Update = col.Update
+			storeConfig.Delete = col.Delete
+			storeConfig.ParallelRead = col.ParallelRead
+			storeConfig.ParallelWrite = col.ParallelWrite
+		} else if storeType == Resources {
+			def, err := store.GetDefinitionByPathName(project, collectionName)
+			if err != nil {
+				respondWithError(http.StatusInternalServerError, "error retrieving resource", c)
+				return
+			}
+			storeConfig.Create = def.Create
+			storeConfig.Read = def.Read
+			storeConfig.Update = def.Update
+			storeConfig.Delete = def.Delete
+			storeConfig.ParallelRead = def.ParallelRead
+			storeConfig.ParallelWrite = def.ParallelWrite
+		}
+
+		// put store in context
+		c.Set("storeConfig", storeConfig)
 
 		// validate Authorization header
 		if values, _ := c.Request.Header["Authorization"]; len(values) > 0 {
@@ -188,8 +238,8 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 						// perms["PATCH"] = true
 					}
 
-					if _, ok := perms[c.Request.Method]; !ok {
-						respondWithError(http.StatusUnauthorized, fmt.Sprintf("user does not have permission to '%s'", c.Request.Method), c)
+					if _, ok := perms[verb]; !ok {
+						respondWithError(http.StatusUnauthorized, fmt.Sprintf("user does not have permission to '%s'", verb), c)
 						return
 					}
 
@@ -228,8 +278,8 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 					// perms["PATCH"] = true
 				}
 
-				if _, ok := perms[c.Request.Method]; !ok {
-					respondWithError(http.StatusUnauthorized, fmt.Sprintf("user does not have permission to '%s'", c.Request.Method), c)
+				if _, ok := perms[verb]; !ok {
+					respondWithError(http.StatusUnauthorized, fmt.Sprintf("user does not have permission to '%s'", verb), c)
 					return
 				}
 
@@ -247,8 +297,13 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			return
 		}
 
-		// if no Authorization header is present, load the project and check the authn policy
-		if !prj.Authn {
+		// if no Authorization header is present, check the authn policy
+		requiresAuthn, err := storeConfig.VerbRequiresAuthn(verb)
+		if err != nil {
+			respondWithError(http.StatusInternalServerError, "unexpected verb when checking for authentication", c)
+			return
+		}
+		if !requiresAuthn {
 			c.Set("authType", "anonymous")
 			c.Set("authString", "anonymous")
 			c.Set("authID", "anonymous")
