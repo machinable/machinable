@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Usage wraps the collection requests, status codes, and process times
 type Usage struct {
 	RequestCount      int64         `json:"request_count"`
 	TotalResponseTime int64         `json:"-"`
