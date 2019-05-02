@@ -53,11 +53,16 @@ func (d *Datastore) UpdateDefDocument(project, path, documentID string, updatedF
 		return errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
 	}
 
+	// add object id to filters
+	filter["_id"] = objectID
+
 	// get existing object
 	collection := d.db.ResourceDocs(project, path)
-	_, derr := d.getDefinitionDocument(objectID, collection)
-	if derr != nil {
-		return errors.New(errors.NotFound, fmt.Errorf("object does not exist '%s'", documentID))
+
+	var r interface{}
+	findErr := collection.FindOne(context.Background(), filter).Decode(r)
+	if findErr != nil {
+		return errors.New(errors.NotFound, fmt.Errorf("object does not exist"))
 	}
 
 	// get definition
@@ -91,9 +96,7 @@ func (d *Datastore) UpdateDefDocument(project, path, documentID string, updatedF
 	// Get the resources.{resourcePathName} collection
 	_, err = collection.UpdateOne(
 		context.Background(),
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", objectID),
-		),
+		filter,
 		bson.NewDocument(
 			bson.EC.SubDocumentFromElements("$set",
 				updatedElements...,
@@ -148,7 +151,7 @@ func (d *Datastore) ListDefDocuments(project, path string, limit, offset int64, 
 }
 
 // GetDefDocument retrieves a single document
-func (d *Datastore) GetDefDocument(project, path, documentID string) (map[string]interface{}, *errors.DatastoreError) {
+func (d *Datastore) GetDefDocument(project, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
 	collection := d.db.ResourceDocs(project, path)
 	resDefCollection := d.db.ResourceDefinitions(project)
 
@@ -164,9 +167,16 @@ func (d *Datastore) GetDefDocument(project, path, documentID string) (map[string
 		return nil, errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
 	}
 
+	// add object id to filters
+	filter["_id"] = objectID
+
 	// Find object based on ID
 	// Decode result into document
-	doc, err := d.getDefinitionDocument(objectID, collection)
+	doc := bson.NewDocument()
+	findErr := collection.FindOne(context.Background(), filter).Decode(doc)
+	if findErr != nil {
+		return nil, errors.New(errors.NotFound, fmt.Errorf("object does not exist"))
+	}
 
 	if err != nil {
 		return nil, errors.New(errors.NotFound, fmt.Errorf("object does not exist, '%s'", documentID))
@@ -190,7 +200,7 @@ func (d *Datastore) CountDefDocuments(project, path string, filter map[string]in
 }
 
 // DeleteDefDocument deletes a single document
-func (d *Datastore) DeleteDefDocument(project, path, documentID string) *errors.DatastoreError {
+func (d *Datastore) DeleteDefDocument(project, path, documentID string, filter map[string]interface{}) *errors.DatastoreError {
 	collection := d.db.ResourceDocs(project, path)
 
 	// Create object ID from resource ID string
@@ -199,12 +209,18 @@ func (d *Datastore) DeleteDefDocument(project, path, documentID string) *errors.
 		return errors.New(errors.BadParameter, fmt.Errorf("invalid identifier '%s': %s", documentID, err.Error()))
 	}
 
+	filter["_id"] = objectID
+
+	var r interface{}
+	findErr := collection.FindOne(context.Background(), filter).Decode(r)
+	if findErr != nil {
+		return errors.New(errors.NotFound, fmt.Errorf("object does not exist"))
+	}
+
 	// Delete the object
 	_, err = collection.DeleteOne(
 		context.Background(),
-		bson.NewDocument(
-			bson.EC.ObjectID("_id", objectID),
-		),
+		filter,
 	)
 	if err != nil {
 		return errors.New(errors.UnknownError, err)

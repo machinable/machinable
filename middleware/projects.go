@@ -153,7 +153,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		if storeType == Collections {
 			col, err := store.GetCollection(project, collectionName)
 			if err != nil {
-				respondWithError(http.StatusInternalServerError, "error retrieving collection", c)
+				respondWithError(http.StatusNotFound, "error retrieving collection - does not exist", c)
 				return
 			}
 			storeConfig.Create = col.Create
@@ -165,7 +165,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		} else if storeType == Resources {
 			def, err := store.GetDefinitionByPathName(project, collectionName)
 			if err != nil {
-				respondWithError(http.StatusInternalServerError, "error retrieving resource", c)
+				respondWithError(http.StatusNotFound, "error retrieving resource - does not exist", c)
 				return
 			}
 			storeConfig.Create = def.Create

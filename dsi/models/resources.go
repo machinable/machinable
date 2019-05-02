@@ -101,6 +101,10 @@ func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
 		PathName:      def.PathName,
 		ParallelRead:  def.ParallelRead,
 		ParallelWrite: def.ParallelWrite,
+		Create:        def.Create,
+		Read:          def.Read,
+		Update:        def.Update,
+		Delete:        def.Delete,
 		Created:       def.Created,
 		Properties:    properties,
 	})

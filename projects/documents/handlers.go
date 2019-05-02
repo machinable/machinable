@@ -196,8 +196,9 @@ func (h *Documents) GetObject(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
 	resourceID := c.Param("resourceID")
 	projectSlug := c.MustGet("project").(string)
+	authFilters := c.MustGet("filters").(map[string]interface{})
 
-	document, err := h.store.GetDefDocument(projectSlug, resourcePathName, resourceID)
+	document, err := h.store.GetDefDocument(projectSlug, resourcePathName, resourceID, authFilters)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -212,8 +213,9 @@ func (h *Documents) DeleteObject(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
 	resourceID := c.Param("resourceID")
 	projectSlug := c.MustGet("project").(string)
+	authFilters := c.MustGet("filters").(map[string]interface{})
 
-	err := h.store.DeleteDefDocument(projectSlug, resourcePathName, resourceID)
+	err := h.store.DeleteDefDocument(projectSlug, resourcePathName, resourceID, authFilters)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
