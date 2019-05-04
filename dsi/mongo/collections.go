@@ -90,7 +90,7 @@ func (d *Datastore) GetCollection(project, name string) (*models.Collection, *er
 		}
 	}
 
-	return colModel, errors.New(errors.UnknownError, err)
+	return colModel, errors.New(errors.NotFound, err)
 }
 
 // UpdateCollection updates a collection by id
