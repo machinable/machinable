@@ -147,8 +147,12 @@ func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 func (def *ResourceDefinition) Validate() error {
 	if def.Title == "" {
 		return errors.New("resource title cannot be empty")
+	} else if len(def.Title) > dsi.MaxLengthOfCollectionInfo {
+		return fmt.Errorf("resource title cannot be longer than %d characters", dsi.MaxLengthOfCollectionInfo)
 	} else if def.PathName == "" {
 		return errors.New("resource path_name cannot be empty")
+	} else if len(def.PathName) > dsi.MaxLengthOfCollectionInfo {
+		return fmt.Errorf("resource path_name cannot be longer than %d characters", dsi.MaxLengthOfCollectionInfo)
 	} else if def.Properties == "" {
 		return errors.New("resource properties cannot be empty")
 	} else if !dsi.ValidPathFormat.MatchString(def.PathName) {

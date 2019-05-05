@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/anothrnick/machinable/dsi"
@@ -26,6 +27,8 @@ type Collection struct {
 func (c *Collection) Validate() error {
 	if c.Name == "" {
 		return errors.New("collection name cannot be empty")
+	} else if len(c.Name) > dsi.MaxLengthOfCollectionInfo {
+		return fmt.Errorf("collection name cannot be longer than %d characters", dsi.MaxLengthOfCollectionInfo)
 	} else if !dsi.ValidPathFormat.MatchString(c.Name) {
 		return errors.New("invalid collection name: only alphanumeric, dashes, and underscores allowed")
 	}

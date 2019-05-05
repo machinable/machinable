@@ -52,6 +52,29 @@ func (s *StoreConfig) VerbRequiresAuthn(verb string) (bool, error) {
 	}
 }
 
+// ProjectUserRegistrationMiddleware verifies this project has User Registration enabled
+func ProjectUserRegistrationMiddleware(store interfaces.Datastore) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// get project slug
+		// get project from context, inserted into context from subdomain
+		project := c.GetString("project")
+
+		// load the project and check the authn policy
+		prj, err := store.GetProjectBySlug(project)
+		if err != nil {
+			respondWithError(http.StatusNotFound, "project not found", c)
+			return
+		}
+
+		if !prj.UserRegistration {
+			respondWithError(http.StatusNotFound, "path not found", c)
+			return
+		}
+
+		c.Next()
+	}
+}
+
 // ProjectAuthzBuildFiltersMiddleware builds the necessary filters based on the requester's role, permissions, as well as
 // the collection/resource's access policies. This middleware requires that the requester `role` has been injected into
 // the context.
@@ -69,11 +92,10 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 		}
 		store := storei.(StoreConfig)
 
-		// if the projectAuthn key exists, this project does not require authn or authz
-		// if the requester is doing a POST, just continue
+		// check verb authentication policy
 		requiresAuthn, err := store.VerbRequiresAuthn(verb)
 		if err != nil {
-			respondWithError(http.StatusInternalServerError, "unexpected verb when checking for authentication", c)
+			respondWithError(http.StatusNotImplemented, "unexpected HTTP verb when checking for authentication", c)
 			return
 		}
 		if !requiresAuthn || verb == "POST" {
@@ -128,13 +150,11 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		project := c.GetString("project")
 
 		// load the project and check the authn policy
-		prj, err := store.GetProjectBySlug(project)
+		_, err := store.GetProjectBySlug(project)
 		if err != nil {
 			respondWithError(http.StatusNotFound, "project not found", c)
 			return
 		}
-
-		c.Set("projectAuthn", prj.Authn)
 
 		//	  > Load collection/resource access policies
 		params := strings.Split(c.Request.URL.Path, "/")
@@ -305,7 +325,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		// if no Authorization header is present, check the authn policy
 		requiresAuthn, err := storeConfig.VerbRequiresAuthn(verb)
 		if err != nil {
-			respondWithError(http.StatusInternalServerError, "unexpected verb when checking for authentication", c)
+			respondWithError(http.StatusNotImplemented, "unexpected HTTP verb when checking for authentication", c)
 			return
 		}
 		if !requiresAuthn {

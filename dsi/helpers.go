@@ -28,6 +28,9 @@ const (
 	MaxRecursion = 8
 )
 
+// MaxLengthOfCollectionInfo is the maximum character length of collection/resource names and paths
+var MaxLengthOfCollectionInfo = 12
+
 // ValidPathFormat is the regular expression used to validate resource path names, collection names, and project slugs
 var ValidPathFormat = regexp.MustCompile(`^[a-zA-Z0-9_-]*$`)
 

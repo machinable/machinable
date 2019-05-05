@@ -55,6 +55,56 @@ func (u *Users) UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+// AddLimitedUser creates a new user for this project from the unauthenticated route
+func (u *Users) AddLimitedUser(c *gin.Context) {
+	var newUser NewProjectUser
+	projectSlug := c.MustGet("project").(string)
+
+	c.BindJSON(&newUser)
+	// override role
+	newUser.Role = "user"
+
+	// validate user
+	err := newUser.Validate()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if _, err := u.store.GetUserByUsername(projectSlug, newUser.Username); err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user already exists"})
+		return
+	}
+
+	// generate hashed password
+	passwordHash, err := auth.HashPassword(newUser.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	newUser.Password = ""
+
+	// create project user object
+	user := &models.ProjectUser{
+		ID:           objectid.New(), // I don't like this
+		Created:      time.Now(),
+		PasswordHash: passwordHash,
+		Username:     newUser.Username,
+		Read:         newUser.Read,
+		Write:        newUser.Write,
+		Role:         newUser.Role,
+	}
+
+	u.store.CreateUser(projectSlug, user)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, user)
+}
+
 // AddUser creates a new user for this project
 func (u *Users) AddUser(c *gin.Context) {
 	var newUser NewProjectUser
@@ -66,6 +116,11 @@ func (u *Users) AddUser(c *gin.Context) {
 	err := newUser.Validate()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if _, err := u.store.GetUserByUsername(projectSlug, newUser.Username); err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user already exists"})
 		return
 	}
 

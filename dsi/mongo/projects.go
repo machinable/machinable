@@ -9,6 +9,41 @@ import (
 	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
+// UpdateProject updates the project
+func (d *Datastore) UpdateProject(slug, userID string, project *models.Project) (*models.Project, error) {
+	// Create object ID from resource ID string
+	userObjectID, err := objectid.FromHex(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// connect to project collection
+	col := d.db.Projects()
+
+	// only updated `authn` value
+	_, err = col.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.String("slug", slug),
+			bson.EC.ObjectID("user_id", userObjectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				bson.EC.Boolean("authn", project.Authn),
+				bson.EC.Boolean("user_registration", project.UserRegistration),
+			),
+		),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	updatedProject, err := d.GetProjectBySlug(slug)
+
+	return updatedProject, err
+}
+
 // UpdateProjectAuthn updates the project authentication policy
 func (d *Datastore) UpdateProjectAuthn(slug, userID string, authn bool) (*models.Project, error) {
 	// Create object ID from resource ID string
@@ -30,6 +65,40 @@ func (d *Datastore) UpdateProjectAuthn(slug, userID string, authn bool) (*models
 		bson.NewDocument(
 			bson.EC.SubDocumentFromElements("$set",
 				bson.EC.Boolean("authn", authn),
+			),
+		),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	project, err := d.GetProjectBySlug(slug)
+
+	return project, err
+}
+
+// UpdateProjectUserRegistration updates the project authentication policy
+func (d *Datastore) UpdateProjectUserRegistration(slug, userID string, registration bool) (*models.Project, error) {
+	// Create object ID from resource ID string
+	userObjectID, err := objectid.FromHex(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	// connect to project collection
+	col := d.db.Projects()
+
+	// only updated `user_registration` value
+	_, err = col.UpdateOne(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.String("slug", slug),
+			bson.EC.ObjectID("user_id", userObjectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				bson.EC.Boolean("user_registration", registration),
 			),
 		),
 	)

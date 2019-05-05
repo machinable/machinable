@@ -49,7 +49,7 @@ func loggingMiddleware(store interfaces.Datastore, endpointType string) gin.Hand
 		authID := c.GetString("authID")
 
 		if authString == "" {
-			authString = "unknown"
+			authString = "anonymous"
 		}
 
 		// save project log

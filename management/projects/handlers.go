@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,7 +28,7 @@ func (p *Projects) UpdateProject(c *gin.Context) {
 	var updatedProject ProjectBody
 	c.BindJSON(&updatedProject)
 
-	project, err := p.store.UpdateProjectAuthn(projectSlug, userID, updatedProject.Authn)
+	project, err := p.store.UpdateProject(projectSlug, userID, &models.Project{Authn: updatedProject.Authn, UserRegistration: updatedProject.UserRegistration})
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

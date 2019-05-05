@@ -174,6 +174,11 @@ func (h *Collections) AddObjectToCollection(c *gin.Context) {
 
 	// get or create the project collection
 	if _, err := h.store.GetCollection(projectSlug, collectionName); err != nil {
+		// set authentication to default
+		requestedCollection.Create = true
+		requestedCollection.Read = true
+		requestedCollection.Update = true
+		requestedCollection.Delete = true
 		if err := h.store.AddCollection(projectSlug, requestedCollection); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get collection"})
 			return

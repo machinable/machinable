@@ -16,7 +16,7 @@ func SubDomainMiddleware() gin.HandlerFunc {
 		}
 
 		hostParts := strings.Split(c.Request.Host, ".")
-		if len(hostParts) != 3 {
+		if len(hostParts) < 3 {
 			c.AbortWithStatus(404)
 			return
 		}

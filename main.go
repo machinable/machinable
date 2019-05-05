@@ -22,7 +22,7 @@ func (hs HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hostParts := strings.Split(r.Host, ".")
 
 	// {sub}.{domain}.{tld}
-	if len(hostParts) != 3 {
+	if len(hostParts) < 3 {
 		http.Error(w, "Project Not Found", 404)
 		return
 	}

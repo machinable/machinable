@@ -36,12 +36,13 @@ const MaxNameLength = 32
 
 // ProjectBody is used to unmarshal the JSON body of an incoming request
 type ProjectBody struct {
-	UserID      string `json:"user_id"`
-	Slug        string `json:"slug"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Icon        string `json:"icon"`
-	Authn       bool   `json:"authn"`
+	UserID           string `json:"user_id"`
+	Slug             string `json:"slug"`
+	Name             string `json:"name"`
+	Description      string `json:"description"`
+	Icon             string `json:"icon"`
+	Authn            bool   `json:"authn"`
+	UserRegistration bool   `json:"user_registration"`
 }
 
 // Validate checks the project body for invalid fields
