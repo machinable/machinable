@@ -113,7 +113,7 @@ func (d *Datastore) UpdateProjectUserRegistration(slug, userID string, registrat
 }
 
 // CreateProject creates a new project for a user
-func (d *Datastore) CreateProject(userID, slug, name, description, icon string, authn bool) (*models.Project, error) {
+func (d *Datastore) CreateProject(userID, slug, name, description, icon string, authn bool, register bool) (*models.Project, error) {
 	// create ObjectID from UserID string
 	userObjectID, err := objectid.FromHex(userID)
 	if err != nil {
@@ -125,13 +125,14 @@ func (d *Datastore) CreateProject(userID, slug, name, description, icon string, 
 
 	// init project struc
 	project := &models.Project{
-		UserID:      userObjectID,
-		Slug:        slug,
-		Name:        name,
-		Description: description,
-		Icon:        icon,
-		Created:     time.Now(),
-		Authn:       authn,
+		UserID:           userObjectID,
+		Slug:             slug,
+		Name:             name,
+		Description:      description,
+		Icon:             icon,
+		Created:          time.Now(),
+		Authn:            authn,
+		UserRegistration: register,
 	}
 
 	// save user project

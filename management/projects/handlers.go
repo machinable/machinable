@@ -73,6 +73,7 @@ func (p *Projects) CreateProject(c *gin.Context) {
 		newProject.Description,
 		newProject.Icon,
 		newProject.Authn,
+		newProject.UserRegistration,
 	)
 
 	if err != nil {

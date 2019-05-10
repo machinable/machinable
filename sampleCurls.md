@@ -34,3 +34,13 @@ curl -d '{"firstName":"Nick", "lastName":"Sjostrom", "age":28}' -X POST http://o
 $ BASIC=$(echo "$USERNAME:$PASSWORD" | base64)
 $ curl -X POST -H "Authorization: basic $BASIC" https://one.machinable.io/sessions/
 ```
+
+```sh
+# local keys
+nsjostrom@nsjostrom-H61MA-D3V:~$ echo $KEY
+051204d1-6a29-4e07-b5a7-03c90bfc3fe3
+nsjostrom@nsjostrom-H61MA-D3V:~$ echo $KEY2
+fff24cb6-deb4-47b2-bea1-d6a67a2bd637
+nsjostrom@nsjostrom-H61MA-D3V:~$ echo $KEY3
+d933cbaa-74d9-48fd-9b83-08ab40ea18d6
+```

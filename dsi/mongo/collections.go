@@ -166,16 +166,22 @@ func (d *Datastore) GetCollections(project string) ([]*models.Collection, *error
 		docName := doc.Lookup("name").StringValue()
 		cnt, _ := d.CountCollectionDocuments(project, docName, nil)
 
+		// default in case old collections exist without defaults
+		create, _ := doc.Lookup("create").BooleanOK()
+		read, _ := doc.Lookup("read").BooleanOK()
+		update, _ := doc.Lookup("update").BooleanOK()
+		delete, _ := doc.Lookup("delete").BooleanOK()
+
 		collections = append(collections,
 			&models.Collection{
 				Name:          doc.Lookup("name").StringValue(),
 				ID:            doc.Lookup("_id").ObjectID().Hex(),
 				ParallelRead:  doc.Lookup("parallel_read").Boolean(),
 				ParallelWrite: doc.Lookup("parallel_write").Boolean(),
-				Create:        doc.Lookup("create").Boolean(),
-				Read:          doc.Lookup("read").Boolean(),
-				Update:        doc.Lookup("update").Boolean(),
-				Delete:        doc.Lookup("delete").Boolean(),
+				Create:        create,
+				Read:          read,
+				Update:        update,
+				Delete:        delete,
 				Created:       doc.Lookup("created").Time(),
 				Items:         cnt,
 			})
