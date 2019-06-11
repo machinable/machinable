@@ -33,9 +33,9 @@ func getEnv(key, fallback string) string {
 }
 
 func createConnection() *mongo.Database {
-	host := getEnv("MONGO_HOST", "localhost")
-	port := getEnv("MONGO_PORT", "27017")
-	client, err := mongo.Connect(context.Background(), fmt.Sprintf("mongodb://%s:%s", host, port), nil)
+	connectionString := getEnv("MONGO_CONN", "mongodb://localhost:27017")
+
+	client, err := mongo.Connect(context.Background(), connectionString, nil)
 	if err != nil {
 		fmt.Println(err)
 		panic("failed to connect database")
@@ -47,9 +47,6 @@ func createConnection() *mongo.Database {
 // Connect returns a *mongo.Database connection
 func Connect() *Database {
 	mongoDatabase := createConnection()
-	//db.runCommand({collStats:"project.one.collections.dogs", scale: 1024})
-	//r, _ := mongoDatabase.RunCommand(nil, bson.NewDocument(bson.EC.String("collStats", "project.one.collections.dogs")))
-
 	return &Database{db: mongoDatabase}
 }
 
