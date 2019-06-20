@@ -126,7 +126,6 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 		"session_id":    session.ID.Hex(),
-		"user_id":       user.ID.Hex(),
 	})
 }
 
@@ -185,7 +184,6 @@ func (u *Users) LoginUser(c *gin.Context) {
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 		"session_id":    session.ID.Hex(),
-		"user_id":       user.ID.Hex(),
 	})
 }
 

@@ -59,12 +59,10 @@ func (d *Datastore) CreateAppUser(user *models.User) error {
 	col := d.db.Users()
 
 	// save the user
-	result, err := col.InsertOne(
+	_, err := col.InsertOne(
 		context.Background(),
 		user,
 	)
-
-	user.ID = result.InsertedID.(objectid.ObjectID)
 
 	return err
 }
