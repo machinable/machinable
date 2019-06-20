@@ -126,6 +126,7 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 		"session_id":    session.ID.Hex(),
+		"user_id":       user.ID.Hex(),
 	})
 }
 
@@ -184,6 +185,7 @@ func (u *Users) LoginUser(c *gin.Context) {
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 		"session_id":    session.ID.Hex(),
+		"user_id":       user.ID.Hex(),
 	})
 }
 
@@ -258,6 +260,38 @@ func (u *Users) RevokeSession(c *gin.Context) {
 // ResetPassword authenticates the user using the old password, then sets a new password for the application user.
 func (u *Users) ResetPassword(c *gin.Context) {
 
+}
+
+// GetUser retrieves the user by ID
+func (u *Users) GetUser(c *gin.Context) {
+	userID, ok := c.MustGet("user_id").(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no user"})
+		return
+	}
+
+	user, err := u.store.GetAppUserByID(userID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+// GetSession retrieves the user's current session information.
+func (u *Users) GetSession(c *gin.Context) {
+	sessionID := c.Param("sessionID")
+
+	session, err := u.store.GetAppSession(sessionID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"session": session})
 }
 
 // ListUserSessions returns a list of the user's active sessions
