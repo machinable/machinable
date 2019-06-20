@@ -10,6 +10,7 @@ import (
 type SessionsDatastore interface {
 	CreateAppSession(session *models.Session) error
 	UpdateAppSessionLastAccessed(sessionID string, lastAccessed time.Time) error
+	ListUserSessions(userID string) ([]*models.Session, error)
 	GetAppSession(sessionID string) (*models.Session, error)
 	DeleteAppSession(sessionID string) error
 }

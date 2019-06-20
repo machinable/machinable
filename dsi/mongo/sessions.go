@@ -89,3 +89,31 @@ func (d *Datastore) DeleteAppSession(sessionID string) error {
 
 	return err
 }
+
+// ListUserSessions lists all sessions for a user
+func (d *Datastore) ListUserSessions(userID string) ([]*models.Session, error) {
+	sessions := make([]*models.Session, 0)
+	collection := d.db.Sessions()
+
+	cursor, err := collection.Find(
+		context.Background(),
+		bson.NewDocument(
+			bson.EC.String("user_id", userID),
+		),
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(context.Background()) {
+		var session models.Session
+		err := cursor.Decode(&session)
+		if err != nil {
+			return nil, err
+		}
+		sessions = append(sessions, &session)
+	}
+
+	return sessions, nil
+}

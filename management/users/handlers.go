@@ -259,3 +259,21 @@ func (u *Users) RevokeSession(c *gin.Context) {
 func (u *Users) ResetPassword(c *gin.Context) {
 
 }
+
+// ListUserSessions returns a list of the user's active sessions
+func (u *Users) ListUserSessions(c *gin.Context) {
+	userID, ok := c.MustGet("user_id").(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no user"})
+		return
+	}
+
+	sessions, err := u.store.ListUserSessions(userID)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"sessions": sessions})
+}

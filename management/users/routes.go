@@ -14,6 +14,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	users := engine.Group("/users")
 	users.POST("/register", handler.RegisterUser)
 	users.POST("/sessions", handler.LoginUser)
+	users.GET("/sessions", middleware.AppUserJwtAuthzMiddleware(), handler.ListUserSessions)
 	users.DELETE("/sessions/:sessionID", middleware.AppUserJwtAuthzMiddleware(), handler.RevokeSession)
 	users.POST("/refresh", middleware.ValidateRefreshToken(), handler.RefreshToken)
 	users.POST("/password", middleware.AppUserJwtAuthzMiddleware(), handler.ResetPassword)

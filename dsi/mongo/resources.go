@@ -74,6 +74,8 @@ func (d *Datastore) AddDefinition(project string, def *models.ResourceDefinition
 		return "", errors.New(errors.UnknownError, err)
 	}
 
+	// create new resource document collection with indexes
+
 	return result.InsertedID.(objectid.ObjectID).Hex(), nil
 }
 
