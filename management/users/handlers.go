@@ -257,7 +257,60 @@ func (u *Users) RevokeSession(c *gin.Context) {
 
 // ResetPassword authenticates the user using the old password, then sets a new password for the application user.
 func (u *Users) ResetPassword(c *gin.Context) {
+	userID, ok := c.MustGet("user_id").(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no user"})
+		return
+	}
 
+	var passwordUpdate updatePasswordBody
+
+	c.BindJSON(&passwordUpdate)
+
+	// validate user
+	err := passwordUpdate.Validate()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// generate hashed password
+	// passwordHash, err := auth.HashPassword(passwordUpdate.OldPW)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// 	return
+	// }
+	// passwordUpdate.OldPW = ""
+
+	// look up the user
+	user, err := u.store.GetAppUserByID(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+
+	// compare passwords
+	if !auth.CompareHashAndPassword(user.PasswordHash, passwordUpdate.OldPW) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "invalid password"})
+		return
+	}
+
+	// generate hashed NEW password
+	newPasswordHash, err := auth.HashPassword(passwordUpdate.NewPW)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	passwordUpdate.OldPW = ""
+	passwordUpdate.NewPW = ""
+
+	// update password
+	if err := u.store.UpdateUserPassword(userID, newPasswordHash); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 // GetUser retrieves the user by ID

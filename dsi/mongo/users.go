@@ -66,3 +66,28 @@ func (d *Datastore) CreateAppUser(user *models.User) error {
 
 	return err
 }
+
+// UpdateUserPassword updates the user's password
+func (d *Datastore) UpdateUserPassword(userID, passwordHash string) error {
+	userObjectID, err := objectid.FromHex(userID)
+	if err != nil {
+		return err
+	}
+
+	col := d.db.Users()
+
+	_, uerr := col.UpdateOne(
+		nil,
+		bson.NewDocument(
+			bson.EC.ObjectID("_id", userObjectID),
+		),
+		bson.NewDocument(
+			bson.EC.SubDocumentFromElements("$set",
+				bson.EC.String("password_hash", passwordHash),
+			),
+		),
+		nil,
+	)
+
+	return uerr
+}
