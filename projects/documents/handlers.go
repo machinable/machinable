@@ -109,7 +109,7 @@ func (h *Documents) ListObjects(c *gin.Context) {
 	sort := make(map[string]int)
 
 	var resourceDefinition *models.ResourceDefinition
-	validProperties := map[string]models.Property{}
+	validSchema := &models.JSONSchemaObject{}
 	for k, v := range values {
 		if k == dsi.LimitKey || k == dsi.OffsetKey {
 			continue
@@ -127,7 +127,7 @@ func (h *Documents) ListObjects(c *gin.Context) {
 			continue
 		}
 
-		if resourceDefinition == nil || validProperties == nil {
+		if resourceDefinition == nil || validSchema == nil {
 			// get resource definition if we do not already have it
 			resourceDefinition, err := h.store.GetDefinitionByPathName(projectSlug, resourcePathName)
 			if err != nil {
@@ -137,21 +137,22 @@ func (h *Documents) ListObjects(c *gin.Context) {
 
 			// get property types
 			var pErr error
-			validProperties, pErr = resourceDefinition.GetProperties()
+			validSchema, pErr = resourceDefinition.GetSchema()
 			if pErr != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting property types"})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting schema property types"})
 				return
 			}
 		}
 
-		prop, ok := validProperties[k]
+		prop, ok := validSchema.Properties[k]
 		if !ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("unable to filter on '%s', field does not exist", k)})
 			return
 		}
 
 		// cast filters to their actual types, based on definition
-		trueValue, err := dsi.CastInterfaceToType(prop.Type, v[0])
+
+		trueValue, err := dsi.CastInterfaceToType(prop["type"].(string), v[0])
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return

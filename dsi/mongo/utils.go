@@ -85,6 +85,7 @@ func getMutableDocument(key string, doc *bson.Document) (*bson.Document, error) 
 
 // parseDefinition parses the *bson.Document of the resource definition to a *models.ResourceDefinition struct
 func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
+	var found bool
 	def := models.ResourceDefinition{}
 	def.ID = doc.Lookup(dsi.DocumentIDKey).ObjectID().Hex()
 	def.Title = doc.Lookup("title").StringValue()
@@ -96,7 +97,10 @@ func parseDefinition(doc *bson.Document) (*models.ResourceDefinition, error) {
 	def.Read, _ = doc.Lookup("read").BooleanOK()
 	def.Update, _ = doc.Lookup("update").BooleanOK()
 	def.Delete, _ = doc.Lookup("delete").BooleanOK()
-	def.Properties = doc.Lookup("properties").StringValue()
+	def.Schema, found = doc.Lookup("schema").StringValueOK()
+	if found == false {
+		def.Schema = "{}"
+	}
 
 	return &def, nil
 }

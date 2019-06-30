@@ -61,7 +61,7 @@ func (d *Datastore) AddDefinition(project string, def *models.ResourceDefinition
 	resourceElements = append(resourceElements, bson.EC.Boolean("update", def.Update))
 	resourceElements = append(resourceElements, bson.EC.Boolean("delete", def.Delete))
 	resourceElements = append(resourceElements, bson.EC.Time("created", time.Now()))
-	resourceElements = append(resourceElements, bson.EC.String("properties", def.Properties))
+	resourceElements = append(resourceElements, bson.EC.String("schema", def.Schema))
 
 	// Get a connection and insert the new document
 	collection := d.db.ResourceDefinitions(project)

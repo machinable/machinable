@@ -23,9 +23,8 @@ func (obj *ResourceObject) Validate(definition *ResourceDefinition) error {
 	}
 
 	schema := new(spec.Schema)
-	properties := fmt.Sprintf(`{"properties": %s }`, definition.Properties)
 
-	err := json.Unmarshal([]byte(properties), schema)
+	err := json.Unmarshal([]byte(definition.Schema), schema)
 	if err != nil {
 		return err
 	}
@@ -47,10 +46,18 @@ func (obj *ResourceObject) Validate(definition *ResourceDefinition) error {
 	return nil
 }
 
-// Property is a simplified representation of a JSON Schema property
-type Property struct {
-	Type string `json:"type"`
+// JSONSchemaObject is a simplified representation of the root schema
+type JSONSchemaObject struct {
+	Type       string                            `json:"type"`
+	Properties map[string]map[string]interface{} `json:"properties"`
+	Required   []string                          `json:"required"`
+	// AdditionalProperties bool                              `json:"additionalProperties"`
 }
+
+// Property is a simplified representation of a JSON Schema property
+// type Property struct {
+// 	Type string `json:"type"`
+// }
 
 // ResourceDefinition defines an API resource
 type ResourceDefinition struct {
@@ -63,38 +70,38 @@ type ResourceDefinition struct {
 	Read          bool      `json:"read"`
 	Update        bool      `json:"update"`
 	Delete        bool      `json:"delete"`
-	Created       time.Time `json:"created"`    // Created is the timestamp the resource was created
-	Properties    string    `json:"properties"` // Properties is the string representation of the JSON schema properties
+	Created       time.Time `json:"created"` // Created is the timestamp the resource was created
+	Schema        string    `json:"schema"`  // Properties is the string representation of the JSON schema properties
 }
 
-// GetProperties returns the properties as a `Properties` object
-func (def *ResourceDefinition) GetProperties() (map[string]Property, error) {
-	properties := map[string]Property{}
-	err := json.Unmarshal([]byte(def.Properties), &properties)
+// GetSchema returns the schema as a `Schema` object
+func (def *ResourceDefinition) GetSchema() (*JSONSchemaObject, error) {
+	schema := &JSONSchemaObject{}
+	err := json.Unmarshal([]byte(def.Schema), schema)
 
-	return properties, err
+	return schema, err
 }
 
 // MarshalJSON custom marshaller to marshall properties to json
 func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
-	properties := map[string]interface{}{}
-	err := json.Unmarshal([]byte(def.Properties), &properties)
+	schema := JSONSchemaObject{}
+	err := json.Unmarshal([]byte(def.Schema), &schema)
 	if err != nil {
 		panic(err)
 	}
 
 	return json.Marshal(&struct {
-		ID            string                 `json:"id"`        // ID is the unique identifier for this resource definition
-		Title         string                 `json:"title"`     // Title of this resource
-		PathName      string                 `json:"path_name"` // PathName is the name that will appear in the URL path
-		ParallelRead  bool                   `json:"parallel_read"`
-		ParallelWrite bool                   `json:"parallel_write"`
-		Create        bool                   `json:"create"`
-		Read          bool                   `json:"read"`
-		Update        bool                   `json:"update"`
-		Delete        bool                   `json:"delete"`
-		Created       time.Time              `json:"created"`    // Created is the timestamp the resource was created
-		Properties    map[string]interface{} `json:"properties"` // Properties is the string representation of the JSON schema properties
+		ID            string           `json:"id"`        // ID is the unique identifier for this resource definition
+		Title         string           `json:"title"`     // Title of this resource
+		PathName      string           `json:"path_name"` // PathName is the name that will appear in the URL path
+		ParallelRead  bool             `json:"parallel_read"`
+		ParallelWrite bool             `json:"parallel_write"`
+		Create        bool             `json:"create"`
+		Read          bool             `json:"read"`
+		Update        bool             `json:"update"`
+		Delete        bool             `json:"delete"`
+		Created       time.Time        `json:"created"` // Created is the timestamp the resource was created
+		Schema        JSONSchemaObject `json:"schema"`  // Properties is the string representation of the JSON schema properties
 	}{
 		ID:            def.ID,
 		Title:         def.Title,
@@ -106,16 +113,16 @@ func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
 		Update:        def.Update,
 		Delete:        def.Delete,
 		Created:       def.Created,
-		Properties:    properties,
+		Schema:        schema,
 	})
 }
 
 // UnmarshalJSON is a custom unmarshaller
 func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 	payload := struct {
-		Title         string          `json:"title"`      // Title of this resource
-		PathName      string          `json:"path_name"`  // PathName is the name that will appear in the URL path
-		Properties    json.RawMessage `json:"properties"` // Properties is the string representation of the JSON schema properties
+		Title         string          `json:"title"`     // Title of this resource
+		PathName      string          `json:"path_name"` // PathName is the name that will appear in the URL path
+		Schema        json.RawMessage `json:"schema"`    // Schema is the string representation of the JSON schema
 		ParallelRead  bool            `json:"parallel_read"`
 		ParallelWrite bool            `json:"parallel_write"`
 		Create        bool            `json:"create"`
@@ -132,7 +139,7 @@ func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 
 	def.Title = payload.Title
 	def.PathName = payload.PathName
-	def.Properties = string(payload.Properties)
+	def.Schema = string(payload.Schema)
 	def.ParallelRead = payload.ParallelRead
 	def.ParallelWrite = payload.ParallelWrite
 	def.Create = payload.Create
@@ -153,21 +160,26 @@ func (def *ResourceDefinition) Validate() error {
 		return errors.New("resource path_name cannot be empty")
 	} else if len(def.PathName) > dsi.MaxLengthOfCollectionInfo {
 		return fmt.Errorf("resource path_name cannot be longer than %d characters", dsi.MaxLengthOfCollectionInfo)
-	} else if def.Properties == "" {
-		return errors.New("resource properties cannot be empty")
+	} else if def.Schema == "" {
+		return errors.New("resource schema cannot be empty")
 	} else if !dsi.ValidPathFormat.MatchString(def.PathName) {
 		return errors.New("invalid path name: only alphanumeric, dashes, and underscores allowed")
 	}
 
-	props := map[string]interface{}{}
-	err := json.Unmarshal([]byte(def.Properties), &props)
-	if err := dsi.ContainsReservedField(props); err != nil {
+	objectSchema := JSONSchemaObject{}
+	err := json.Unmarshal([]byte(def.Schema), &objectSchema)
+
+	m := map[string]interface{}{}
+	rec, _ := json.Marshal(objectSchema.Properties)
+	json.Unmarshal(rec, &m)
+
+	if err := dsi.ContainsReservedField(m); err != nil {
 		return err
 	}
 
 	schema := new(spec.Schema)
 
-	err = json.Unmarshal([]byte(def.Properties), schema)
+	err = json.Unmarshal([]byte(def.Schema), schema)
 
 	return err
 }
