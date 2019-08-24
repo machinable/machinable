@@ -13,9 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Collection is the constant value for the URL parameter
-var Collections = "collections"
-
 // Resources is the constant value for the URL parameter
 var Resources = "api"
 
@@ -170,24 +167,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		storeConfig := StoreConfig{}
 
 		// check store type, load store and get config for access policies
-		if storeType == Collections {
-			col, err := store.GetCollection(project, collectionName)
-			if err != nil {
-				// if the collection does not exist and this is a POST, collection gets created
-				if err.Code() == http.StatusNotFound && verb == "POST" {
-					storeConfig.Create = true
-				} else {
-					respondWithError(http.StatusNotFound, "error retrieving collection - does not exist", c)
-				}
-			} else {
-				storeConfig.Create = col.Create
-				storeConfig.Read = col.Read
-				storeConfig.Update = col.Update
-				storeConfig.Delete = col.Delete
-				storeConfig.ParallelRead = col.ParallelRead
-				storeConfig.ParallelWrite = col.ParallelWrite
-			}
-		} else if storeType == Resources {
+		if storeType == Resources {
 			def, err := store.GetDefinitionByPathName(project, collectionName)
 			if err != nil {
 				respondWithError(http.StatusNotFound, "error retrieving resource - does not exist", c)

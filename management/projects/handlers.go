@@ -133,11 +133,6 @@ func (p *Projects) DeleteUserProject(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project sessions"})
 		return
 	}
-	colErr := p.store.DropProjectCollections(projectSlug)
-	if colErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project collections"})
-		return
-	}
 	resourceErr := p.store.DropProjectResources(projectSlug)
 	if resourceErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project resources"})
