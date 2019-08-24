@@ -1,14 +1,14 @@
-hash: 3986b22e5db79fdcf42b40f29db70bb3a8a673ed79d628a5b4013678b1563f66
-updated: 2019-02-18T20:52:11.353764726Z
+hash: 8d3de2696fad2a2c42ab42636fbd5daa095e287d760db2e73d0864e041aef381
+updated: 2019-08-24T01:46:58.482643736Z
 imports:
 - name: github.com/asaskevich/govalidator
-  version: f9ffefc3facfbe0caee3fea233cbb6e8208f4541
+  version: f61b66f89f4a311bef65f13e575bcf1a2ffadda6
 - name: github.com/dgrijalva/jwt-go
-  version: 3af4c746e1c248ee8491a3e0c6f7a9cd831e95f8
+  version: 5e25c22bd5d6de03265bbe5462dcd162f85046f6
 - name: github.com/gin-contrib/sse
-  version: a7658810eb745c2f22927282dea478278103a897
+  version: 54d8467d122d380a14768b6b4e5cd7ca4755938f
 - name: github.com/gin-gonic/gin
-  version: 31bbb10f34e4673815ab66099571bac95cf4113d
+  version: 9a820cf0054bcd769f785457b7dbd149a7b29fdd
   subpackages:
   - binding
   - internal/json
@@ -19,45 +19,50 @@ imports:
   - bson
   - internal/json
 - name: github.com/go-openapi/analysis
-  version: e2f3fdbb7ed0e56e070ccbfb6fc75b288a33c014
+  version: 47fc820a84d431c1eecfe34ec77978e0b08501a9
   subpackages:
   - internal
 - name: github.com/go-openapi/errors
-  version: 7a7ff1b7b8020f22574411a32f28b4d168d69237
+  version: 9b273e805998abc751853b4e1574d66e5df888b4
 - name: github.com/go-openapi/jsonpointer
-  version: ef5f0afec364d3b9396b7b77b43dbe26bf1f8004
+  version: a67b0cdac37a3489417baf74a7c7802673395a2d
 - name: github.com/go-openapi/jsonreference
-  version: 8483a886a90412cd6858df4ea3483dce9c8e35a3
+  version: 2903bfd4bfbaf188694f1edf731f2725a8fa344f
 - name: github.com/go-openapi/loads
-  version: 74628589c3b94e3526a842d24f46589980f5ab22
+  version: 8548893a17237be4a5b2f74773f23002f4179bbe
 - name: github.com/go-openapi/runtime
-  version: 41e24cc66d7af6af39eb9b5a6418e901bcdd333c
+  version: 882fa18ad52bee24eb77d2312d1929580e894013
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/strfmt
   version: e471370ae57ac74eaf0afe816a66e4ddd7f1b027
 - name: github.com/go-openapi/swag
-  version: b28747f5c7f9eb6b0b82d2f87f365fff72b535c9
+  version: c3d0f7896d589f3babb99eea24bbc7de98108e72
 - name: github.com/go-openapi/validate
   version: d2eab7d93009e9215fc85b2faa2c2f2a98c2af48
 - name: github.com/go-stack/stack
   version: 2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a
 - name: github.com/golang/protobuf
-  version: c823c79ea1570fb5ff454033735a8e68575d1d0f
+  version: 4c88cc3f1a34ffade77b79abc53335d1e511f25b
   subpackages:
   - proto
 - name: github.com/golang/snappy
-  version: 2e65f85255dbc3072edf28d6b5b8efc472979f5a
+  version: 2a8bb927dd31d8daada140a5d09578521ce5c36a
 - name: github.com/json-iterator/go
-  version: 5bc93205020f6311d7e4a34f82c5616a18ec35e5
+  version: 27518f6661eba504be5a7a9a9f6d9460d892ade3
+- name: github.com/lib/pq
+  version: 3427c32cb71afc948325f299f040e53c1dd78979
+  subpackages:
+  - oid
+  - scram
 - name: github.com/mailru/easyjson
-  version: 60711f1a8329503b04e1c88535f419d0bb440bff
+  version: b2ccc519800e761ac8000b95e5d57c80a897ff9e
   subpackages:
   - buffer
   - jlexer
   - jwriter
 - name: github.com/mattn/go-isatty
-  version: 3fb116b820352b7f0c281308a4d6250c22d94e27
+  version: bf9a1dea1961e1d831824fb135332bfb8c10e8b8
 - name: github.com/mitchellh/mapstructure
   version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/modern-go/concurrent
@@ -122,7 +127,7 @@ imports:
   - mongo/transactionopt
   - mongo/updateopt
 - name: github.com/mssola/user_agent
-  version: 8b39990837709a42bf92e5f8bc8707a901c57338
+  version: 74451004a1beb37221bccd8a3931c6acf4a2e80e
 - name: github.com/PuerkitoBio/purell
   version: 44968752391892e1b0d0b821ee79e9a85fa13049
 - name: github.com/PuerkitoBio/urlesc
@@ -130,7 +135,7 @@ imports:
 - name: github.com/satori/go.uuid
   version: b2ce2384e17bbe0c6d34077efa39dbab3e09123b
 - name: github.com/ugorji/go
-  version: e444a5086c436778cf9281a7059a3d58b9e17935
+  version: 42bc974514ff101a54c6b72a0e4dee29d96c0b26
   subpackages:
   - codec
 - name: github.com/xdg/scram
@@ -138,25 +143,25 @@ imports:
 - name: github.com/xdg/stringprep
   version: 73f8eece6fdcd902c185bf651de50f3828bed5ed
 - name: golang.org/x/crypto
-  version: 74369b46fc6756741c016591724fd1cb8e26845f
+  version: 60c769a6c58655dab1b9adac0d58967dd517cfba
   subpackages:
   - bcrypt
   - blowfish
   - pbkdf2
 - name: golang.org/x/net
-  version: 3a22650c66bd7f4fb6d1e8072ffd7b75c8a27898
+  version: 74dc4d7220e7acc4e100824340f3e66577424772
   subpackages:
   - idna
 - name: golang.org/x/sync
-  version: 37e7f081c4d4c64e13b10787722085407fe5d15f
+  version: 112230192c580c3556b8cee6403af37a4fc5f28c
   subpackages:
   - semaphore
 - name: golang.org/x/sys
-  version: d0b11bdaac8adb652bff00e49bcacf992835621a
+  version: fde4db37ae7ad8191b03d30d27f258b5291ae4e3
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 6c92c7dc7f53607809182301b96e4cc1975143f1
+  version: 342b2e1fbaa52c93f31447ad2c6abc048c63e475
   subpackages:
   - secure/bidirule
   - transform

@@ -1,14 +1,16 @@
 package: github.com/anothrnick/machinable
 import:
-  - package: github.com/mongodb/mongo-go-driver
-    version: v0.0.17
-  - package: github.com/mssola/user_agent
-  - package: github.com/satori/go.uuid
-  - package: github.com/gin-gonic/gin
-  - package: github.com/dgrijalva/jwt-go
-  - package: github.com/go-openapi/validate
-    version: v0.18.0
-  - package: github.com/go-openapi/strfmt
-    version: v0.18.0
-  - package: github.com/go-openapi/spec
-    version: v0.18.0
+- package: github.com/mongodb/mongo-go-driver
+  version: v0.0.17
+- package: github.com/mssola/user_agent
+- package: github.com/satori/go.uuid
+- package: github.com/gin-gonic/gin
+- package: github.com/dgrijalva/jwt-go
+- package: github.com/go-openapi/validate
+  version: v0.18.0
+- package: github.com/go-openapi/strfmt
+  version: v0.18.0
+- package: github.com/go-openapi/spec
+  version: v0.18.0
+- package: github.com/lib/pq
+  version: ^1.2.0
