@@ -5,7 +5,6 @@ import (
 
 	"github.com/anothrnick/machinable/middleware"
 	"github.com/anothrnick/machinable/projects/apikeys"
-	"github.com/anothrnick/machinable/projects/collections"
 	"github.com/anothrnick/machinable/projects/documents"
 	"github.com/anothrnick/machinable/projects/logs"
 	"github.com/anothrnick/machinable/projects/resources"
@@ -22,7 +21,6 @@ func CreateRoutes(datastore interfaces.Datastore) *gin.Engine {
 	router.Use(middleware.SubDomainMiddleware())
 
 	// set routes -> handlers for each package
-	collections.SetRoutes(router, datastore)
 	resources.SetRoutes(router, datastore)
 	documents.SetRoutes(router, datastore)
 	logs.SetRoutes(router, datastore)

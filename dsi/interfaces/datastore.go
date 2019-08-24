@@ -7,8 +7,6 @@ package interfaces
 type Datastore interface {
 	// Project resources/definitions
 	ResourcesDatastore
-	// Project collections
-	CollectionsDatastore
 	// Project users
 	ProjectUsersDatastore
 	// Project apikeys
