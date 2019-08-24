@@ -5,15 +5,15 @@ import (
 	"time"
 
 	"github.com/mongodb/mongo-go-driver/bson"
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // User is a user of the application
 type User struct {
-	ID           objectid.ObjectID `json:"id" bson:"_id,omitempty"`
-	Username     string            `json:"username" bson:"username"`
-	PasswordHash string            `json:"-" bson:"password_hash"`
-	Created      time.Time         `json:"created" bson:"created"`
+	ID           string    `json:"id" bson:"_id,omitempty"`
+	Username     string    `json:"username" bson:"username"`
+	Email        string    `json:"-" bson:"username"`
+	PasswordHash string    `json:"-" bson:"password_hash"`
+	Created      time.Time `json:"created" bson:"created"`
 }
 
 // MarshalJSON is a custom json marshal function
@@ -25,7 +25,7 @@ func (u User) MarshalJSON() ([]byte, error) {
 	}{}
 
 	// Marshal ID to string
-	user.ID = u.ID.Hex()
+	user.ID = u.ID
 	user.Username = u.Username
 	user.Created = u.Created
 
@@ -39,7 +39,7 @@ func (u *User) UnmarshalBSON(bytes []byte) error {
 		return err
 	}
 
-	u.ID = doc.Lookup("_id").ObjectID()
+	u.ID = doc.Lookup("_id").ObjectID().Hex()
 	u.Username = doc.Lookup("username").StringValue()
 	u.PasswordHash = doc.Lookup("password_hash").StringValue()
 
