@@ -60,6 +60,7 @@ func (d *Database) ListUserSessions(userID string) ([]*models.Session, error) {
 	for rows.Next() {
 		session := models.Session{}
 		err = rows.Scan(
+			&session.ID,
 			&session.UserID,
 			&session.Location,
 			&session.Mobile,
@@ -108,7 +109,7 @@ func (d *Database) GetAppSession(sessionID string) (*models.Session, error) {
 func (d *Database) DeleteAppSession(sessionID string) error {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"DELETE FROM %s WHERE user_id=$1 AND id=$2",
+			"DELETE FROM %s WHERE id=$1",
 			tableAppSessions,
 		),
 		sessionID,

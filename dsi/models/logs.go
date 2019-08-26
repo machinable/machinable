@@ -9,6 +9,8 @@ const (
 
 // Log is any user/api key initiated event that should be recorded
 type Log struct {
+	ID             string `json:"id"`
+	ProjectID      string `json:"project_id"`
 	EndpointType   string `json:"endpoint_type"`
 	Verb           string `json:"verb"`
 	Path           string `json:"path"`

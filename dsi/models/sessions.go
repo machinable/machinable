@@ -7,6 +7,7 @@ import (
 // Session is a user session model for either the mgmt application or a project
 type Session struct {
 	ID           string    `json:"id"`
+	ProjectID    string    `json:"project_id"`
 	UserID       string    `json:"user_id"`
 	Location     string    `json:"location"`
 	Mobile       bool      `json:"mobile"`
