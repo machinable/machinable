@@ -11,7 +11,8 @@ CREATE TABLE app_users (
     email VARCHAR NOT NULL UNIQUE,
     username VARCHAR NOT NULL UNIQUE,
     password_hash VARCHAR NOT NULL,
-    created TIMESTAMP NOT NULL
+    created TIMESTAMP NOT NULL,
+    admin BOOLEAN DEFAULT false,
 );
 
 CREATE TABLE app_sessions (
@@ -60,7 +61,7 @@ CREATE TABLE project_sessions (
     os VARCHAR
 );
 
-CREATE TABLE project_resources (
+CREATE TABLE project_resource_definitions (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
     name VARCHAR NOT NULL,
@@ -72,12 +73,14 @@ CREATE TABLE project_resources (
     update BOOLEAN DEFAULT false,
     delete BOOLEAN DEFAULT false,
     schema JSONB,
-    created TIMESTAMP NOT NULL
+    created TIMESTAMP NOT NULL,
+
+    UNIQUE(project_id, path_name)
 );
 
 CREATE TABLE project_resource_objects (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-    resource_id uuid NOT NULL REFERENCES project_resources(id),
+    resource_path uuid NOT NULL REFERENCES project_resources(path_name),
     user_id uuid REFERENCES project_users(id),
     apikey_id uuid REFERENCES project_apikeys(id),
     created TIMESTAMP NOT NULL,
