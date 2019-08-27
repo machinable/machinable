@@ -2,6 +2,13 @@ package models
 
 import "time"
 
+const (
+	// CreatorUser constant
+	CreatorUser = "user"
+	// CreatorAPIKey constant
+	CreatorAPIKey = "apikey"
+)
+
 // NewMetaData returns a pointer to a new MetaData object with the `Created` field set to now.
 func NewMetaData(creator, creatorType string) *MetaData {
 	return &MetaData{

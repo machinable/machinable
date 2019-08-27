@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -144,6 +145,8 @@ func (d *Database) GetResourceStats(projectID, definitionID string) (*models.Sta
 		return nil, errors.New(errors.UnknownError, err)
 	}
 
+	// TODO get stats for all objects...
+
 	return &stats, nil
 }
 
@@ -212,28 +215,195 @@ func (d *Database) DropProjectResources(projectID string) *errors.DatastoreError
 /******************************/
 
 // AddDefDocument creates a new document for the existing resource, specified by the path.
-func (d *Database) AddDefDocument(projectID, path string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError) {
-	return "", nil
+func (d *Database) AddDefDocument(projectID, pathName string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError) {
+	var id, userID, apiKeyID string
+
+	if metadata.CreatorType == models.CreatorAPIKey {
+		apiKeyID = metadata.Creator
+	} else {
+		userID = metadata.Creator
+	}
+
+	// Get field definitions for this resource
+	resourceDefinition, defErr := d.GetDefinitionByPathName(projectID, pathName)
+	if defErr != nil {
+		return "", errors.New(errors.NotFound, fmt.Errorf("resource does not exist"))
+	}
+
+	// validate schema
+	schemaErr := fields.Validate(resourceDefinition)
+	if schemaErr != nil {
+		return "", errors.New(errors.BadParameter, schemaErr)
+	}
+
+	data, der := json.Marshal(fields)
+	if der != nil {
+		return "", errors.New(errors.UnknownError, der)
+	}
+
+	err := d.db.QueryRow(
+		fmt.Sprintf(
+			"INSERT INTO %s (resource_path, user_id, apikey_id, created, data) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+			tableProjectResourceObjects,
+		),
+		pathName,
+		userID,
+		apiKeyID,
+		time.Now(),
+		data,
+	).Scan(&id)
+
+	return id, errors.New(errors.UnknownError, err)
 }
 
 // UpdateDefDocument updates an existing document if it exists
-func (d *Database) UpdateDefDocument(projectID, path, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) *errors.DatastoreError {
-	return nil
+func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) *errors.DatastoreError {
+	// Get field definitions for this resource
+	resourceDefinition, defErr := d.GetDefinitionByPathName(projectID, pathName)
+	if defErr != nil {
+		return errors.New(errors.NotFound, fmt.Errorf("resource does not exist"))
+	}
+
+	// validate schema
+	schemaErr := updatedFields.Validate(resourceDefinition)
+	if schemaErr != nil {
+		return errors.New(errors.BadParameter, schemaErr)
+	}
+
+	data, der := json.Marshal(updatedFields)
+	if der != nil {
+		return errors.New(errors.UnknownError, der)
+	}
+
+	_, err := d.db.Exec(
+		fmt.Sprintf(
+			"UPDATE %s SET data=$1 WHERE id=$2",
+			tableProjectResourceObjects,
+		),
+		data,
+		documentID,
+	)
+
+	return errors.New(errors.UnknownError, err)
 }
 
 // ListDefDocuments retrieves all definition documents for the give project and path
-func (d *Database) ListDefDocuments(projectID, path string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError) {
-	return nil, nil
+func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError) {
+
+	// TODO: filter
+
+	rows, err := d.db.Query(
+		fmt.Sprintf(
+			"SELECT id, user_id, apikey_id, created, data FROM %s WHERE resource_path=$1 LIMIT=$2 OFFSET=$3",
+			tableProjectResourceObjects,
+		),
+		pathName,
+		limit,
+		offset,
+	)
+	if err != nil {
+		return nil, errors.New(errors.UnknownError, err)
+	}
+	defer rows.Close()
+
+	objects := make([]map[string]interface{}, 0)
+	for rows.Next() {
+		var id, userID, apikeyID, creator, creatorType string
+		var created time.Time
+		obj := make(map[string]interface{})
+		err = rows.Scan(
+			&id,
+			&userID,
+			&apikeyID,
+			&created,
+			&obj,
+		)
+
+		if userID != "" {
+			creator = userID
+			creatorType = models.CreatorUser
+		} else {
+			creator = apikeyID
+			creatorType = models.CreatorAPIKey
+		}
+
+		obj["_metadata"] = models.MetaData{
+			Created:     created.Unix(),
+			Creator:     creator,
+			CreatorType: creatorType,
+		}
+		obj["id"] = id
+
+		if err != nil {
+			return nil, errors.New(errors.UnknownError, err)
+		}
+
+		objects = append(objects, obj)
+	}
+
+	return objects, errors.New(errors.UnknownError, rows.Err())
 }
 
 // GetDefDocument retrieves a single document
 func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
-	return nil, nil
+	var id, userID, apikeyID, creator, creatorType string
+	var created time.Time
+	obj := make(map[string]interface{})
+
+	err := d.db.QueryRow(
+		fmt.Sprintf(
+			"SELECT id, user_id, apikey_id, created, data FROM %s WHERE id=$1",
+			tableProjectResourceObjects,
+		),
+		documentID,
+	).Scan(
+		&id,
+		&userID,
+		&apikeyID,
+		&created,
+		&obj,
+	)
+
+	if err != nil {
+		return nil, errors.New(errors.UnknownError, err)
+	}
+
+	if userID != "" {
+		creator = userID
+		creatorType = models.CreatorUser
+	} else {
+		creator = apikeyID
+		creatorType = models.CreatorAPIKey
+	}
+
+	obj["_metadata"] = models.MetaData{
+		Created:     created.Unix(),
+		Creator:     creator,
+		CreatorType: creatorType,
+	}
+	obj["id"] = id
+
+	return obj, nil
 }
 
 // CountDefDocuments returns the count of all documents for a project resource
-func (d *Database) CountDefDocuments(projectID, path string, filter map[string]interface{}) (int64, *errors.DatastoreError) {
-	return 0, nil
+func (d *Database) CountDefDocuments(projectID, pathName string, filter map[string]interface{}) (int64, *errors.DatastoreError) {
+	var count int64
+	err := d.db.QueryRow(
+		fmt.Sprintf(
+			"SELECT count(id) FROM %s WHERE resource_path=$1",
+			tableProjectResourceObjects,
+		),
+		pathName,
+	).Scan(
+		&count,
+	)
+
+	if err != nil {
+		return 0, errors.New(errors.UnknownError, err)
+	}
+
+	return count, nil
 }
 
 // DeleteDefDocument deletes a single document
