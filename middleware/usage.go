@@ -43,7 +43,7 @@ func loggingMiddleware(store interfaces.Datastore, endpointType string) gin.Hand
 		verb := c.Request.Method
 		path := c.Request.URL.Path
 
-		projectSlug := c.GetString("project")
+		projectID := c.GetString("projectId")
 		authType := c.GetString("authType")
 		authString := c.GetString("authString")
 		authID := c.GetString("authID")
@@ -67,7 +67,7 @@ func loggingMiddleware(store interfaces.Datastore, endpointType string) gin.Hand
 		}
 
 		// save the log
-		err := store.AddProjectLog(projectSlug, plog)
+		err := store.AddProjectLog(projectID, plog)
 
 		if err != nil {
 			log.Println("an error occured trying to save the log")

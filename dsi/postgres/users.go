@@ -52,16 +52,16 @@ func (d *Database) GetAppUserByID(userID string) (*models.User, error) {
 
 // CreateAppUser saves a new application user
 func (d *Database) CreateAppUser(user *models.User) error {
-	_, err := d.db.Exec(
+	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"INSERT INTO %s (email, username, password_hash, created) VALUES ($1, $2, $3, $4)",
+			"INSERT INTO %s (email, username, password_hash, created) VALUES ($1, $2, $3, $4) RETURNING id",
 			tableAppUsers,
 		),
 		user.Email,
 		user.Username,
 		user.PasswordHash,
 		user.Created,
-	)
+	).Scan(&user.ID)
 
 	return err
 }

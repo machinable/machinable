@@ -144,14 +144,20 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		verb := c.Request.Method
 		// get project slug
 		// get project from context, inserted into context from subdomain
-		project := c.GetString("project")
+		projectSlug := c.GetString("project")
+		if projectSlug == "" {
+			respondWithError(http.StatusUnauthorized, "invalid project", c)
+			return
+		}
 
 		// load the project and check the authn policy
-		_, err := store.GetProjectBySlug(project)
+		project, err := store.GetProjectBySlug(projectSlug)
 		if err != nil {
 			respondWithError(http.StatusNotFound, "project not found", c)
 			return
 		}
+
+		c.Set("projectId", project.ID)
 
 		//	  > Load collection/resource access policies
 		params := strings.Split(c.Request.URL.Path, "/")
@@ -168,7 +174,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 
 		// check store type, load store and get config for access policies
 		if storeType == Resources {
-			def, err := store.GetDefinitionByPathName(project, collectionName)
+			def, err := store.GetDefinitionByPathName(project.ID, collectionName)
 			if err != nil {
 				respondWithError(http.StatusNotFound, "error retrieving resource - does not exist", c)
 				return
@@ -206,7 +212,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 						return
 					}
 
-					_, ok = projects[project]
+					_, ok = projects[projectSlug]
 					if !ok {
 						// project user does not have access to this project
 						respondWithError(http.StatusNotFound, "project not found", c)
@@ -266,7 +272,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				apiKey := vals[1]
 				hashedKey := auth.SHA1(apiKey)
 
-				key, err := store.GetAPIKeyByKey(project, hashedKey)
+				key, err := store.GetAPIKeyByKey(project.ID, hashedKey)
 				if err != nil {
 					respondWithError(http.StatusNotFound, "invalid key", c)
 					return
@@ -291,7 +297,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				// inject claims into context
 				c.Set("authType", "apikey")
 				c.Set("authString", key.Description)
-				c.Set("authID", key.ID.Hex())
+				c.Set("authID", key.ID)
 				c.Set("authRole", key.Role)
 
 				c.Next()

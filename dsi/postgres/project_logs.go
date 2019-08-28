@@ -49,6 +49,7 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 	logs := make([]*models.Log, 0)
 	for rows.Next() {
 		log := models.Log{}
+		created := time.Time{}
 		err = rows.Scan(
 			&log.ID,
 			&log.ProjectID,
@@ -56,13 +57,14 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 			&log.Verb,
 			&log.Path,
 			&log.StatusCode,
-			&log.Created,
+			&created,
 			&log.ResponseTime,
 			&log.Initiator,
 			&log.InitiatorType,
 			&log.InitiatorID,
 			&log.TargetID,
 		)
+		log.Created = created.Unix()
 		if err != nil {
 			return nil, err
 		}

@@ -18,7 +18,7 @@ const (
 func (d *Database) AddDefinition(projectID string, definition *models.ResourceDefinition) (string, *errors.DatastoreError) {
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"INSERT INTO %s (project_id, name, path_name, parallel_read, parallel_write, create, read, update, delete, schema, created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+			"INSERT INTO %s (project_id, name, path_name, parallel_read, parallel_write, \"create\", \"read\", \"update\", \"delete\", schema, created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
 			tableProjectResourceDefinitions,
 		),
 		projectID,
@@ -41,7 +41,7 @@ func (d *Database) AddDefinition(projectID string, definition *models.ResourceDe
 func (d *Database) UpdateDefinition(projectID, definitionID string, definition *models.ResourceDefinition) *errors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"UPDATE %s SET parallel_read=$1, parallel_write=$2, create=$3, read=$4, update=$5, delete=$6 WHERE id=$7",
+			"UPDATE %s SET parallel_read=$1, parallel_write=$2, \"create\"=$3, \"read\"=$4, \"update\"=$5, \"delete\"=$6 WHERE id=$7",
 			tableProjectResourceDefinitions,
 		),
 		definition.ParallelRead,
@@ -60,7 +60,7 @@ func (d *Database) UpdateDefinition(projectID, definitionID string, definition *
 func (d *Database) ListDefinitions(projectID string) ([]*models.ResourceDefinition, *errors.DatastoreError) {
 	rows, err := d.db.Query(
 		fmt.Sprintf(
-			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, create, read, update, delete, schema, created FROM %s WHERE project_id=$1",
+			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, \"create\", \"read\", \"update\", \"delete\", schema, created FROM %s WHERE project_id=$1",
 			tableProjectResourceDefinitions,
 		),
 		projectID,
@@ -102,7 +102,7 @@ func (d *Database) GetDefinition(projectID, definitionID string) (*models.Resour
 	def := models.ResourceDefinition{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, create, read, update, delete, schema, created FROM %s WHERE id=$1",
+			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, \"create\", \"read\", \"update\", \"delete\", schema, created FROM %s WHERE id=$1",
 			tableProjectResourceDefinitions,
 		),
 		definitionID,
@@ -155,7 +155,7 @@ func (d *Database) GetDefinitionByPathName(projectID, pathName string) (*models.
 	def := models.ResourceDefinition{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, create, read, update, delete, schema, created FROM %s WHERE path_name=$1",
+			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, \"create\", \"read\", \"update\", \"delete\", schema, created FROM %s WHERE path_name=$1",
 			tableProjectResourceDefinitions,
 		),
 		pathName,
@@ -216,12 +216,16 @@ func (d *Database) DropProjectResources(projectID string) *errors.DatastoreError
 
 // AddDefDocument creates a new document for the existing resource, specified by the path.
 func (d *Database) AddDefDocument(projectID, pathName string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError) {
-	var id, userID, apiKeyID string
+	var id string
+	var userID, apiKeyID interface{}
 
 	if metadata.CreatorType == models.CreatorAPIKey {
 		apiKeyID = metadata.Creator
-	} else {
+	} else if metadata.CreatorType == models.CreatorUser {
 		userID = metadata.Creator
+	} else {
+		apiKeyID = nil
+		userID = nil
 	}
 
 	// Get field definitions for this resource
@@ -243,9 +247,10 @@ func (d *Database) AddDefDocument(projectID, pathName string, fields models.Reso
 
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"INSERT INTO %s (resource_path, user_id, apikey_id, created, data) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
+			"INSERT INTO %s (project_id, resource_path, user_id, apikey_id, created, data) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
 			tableProjectResourceObjects,
 		),
+		projectID,
 		pathName,
 		userID,
 		apiKeyID,
@@ -294,10 +299,11 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 
 	rows, err := d.db.Query(
 		fmt.Sprintf(
-			"SELECT id, user_id, apikey_id, created, data FROM %s WHERE resource_path=$1 LIMIT=$2 OFFSET=$3",
+			"SELECT id, user_id, apikey_id, created, data FROM %s WHERE resource_path=$1 AND project_id=$2 LIMIT $3 OFFSET $4",
 			tableProjectResourceObjects,
 		),
 		pathName,
+		projectID,
 		limit,
 		offset,
 	)
@@ -308,22 +314,34 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 
 	objects := make([]map[string]interface{}, 0)
 	for rows.Next() {
-		var id, userID, apikeyID, creator, creatorType string
+		var id, creator, creatorType string
+		var userID, apikeyID interface{}
 		var created time.Time
 		obj := make(map[string]interface{})
+		byt := make([]byte, 0)
+
 		err = rows.Scan(
 			&id,
 			&userID,
 			&apikeyID,
 			&created,
-			&obj,
+			&byt,
 		)
 
-		if userID != "" {
-			creator = userID
+		if err != nil {
+			return nil, errors.New(errors.UnknownError, err)
+		}
+
+		err = json.Unmarshal(byt, &obj)
+		if err != nil {
+			return nil, errors.New(errors.UnknownError, err)
+		}
+
+		if userID != nil {
+			creator = userID.(string)
 			creatorType = models.CreatorUser
-		} else {
-			creator = apikeyID
+		} else if apikeyID != nil {
+			creator = apikeyID.(string)
 			creatorType = models.CreatorAPIKey
 		}
 
@@ -334,10 +352,6 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 		}
 		obj["id"] = id
 
-		if err != nil {
-			return nil, errors.New(errors.UnknownError, err)
-		}
-
 		objects = append(objects, obj)
 	}
 
@@ -346,9 +360,12 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 
 // GetDefDocument retrieves a single document
 func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
-	var id, userID, apikeyID, creator, creatorType string
+	var id, creator, creatorType string
+	var userID, apikeyID interface{}
 	var created time.Time
+
 	obj := make(map[string]interface{})
+	byt := make([]byte, 0)
 
 	err := d.db.QueryRow(
 		fmt.Sprintf(
@@ -361,18 +378,23 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 		&userID,
 		&apikeyID,
 		&created,
-		&obj,
+		&byt,
 	)
 
 	if err != nil {
 		return nil, errors.New(errors.UnknownError, err)
 	}
 
-	if userID != "" {
-		creator = userID
+	err = json.Unmarshal(byt, &obj)
+	if err != nil {
+		return nil, errors.New(errors.UnknownError, err)
+	}
+
+	if userID != nil {
+		creator = userID.(string)
 		creatorType = models.CreatorUser
-	} else {
-		creator = apikeyID
+	} else if apikeyID != nil {
+		creator = apikeyID.(string)
 		creatorType = models.CreatorAPIKey
 	}
 
@@ -391,10 +413,11 @@ func (d *Database) CountDefDocuments(projectID, pathName string, filter map[stri
 	var count int64
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT count(id) FROM %s WHERE resource_path=$1",
+			"SELECT count(id) FROM %s WHERE resource_path=$1 AND project_id=$2",
 			tableProjectResourceObjects,
 		),
 		pathName,
+		projectID,
 	).Scan(
 		&count,
 	)
@@ -423,10 +446,11 @@ func (d *Database) DeleteDefDocument(projectID, path, documentID string, filter 
 func (d *Database) DropAllDefDocuments(projectID, path string) *errors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"DELETE FROM %s WHERE resource_path=$1",
+			"DELETE FROM %s WHERE resource_path=$1 AND project_id=$2",
 			tableProjectResourceObjects,
 		),
 		path,
+		projectID,
 	)
 
 	return errors.New(errors.UnknownError, err)

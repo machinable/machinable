@@ -22,7 +22,8 @@ type Resources struct {
 
 // AddResourceDefinition creates a new resource definition in the users' collection
 func (h *Resources) AddResourceDefinition(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	// projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 	// Marshal JSON into ResourceDefinition
 	var resourceDefinition models.ResourceDefinition
 	c.BindJSON(&resourceDefinition)
@@ -39,7 +40,7 @@ func (h *Resources) AddResourceDefinition(c *gin.Context) {
 		return
 	}
 
-	id, err := h.store.AddDefinition(projectSlug, &resourceDefinition)
+	id, err := h.store.AddDefinition(projectID, &resourceDefinition)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -53,9 +54,9 @@ func (h *Resources) AddResourceDefinition(c *gin.Context) {
 
 // ListResourceDefinitions returns the list of all resource definitions
 func (h *Resources) ListResourceDefinitions(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	definitions, err := h.store.ListDefinitions(projectSlug)
+	definitions, err := h.store.ListDefinitions(projectID)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -68,9 +69,9 @@ func (h *Resources) ListResourceDefinitions(c *gin.Context) {
 // GetResourceDefinition returns a single resource definition
 func (h *Resources) GetResourceDefinition(c *gin.Context) {
 	resourceID := c.Param("resourceDefinitionID")
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	def, err := h.store.GetDefinition(projectSlug, resourceID)
+	def, err := h.store.GetDefinition(projectID, resourceID)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -81,13 +82,13 @@ func (h *Resources) GetResourceDefinition(c *gin.Context) {
 
 // UpdateResourceDefinition updates the parallel_read and parallel_write operations of the definition
 func (h *Resources) UpdateResourceDefinition(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 	resourceDefinitionID := c.Param("resourceDefinitionID") // actually uses ID
 	var updatedDefinition models.ResourceDefinition
 	c.BindJSON(&updatedDefinition)
 
 	// add collection and return error if anything goes wrong
-	err := h.store.UpdateDefinition(projectSlug, resourceDefinitionID, &updatedDefinition)
+	err := h.store.UpdateDefinition(projectID, resourceDefinitionID, &updatedDefinition)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
@@ -100,9 +101,9 @@ func (h *Resources) UpdateResourceDefinition(c *gin.Context) {
 // DeleteResourceDefinition deletes the definition and drops the resource collection
 func (h *Resources) DeleteResourceDefinition(c *gin.Context) {
 	resourceID := c.Param("resourceDefinitionID")
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	err := h.store.DeleteDefinition(projectSlug, resourceID)
+	err := h.store.DeleteDefinition(projectID, resourceID)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return

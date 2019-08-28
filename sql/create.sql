@@ -1,5 +1,5 @@
 
-\c machinabledb;
+\c testdb;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -11,8 +11,8 @@ CREATE TABLE app_users (
     email VARCHAR NOT NULL UNIQUE,
     username VARCHAR NOT NULL UNIQUE,
     password_hash VARCHAR NOT NULL,
-    created TIMESTAMP NOT NULL,
-    admin BOOLEAN DEFAULT false,
+    created TIMESTAMP NOT NULL DEFAULT NOW(),
+    admin BOOLEAN DEFAULT false
 );
 
 CREATE TABLE app_sessions (
@@ -21,7 +21,7 @@ CREATE TABLE app_sessions (
     location VARCHAR, 
     mobile BOOLEAN DEFAULT false, 
     ip VARCHAR, 
-    last_accessed TIMESTAMP NOT NULL, 
+    last_accessed TIMESTAMP NOT NULL DEFAULT NOW(), 
     browser VARCHAR, 
     os VARCHAR
 );
@@ -34,7 +34,7 @@ CREATE TABLE app_projects (
     description VARCHAR,
     icon VARCHAR,
     user_registration BOOLEAN DEFAULT false,
-    created TIMESTAMP NOT NULL
+    created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE project_users (
@@ -46,7 +46,7 @@ CREATE TABLE project_users (
     read BOOLEAN DEFAULT false,
     write BOOLEAN DEFAULT false,
     role VARCHAR NOT NULL,
-    created TIMESTAMP NOT NULL
+    created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE project_sessions (
@@ -56,35 +56,9 @@ CREATE TABLE project_sessions (
     location VARCHAR, 
     mobile BOOLEAN DEFAULT false, 
     ip VARCHAR, 
-    last_accessed TIMESTAMP NOT NULL, 
+    last_accessed TIMESTAMP NOT NULL DEFAULT NOW(), 
     browser VARCHAR, 
     os VARCHAR
-);
-
-CREATE TABLE project_resource_definitions (
-    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-    project_id uuid NOT NULL REFERENCES app_projects(id),
-    name VARCHAR NOT NULL,
-    path_name VARCHAR NOT NULL,
-    parallel_read BOOLEAN DEFAULT false,
-    parallel_write BOOLEAN DEFAULT false,
-    create BOOLEAN DEFAULT false,
-    read BOOLEAN DEFAULT false,
-    update BOOLEAN DEFAULT false,
-    delete BOOLEAN DEFAULT false,
-    schema JSONB,
-    created TIMESTAMP NOT NULL,
-
-    UNIQUE(project_id, path_name)
-);
-
-CREATE TABLE project_resource_objects (
-    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-    resource_path uuid NOT NULL REFERENCES project_resources(path_name),
-    user_id uuid REFERENCES project_users(id),
-    apikey_id uuid REFERENCES project_apikeys(id),
-    created TIMESTAMP NOT NULL,
-    data JSONB
 );
 
 CREATE TABLE project_logs (
@@ -94,7 +68,7 @@ CREATE TABLE project_logs (
     verb VARCHAR,
     path VARCHAR,
     status_code INT NOT NULL DEFAULT -1,
-    created TIMESTAMP NOT NULL,
+    created TIMESTAMP NOT NULL DEFAULT NOW(),
     response_time INT NOT NULL DEFAULT -1,
     initiator VARCHAR,
     initiator_type VARCHAR,
@@ -110,5 +84,35 @@ CREATE TABLE project_apikeys (
     read BOOLEAN DEFAULT false,
     write BOOLEAN DEFAULT false,
     role VARCHAR NOT NULL,
-    created TIMESTAMP NOT NULL
+    created TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE TABLE project_resource_definitions (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    project_id uuid NOT NULL REFERENCES app_projects(id),
+    name VARCHAR NOT NULL,
+    path_name VARCHAR NOT NULL,
+    parallel_read BOOLEAN DEFAULT false,
+    parallel_write BOOLEAN DEFAULT false,
+    "create" BOOLEAN DEFAULT false,
+    "read" BOOLEAN DEFAULT false,
+    "update" BOOLEAN DEFAULT false,
+    "delete" BOOLEAN DEFAULT false,
+    schema JSONB,
+    created TIMESTAMP NOT NULL DEFAULT NOW(),
+
+    UNIQUE(project_id, path_name)
+);
+
+CREATE TABLE project_resource_objects (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    project_id uuid NOT NULL REFERENCES app_projects(id),
+    resource_path VARCHAR NOT NULL,
+    user_id uuid REFERENCES project_users(id),
+    apikey_id uuid REFERENCES project_apikeys(id),
+    created TIMESTAMP NOT NULL DEFAULT NOW(),
+    data JSONB
+);
+
+CREATE INDEX project_resource_objects_idx ON project_resource_objects (resource_path, project_id);
+

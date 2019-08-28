@@ -14,7 +14,6 @@ import (
 	"github.com/anothrnick/machinable/dsi/models"
 	as "github.com/anothrnick/machinable/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // New returns a pointer to a new `Users` struct
@@ -36,7 +35,6 @@ func (s *Sessions) generateSession(userID, ip, userAgent string) *models.Session
 
 	bname, bversion := ua.Browser()
 	session := &models.Session{
-		ID:           objectid.New(), // no
 		UserID:       userID,
 		Location:     location,
 		Mobile:       ua.Mobile(),
@@ -100,7 +98,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 			projectSlug: true,
 		},
 		"user": map[string]interface{}{
-			"id":     user.ID.Hex(),
+			"id":     user.ID,
 			"name":   user.Username,
 			"active": true,
 			"read":   user.Read,
@@ -117,14 +115,14 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 	}
 
 	// create session in database (refresh token)
-	session := s.generateSession(user.ID.Hex(), c.ClientIP(), c.Request.UserAgent())
+	session := s.generateSession(user.ID, c.ClientIP(), c.Request.UserAgent())
 	err = s.store.CreateSession(projectSlug, session)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
 		return
 	}
 
-	refreshToken, err := auth.CreateRefreshToken(session.ID.Hex(), user.ID.Hex())
+	refreshToken, err := auth.CreateRefreshToken(session.ID, user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create refresh token"})
 		return
@@ -134,15 +132,15 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 		"message":       "Successfully logged in",
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
-		"session_id":    session.ID.Hex(),
+		"session_id":    session.ID,
 	})
 }
 
 // ListSessions lists all active user sessions for a project
 func (s *Sessions) ListSessions(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	sessions, err := s.store.ListSessions(projectSlug)
+	sessions, err := s.store.ListSessions(projectID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -155,9 +153,9 @@ func (s *Sessions) ListSessions(c *gin.Context) {
 // RevokeSession deletes a session from the project collection
 func (s *Sessions) RevokeSession(c *gin.Context) {
 	sessionID := c.Param("sessionID")
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	err := s.store.DeleteSession(projectSlug, sessionID)
+	err := s.store.DeleteSession(projectID, sessionID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -169,6 +167,7 @@ func (s *Sessions) RevokeSession(c *gin.Context) {
 
 // RefreshSession uses the refresh token to generate a new access token
 func (s *Sessions) RefreshSession(c *gin.Context) {
+	projectID := c.MustGet("projectId").(string)
 	projectSlug := c.MustGet("project").(string)
 	// get session and user id from context, should have been injected by ValidateRefreshToken
 	sessionID, ok := c.MustGet("session_id").(string)
@@ -186,7 +185,7 @@ func (s *Sessions) RefreshSession(c *gin.Context) {
 	// load session to update last accessed
 
 	// verify session exists
-	_, err := s.store.GetSession(projectSlug, sessionID)
+	_, err := s.store.GetSession(projectID, sessionID)
 
 	if err != nil {
 		// no documents in result, user does not exist
@@ -195,7 +194,7 @@ func (s *Sessions) RefreshSession(c *gin.Context) {
 	}
 
 	// verify user exists
-	user, err := s.store.GetUserByID(projectSlug, userID)
+	user, err := s.store.GetUserByID(projectID, userID)
 	if err != nil {
 		// no documents in result, user does not exist
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
@@ -208,7 +207,7 @@ func (s *Sessions) RefreshSession(c *gin.Context) {
 			projectSlug: true,
 		},
 		"user": map[string]interface{}{
-			"id":     user.ID.Hex(),
+			"id":     user.ID,
 			"name":   user.Username,
 			"active": true,
 			"read":   user.Read,
@@ -225,7 +224,7 @@ func (s *Sessions) RefreshSession(c *gin.Context) {
 	}
 
 	// update session `last_accessed` time
-	err = s.store.UpdateProjectSessionLastAccessed(projectSlug, sessionID, time.Now())
+	err = s.store.UpdateProjectSessionLastAccessed(projectID, sessionID, time.Now())
 
 	c.JSON(http.StatusOK, gin.H{
 		"access_token": accessToken,

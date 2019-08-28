@@ -8,7 +8,6 @@ import (
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
-	"github.com/mongodb/mongo-go-driver/bson/objectid"
 )
 
 // New returns a pointer to a new `Users` struct
@@ -86,7 +85,6 @@ func (u *Users) AddLimitedUser(c *gin.Context) {
 
 	// create project user object
 	user := &models.ProjectUser{
-		ID:           objectid.New(), // I don't like this
 		Created:      time.Now(),
 		PasswordHash: passwordHash,
 		Username:     newUser.Username,
@@ -108,7 +106,7 @@ func (u *Users) AddLimitedUser(c *gin.Context) {
 // AddUser creates a new user for this project
 func (u *Users) AddUser(c *gin.Context) {
 	var newUser NewProjectUser
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
 	c.BindJSON(&newUser)
 
@@ -119,7 +117,7 @@ func (u *Users) AddUser(c *gin.Context) {
 		return
 	}
 
-	if _, err := u.store.GetUserByUsername(projectSlug, newUser.Username); err == nil {
+	if _, err := u.store.GetUserByUsername(projectID, newUser.Username); err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user already exists"})
 		return
 	}
@@ -134,7 +132,6 @@ func (u *Users) AddUser(c *gin.Context) {
 
 	// create project user object
 	user := &models.ProjectUser{
-		ID:           objectid.New(), // I don't like this
 		Created:      time.Now(),
 		PasswordHash: passwordHash,
 		Username:     newUser.Username,
@@ -143,7 +140,7 @@ func (u *Users) AddUser(c *gin.Context) {
 		Role:         newUser.Role,
 	}
 
-	u.store.CreateUser(projectSlug, user)
+	u.store.CreateUser(projectID, user)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -155,9 +152,9 @@ func (u *Users) AddUser(c *gin.Context) {
 
 // ListUsers lists all users of this project
 func (u *Users) ListUsers(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	users, err := u.store.ListUsers(projectSlug)
+	users, err := u.store.ListUsers(projectID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -175,9 +172,9 @@ func (u *Users) GetUser(c *gin.Context) {
 // DeleteUser removes a user by ID
 func (u *Users) DeleteUser(c *gin.Context) {
 	userID := c.Param("userID")
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	err := u.store.DeleteUser(projectSlug, userID)
+	err := u.store.DeleteUser(projectID, userID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

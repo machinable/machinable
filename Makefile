@@ -11,6 +11,12 @@ build:
 up:
 	docker-compose up -d
 
+down:
+	docker-compose down
+
+delvol:
+	docker volume rm machinable_db-data
+
 stop:
 	docker-compose stop
 
