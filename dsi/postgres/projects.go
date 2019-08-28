@@ -12,7 +12,7 @@ const tableAppProjects = "app_projects"
 func (d *Database) UpdateProject(slug, userID string, project *models.Project) (*models.Project, error) {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"UPDATE %s SET name=$1, description=$2, icon=$3, user_registration=$4  WHERE slug=$5 and user_id=$7",
+			"UPDATE %s SET name=$1, description=$2, icon=$3, user_registration=$4  WHERE slug=$5 and user_id=$6",
 			tableAppProjects,
 		),
 		project.Name,

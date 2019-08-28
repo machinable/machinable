@@ -36,7 +36,7 @@ func (d *Database) GetAPIKeyByKey(projectID, hash string) (*models.ProjectAPIKey
 func (d *Database) CreateAPIKey(projectID, hash, description string, read, write bool, role string) (*models.ProjectAPIKey, error) {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"INSERT INTO %s (project_id, key_hash, read, write, role, created) VALUES ($1, $2, $3, $4, $5, $6)",
+			"INSERT INTO %s (project_id, key_hash, description, read, write, role, created) VALUES ($1, $2, $3, $4, $5, $6, $7)",
 			tableProjectAPIKeys,
 		),
 		projectID,

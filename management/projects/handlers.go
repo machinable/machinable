@@ -35,6 +35,8 @@ func (p *Projects) UpdateProject(c *gin.Context) {
 		return
 	}
 
+	project.Slug = projectSlug
+
 	// successful update
 	c.JSON(http.StatusOK, project)
 }
