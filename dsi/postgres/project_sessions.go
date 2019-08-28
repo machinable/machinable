@@ -11,9 +11,9 @@ const tableProjectSessions = "project_sessions"
 
 // CreateSession creates a new session for a project user
 func (d *Database) CreateSession(projectID string, session *models.Session) error {
-	_, err := d.db.Exec(
+	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"INSERT INTO %s (project_id, user_id, location, mobile, ip, last_accessed, browser, os) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+			"INSERT INTO %s (project_id, user_id, location, mobile, ip, last_accessed, browser, os) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id",
 			tableProjectSessions,
 		),
 		projectID,
@@ -24,7 +24,7 @@ func (d *Database) CreateSession(projectID string, session *models.Session) erro
 		session.LastAccessed,
 		session.Browser,
 		session.OS,
-	)
+	).Scan(&session.ID)
 
 	return err
 }

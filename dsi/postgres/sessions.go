@@ -11,9 +11,9 @@ const tableAppSessions = "app_sessions"
 
 // CreateAppSession create new session for an application user
 func (d *Database) CreateAppSession(session *models.Session) error {
-	_, err := d.db.Exec(
+	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"INSERT INTO %s (user_id, location, mobile, ip, last_accessed, browser, os) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+			"INSERT INTO %s (user_id, location, mobile, ip, last_accessed, browser, os) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id",
 			tableAppSessions,
 		),
 		session.UserID,
@@ -23,7 +23,7 @@ func (d *Database) CreateAppSession(session *models.Session) error {
 		session.LastAccessed,
 		session.Browser,
 		session.OS,
-	)
+	).Scan(&session.ID)
 
 	return err
 }
