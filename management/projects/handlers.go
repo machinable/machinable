@@ -28,7 +28,16 @@ func (p *Projects) UpdateProject(c *gin.Context) {
 	var updatedProject ProjectBody
 	c.BindJSON(&updatedProject)
 
-	project, err := p.store.UpdateProject(projectSlug, userID, &models.Project{Authn: updatedProject.Authn, UserRegistration: updatedProject.UserRegistration})
+	project, err := p.store.UpdateProject(
+		projectSlug,
+		userID,
+		&models.Project{
+			Name:             updatedProject.Name,
+			Description:      updatedProject.Description,
+			Icon:             updatedProject.Icon,
+			UserRegistration: updatedProject.UserRegistration,
+		},
+	)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -109,38 +118,40 @@ func (p *Projects) DeleteUserProject(c *gin.Context) {
 	userID := c.MustGet("user_id").(string)
 
 	// be sure this user owns the project
-	_, err := p.store.GetProjectBySlugAndUserID(projectSlug, userID)
+	project, err := p.store.GetProjectBySlugAndUserID(projectSlug, userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "project does not exist"})
 		return
 	}
 
-	logErr := p.store.DropProjectLogs(projectSlug)
+	projectID := project.ID
+
+	logErr := p.store.DropProjectLogs(projectID)
 	if logErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project logs"})
 		return
 	}
-	keyErr := p.store.DropProjectKeys(projectSlug)
+	keyErr := p.store.DropProjectKeys(projectID)
 	if keyErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project api keys"})
 		return
 	}
-	usersErr := p.store.DropProjectUsers(projectSlug)
+	usersErr := p.store.DropProjectUsers(projectID)
 	if usersErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project users"})
 		return
 	}
-	sessionsErr := p.store.DropProjectSessions(projectSlug)
+	sessionsErr := p.store.DropProjectSessions(projectID)
 	if sessionsErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project sessions"})
 		return
 	}
-	resourceErr := p.store.DropProjectResources(projectSlug)
+	resourceErr := p.store.DropProjectResources(projectID)
 	if resourceErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project resources"})
 		return
 	}
-	projectErr := p.store.DeleteProject(projectSlug)
+	projectErr := p.store.DeleteProject(projectID)
 	if projectErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error deleting project"})
 		return

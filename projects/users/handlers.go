@@ -26,7 +26,7 @@ type Users struct {
 func (u *Users) UpdateUser(c *gin.Context) {
 	var newUser NewProjectUser
 	userID := c.Param("userID")
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
 	c.BindJSON(&newUser)
 
@@ -44,7 +44,7 @@ func (u *Users) UpdateUser(c *gin.Context) {
 		Role:  newUser.Role,
 	}
 
-	u.store.UpdateUser(projectSlug, userID, user)
+	u.store.UpdateUser(projectID, userID, user)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -57,7 +57,7 @@ func (u *Users) UpdateUser(c *gin.Context) {
 // AddLimitedUser creates a new user for this project from the unauthenticated route
 func (u *Users) AddLimitedUser(c *gin.Context) {
 	var newUser NewProjectUser
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
 	c.BindJSON(&newUser)
 	// override role
@@ -70,7 +70,7 @@ func (u *Users) AddLimitedUser(c *gin.Context) {
 		return
 	}
 
-	if _, err := u.store.GetUserByUsername(projectSlug, newUser.Username); err == nil {
+	if _, err := u.store.GetUserByUsername(projectID, newUser.Username); err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user already exists"})
 		return
 	}
@@ -93,7 +93,7 @@ func (u *Users) AddLimitedUser(c *gin.Context) {
 		Role:         newUser.Role,
 	}
 
-	u.store.CreateUser(projectSlug, user)
+	u.store.CreateUser(projectID, user)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

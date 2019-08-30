@@ -121,7 +121,7 @@ func (d *Database) DeleteAPIKey(projectID, keyID string) error {
 func (d *Database) DropProjectKeys(projectID string) error {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"DELETE FROM %s WHERE project_id=$2",
+			"DELETE FROM %s WHERE project_id=$1",
 			tableProjectAPIKeys,
 		),
 		projectID,

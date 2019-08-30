@@ -49,7 +49,7 @@ func (s *Sessions) generateSession(userID, ip, userAgent string) *models.Session
 
 // CreateSession creates a new project user session
 func (s *Sessions) CreateSession(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	project := c.MustGet("project").(string)
 
 	// basic auth for login
 	authorizationHeader, _ := c.Request.Header["Authorization"]
@@ -80,7 +80,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 		return
 	}
 
-	user, err := s.store.GetUserByUsername(projectSlug, userName)
+	user, err := s.store.GetUserByUsername(projectID, userName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "username not found"})
 		return
@@ -95,7 +95,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 	// create access token
 	claims := jwt.MapClaims{
 		"projects": map[string]interface{}{
-			projectSlug: true,
+			projectID: true,
 		},
 		"user": map[string]interface{}{
 			"id":     user.ID,
@@ -116,7 +116,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 
 	// create session in database (refresh token)
 	session := s.generateSession(user.ID, c.ClientIP(), c.Request.UserAgent())
-	err = s.store.CreateSession(projectSlug, session)
+	err = s.store.CreateSession(projectID, session)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
 		return

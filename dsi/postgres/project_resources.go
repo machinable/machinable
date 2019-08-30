@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -182,6 +183,13 @@ func (d *Database) GetDefinitionByPathName(projectID, pathName string) (*models.
 
 // DeleteDefinition deletes a definition as well as any data stored for that definition
 func (d *Database) DeleteDefinition(projectID, definitionID string) *errors.DatastoreError {
+
+	// get resource to delete objects
+	resource, dErr := d.GetDefinition(projectID, definitionID)
+	if dErr != nil {
+		return dErr
+	}
+
 	_, err := d.db.Exec(
 		fmt.Sprintf(
 			"DELETE FROM %s WHERE id=$1",
@@ -189,10 +197,14 @@ func (d *Database) DeleteDefinition(projectID, definitionID string) *errors.Data
 		),
 		definitionID,
 	)
+	if err != nil {
+		return errors.New(errors.UnknownError, err)
+	}
 
-	// TODO: delete all objects for resource
+	// delete all objects for resource
+	dErr = d.DropDefDocuments(projectID, resource.PathName)
 
-	return errors.New(errors.UnknownError, err)
+	return dErr
 }
 
 // DropProjectResources drops all resource data as well as the definition
@@ -204,10 +216,14 @@ func (d *Database) DropProjectResources(projectID string) *errors.DatastoreError
 		),
 		projectID,
 	)
+	if err != nil {
+		return errors.New(errors.UnknownError, err)
+	}
 
-	// TODO: delete all objects for each resource
+	// delete all objects for each resource
+	dErr := d.DropProjectDefDocuments(projectID)
 
-	return errors.New(errors.UnknownError, err)
+	return dErr
 }
 
 /******************************/
@@ -315,7 +331,7 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 	objects := make([]map[string]interface{}, 0)
 	for rows.Next() {
 		var id, creator, creatorType string
-		var userID, apikeyID interface{}
+		var userID, apikeyID sql.NullString
 		var created time.Time
 		obj := make(map[string]interface{})
 		byt := make([]byte, 0)
@@ -337,11 +353,11 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 			return nil, errors.New(errors.UnknownError, err)
 		}
 
-		if userID != nil {
-			creator = userID.(string)
+		if userID.Valid {
+			creator = userID.String
 			creatorType = models.CreatorUser
-		} else if apikeyID != nil {
-			creator = apikeyID.(string)
+		} else if apikeyID.Valid {
+			creator = apikeyID.String
 			creatorType = models.CreatorAPIKey
 		}
 
@@ -361,7 +377,7 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 // GetDefDocument retrieves a single document
 func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
 	var id, creator, creatorType string
-	var userID, apikeyID interface{}
+	var userID, apikeyID sql.NullString
 	var created time.Time
 
 	obj := make(map[string]interface{})
@@ -390,11 +406,11 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 		return nil, errors.New(errors.UnknownError, err)
 	}
 
-	if userID != nil {
-		creator = userID.(string)
+	if userID.Valid {
+		creator = userID.String
 		creatorType = models.CreatorUser
-	} else if apikeyID != nil {
-		creator = apikeyID.(string)
+	} else if apikeyID.Valid {
+		creator = apikeyID.String
 		creatorType = models.CreatorAPIKey
 	}
 
@@ -442,14 +458,27 @@ func (d *Database) DeleteDefDocument(projectID, path, documentID string, filter 
 	return errors.New(errors.UnknownError, err)
 }
 
-// DropAllDefDocuments drops the entire collection of documents
-func (d *Database) DropAllDefDocuments(projectID, path string) *errors.DatastoreError {
+// DropDefDocuments drops documents for a resource
+func (d *Database) DropDefDocuments(projectID, path string) *errors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
 			"DELETE FROM %s WHERE resource_path=$1 AND project_id=$2",
 			tableProjectResourceObjects,
 		),
 		path,
+		projectID,
+	)
+
+	return errors.New(errors.UnknownError, err)
+}
+
+// DropProjectDefDocuments drops the entire collection of documents for a project
+func (d *Database) DropProjectDefDocuments(projectID string) *errors.DatastoreError {
+	_, err := d.db.Exec(
+		fmt.Sprintf(
+			"DELETE FROM %s WHERE project_id=$1",
+			tableProjectResourceObjects,
+		),
 		projectID,
 	)
 

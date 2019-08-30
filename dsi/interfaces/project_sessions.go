@@ -8,10 +8,10 @@ import (
 
 // ProjectSessionsDatastore exposes functions to manage project user sessions
 type ProjectSessionsDatastore interface {
-	CreateSession(project string, session *models.Session) error
-	UpdateProjectSessionLastAccessed(project, sessionID string, lastAccessed time.Time) error
-	GetSession(project, sessionID string) (*models.Session, error)
-	ListSessions(project string) ([]*models.Session, error)
-	DeleteSession(project, sessionID string) error
-	DropProjectSessions(project string) error
+	CreateSession(projectID string, session *models.Session) error
+	UpdateProjectSessionLastAccessed(projectID, sessionID string, lastAccessed time.Time) error
+	GetSession(projectID, sessionID string) (*models.Session, error)
+	ListSessions(projectID string) ([]*models.Session, error)
+	DeleteSession(projectID, sessionID string) error
+	DropProjectSessions(projectID string) error
 }

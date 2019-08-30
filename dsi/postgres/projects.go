@@ -160,13 +160,13 @@ func (d *Database) GetProjectBySlugAndUserID(slug, userID string) (*models.Proje
 }
 
 // DeleteProject permanently removes a project based on project slug
-func (d *Database) DeleteProject(slug string) error {
+func (d *Database) DeleteProject(projectID string) error {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"DELETE FROM %s WHERE slug=$1",
+			"DELETE FROM %s WHERE id=$1",
 			tableAppProjects,
 		),
-		slug,
+		projectID,
 	)
 	return err
 }
