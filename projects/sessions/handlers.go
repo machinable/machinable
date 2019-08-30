@@ -2,6 +2,7 @@ package sessions
 
 import (
 	"encoding/base64"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -49,7 +50,7 @@ func (s *Sessions) generateSession(userID, ip, userAgent string) *models.Session
 
 // CreateSession creates a new project user session
 func (s *Sessions) CreateSession(c *gin.Context) {
-	project := c.MustGet("project").(string)
+	projectSlug := c.MustGet("project").(string)
 
 	// basic auth for login
 	authorizationHeader, _ := c.Request.Header["Authorization"]
@@ -80,7 +81,18 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 		return
 	}
 
-	user, err := s.store.GetUserByUsername(projectID, userName)
+	// find project
+	project, err := s.store.GetProjectBySlug(projectSlug)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "project does not exist"})
+		return
+	}
+
+	log.Println(project.ID)
+	log.Println(userName)
+	user, err := s.store.GetUserByUsername(project.ID, userName)
+	log.Println(user)
+	log.Println(err)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "username not found"})
 		return
@@ -95,7 +107,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 	// create access token
 	claims := jwt.MapClaims{
 		"projects": map[string]interface{}{
-			projectID: true,
+			projectSlug: true,
 		},
 		"user": map[string]interface{}{
 			"id":     user.ID,
@@ -116,7 +128,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 
 	// create session in database (refresh token)
 	session := s.generateSession(user.ID, c.ClientIP(), c.Request.UserAgent())
-	err = s.store.CreateSession(projectID, session)
+	err = s.store.CreateSession(project.ID, session)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create session"})
 		return

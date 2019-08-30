@@ -22,6 +22,7 @@ func (d *Database) GetUserByUsername(projectID, userName string) (*models.Projec
 		projectID,
 	).Scan(
 		&user.ID,
+		&user.ProjectID,
 		&user.Email,
 		&user.Username,
 		&user.PasswordHash,
