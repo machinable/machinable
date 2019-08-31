@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"fmt"
+	"log"
+	"strings"
 	"time"
 
 	"github.com/anothrnick/machinable/dsi/models"
@@ -34,12 +36,69 @@ func (d *Database) AddProjectLog(projectID string, log *models.Log) error {
 
 // ListProjectLogs retrieves logs based on the limit, offset, filter, and sort parameters
 func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter *models.Filters, sort map[string]int) ([]*models.Log, error) {
+	args := make([]interface{}, 0)
+	index := 1
+
+	// query builders
+	filterString := make([]string, 0)
+	sortString := make([]string, 0)
+	pageString := ""
+
+	// projectID
+	args = append(args, projectID)
+	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
+	// valid filter/sort
+	validFields := map[string]bool{"created": true}
+
+	// filters
+	// for v, i := range filter {
+	// 	// TODO: translate filters
+	// }
+
+	// sort
+	for key, val := range sort {
+		// validate fields
+		if _, ok := validFields[key]; !ok {
+			// not a valid field, move on
+			continue
+		}
+		direction := "DESC"
+		if val > 0 {
+			direction = "ASC"
+		}
+		sortString = append(sortString, fmt.Sprintf("%s %s", key, direction))
+	}
+
+	// paginate
+	if limit >= 0 {
+		args = append(args, limit)
+		pageString += fmt.Sprintf(" LIMIT $%d", index)
+		index++
+	}
+
+	if offset >= 0 {
+		args = append(args, offset)
+		pageString += fmt.Sprintf(" OFFSET $%d", index)
+		index++
+	}
+
+	queryFields := "id, project_id, endpoint_type, verb, path, status_code, created, response_time, initiator, initiator_type, initiator_id, target_id"
+	query := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s ORDER BY %s%s",
+		queryFields,
+		tableProjectLogs,
+		strings.Join(filterString, ", "),
+		strings.Join(sortString, ", "),
+		pageString,
+	)
+
+	log.Println(query)
+
 	rows, err := d.db.Query(
-		fmt.Sprintf(
-			"SELECT id, project_id, endpoint_type, verb, path, status_code, created, response_time, initiator, initiator_type, initiator_id, target_id FROM %s WHERE project_id=$1",
-			tableProjectLogs,
-		),
-		projectID,
+		query,
+		args...,
 	)
 	if err != nil {
 		return nil, err
