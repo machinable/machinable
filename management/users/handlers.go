@@ -3,6 +3,7 @@ package users
 import (
 	"encoding/base64"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -207,6 +208,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	_, err := u.store.GetAppSession(sessionID)
 
 	if err != nil {
+		log.Println(err)
 		// no documents in result, user does not exist
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
@@ -215,6 +217,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	// verify user exists
 	user, err := u.store.GetAppUserByID(userID)
 	if err != nil {
+		log.Println(err)
 		// no documents in result, user does not exist
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
@@ -223,6 +226,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	// create new access jwt
 	accessToken, err := u.createAccessToken(user)
 	if err != nil {
+		log.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
 	}

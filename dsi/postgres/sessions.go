@@ -90,6 +90,7 @@ func (d *Database) GetAppSession(sessionID string) (*models.Session, error) {
 		),
 		sessionID,
 	).Scan(
+		&session.ID,
 		&session.UserID,
 		&session.Location,
 		&session.Mobile,

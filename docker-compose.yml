@@ -17,6 +17,7 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
+    container_name: machinable_api
     depends_on:
       - 'database'
     ports:
