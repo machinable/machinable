@@ -108,8 +108,8 @@ CREATE TABLE project_resource_objects (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
     resource_path VARCHAR NOT NULL,
-    user_id uuid REFERENCES project_users(id),
-    apikey_id uuid REFERENCES project_apikeys(id),
+    creator_type VARCHAR NOT NULL,
+    creator uuid,
     created TIMESTAMP NOT NULL DEFAULT NOW(),
     data JSONB
 );

@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -50,12 +49,13 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 	index++
 
 	// valid filter/sort
-	validFields := map[string]bool{"created": true}
+	validFields := map[string]bool{"created": true, "initiator_type": true, "status_code": true}
 
 	// filters
-	// for v, i := range filter {
-	// 	// TODO: translate filters
-	// }
+	filterErr := d.filterToQuery(filter, validFields, &filterString, &args, &index)
+	if filterErr != nil {
+		return nil, filterErr
+	}
 
 	// sort
 	for key, val := range sort {
@@ -89,12 +89,10 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 		"SELECT %s FROM %s WHERE %s ORDER BY %s%s",
 		queryFields,
 		tableProjectLogs,
-		strings.Join(filterString, ", "),
+		strings.Join(filterString, " AND "),
 		strings.Join(sortString, ", "),
 		pageString,
 	)
-
-	log.Println(query)
 
 	rows, err := d.db.Query(
 		query,
@@ -137,13 +135,37 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 // CountProjectLogs returns the count of logs for a project
 func (d *Database) CountProjectLogs(projectID string, filter *models.Filters) (int64, error) {
 	var count int64
+	args := make([]interface{}, 0)
+	index := 1
+
+	// query builders
+	filterString := make([]string, 0)
+
+	// projectID
+	args = append(args, projectID)
+	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
+	// valid filter/sort
+	validFields := map[string]bool{"created": true, "initiator_type": true, "status_code": true}
+
+	// filters
+	filterErr := d.filterToQuery(filter, validFields, &filterString, &args, &index)
+	if filterErr != nil {
+		return 0, filterErr
+	}
+
+	query := fmt.Sprintf(
+		"SELECT count(id) FROM %s WHERE %s",
+		tableProjectLogs,
+		strings.Join(filterString, " AND "),
+	)
+
 	err := d.db.QueryRow(
-		fmt.Sprintf(
-			"SELECT count(id) FROM %s WHERE project_id=$1",
-			tableProjectLogs,
-		),
-		projectID,
+		query,
+		args...,
 	).Scan(&count)
+
 	return count, err
 }
 

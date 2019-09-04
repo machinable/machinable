@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/anothrnick/machinable/dsi/errors"
@@ -14,6 +15,12 @@ const (
 	tableProjectResourceDefinitions = "project_resource_definitions"
 	tableProjectResourceObjects     = "project_resource_objects"
 )
+
+var objectFilterTranslation = map[string]string{
+	"_metadata.creator":      "creator",
+	"_metadata.creator_type": "creator_type",
+	"_metadata.created":      "created",
+}
 
 // AddDefinition creates a new definition
 func (d *Database) AddDefinition(projectID string, definition *models.ResourceDefinition) (string, *errors.DatastoreError) {
@@ -233,15 +240,10 @@ func (d *Database) DropProjectResources(projectID string) *errors.DatastoreError
 // AddDefDocument creates a new document for the existing resource, specified by the path.
 func (d *Database) AddDefDocument(projectID, pathName string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError) {
 	var id string
-	var userID, apiKeyID interface{}
+	var creatorID interface{}
 
-	if metadata.CreatorType == models.CreatorAPIKey {
-		apiKeyID = metadata.Creator
-	} else if metadata.CreatorType == models.CreatorUser {
-		userID = metadata.Creator
-	} else {
-		apiKeyID = nil
-		userID = nil
+	if metadata.CreatorType == models.CreatorAPIKey || metadata.CreatorType == models.CreatorUser {
+		creatorID = metadata.Creator
 	}
 
 	// Get field definitions for this resource
@@ -263,13 +265,13 @@ func (d *Database) AddDefDocument(projectID, pathName string, fields models.Reso
 
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"INSERT INTO %s (project_id, resource_path, user_id, apikey_id, created, data) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
+			"INSERT INTO %s (project_id, resource_path, creator_type, creator, created, data) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id",
 			tableProjectResourceObjects,
 		),
 		projectID,
 		pathName,
-		userID,
-		apiKeyID,
+		metadata.CreatorType,
+		creatorID,
 		time.Now(),
 		data,
 	).Scan(&id)
@@ -310,19 +312,88 @@ func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, upd
 
 // ListDefDocuments retrieves all definition documents for the give project and path
 func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError) {
+	// translate filters
+	for key, value := range filter {
+		if translated, ok := objectFilterTranslation[key]; ok {
+			if _, ok := filter[translated]; !ok {
+				filter[translated] = value
+			}
+			delete(filter, key)
+		}
+	}
 
-	// TODO: filter
+	args := make([]interface{}, 0)
+	index := 1
+
+	// query builders
+	filterString := make([]string, 0)
+	sortString := make([]string, 0)
+	pageString := ""
+
+	// path name
+	args = append(args, pathName)
+	filterString = append(filterString, fmt.Sprintf("resource_path=$%d", index))
+	index++
+	// projectID
+	args = append(args, projectID)
+	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
+	// valid sort/filter
+	validFields := map[string]bool{"creator": true}
+
+	// filters
+	filterErr := d.mapToQuery(filter, validFields, &filterString, &args, &index)
+	if filterErr != nil {
+		return nil, errors.New(errors.UnknownError, filterErr)
+	}
+
+	// sort
+	for key, val := range sort {
+		// validate fields
+		if _, ok := validFields[key]; !ok {
+			// not a valid field, move on
+			continue
+		}
+		direction := "DESC"
+		if val > 0 {
+			direction = "ASC"
+		}
+		sortString = append(sortString, fmt.Sprintf("%s %s", key, direction))
+	}
+
+	// paginate
+	if limit >= 0 {
+		args = append(args, limit)
+		pageString += fmt.Sprintf(" LIMIT $%d", index)
+		index++
+	}
+
+	if offset >= 0 {
+		args = append(args, offset)
+		pageString += fmt.Sprintf(" OFFSET $%d", index)
+		index++
+	}
+
+	queryFields := "id, creator, creator_type, created, data"
+	orderBy := ""
+	if len(sortString) > 0 {
+		orderBy = fmt.Sprintf(" ORDER BY %s", strings.Join(sortString, ", "))
+	}
+	query := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s%s%s",
+		queryFields,
+		tableProjectResourceObjects,
+		strings.Join(filterString, " AND "),
+		orderBy,
+		pageString,
+	)
 
 	rows, err := d.db.Query(
-		fmt.Sprintf(
-			"SELECT id, user_id, apikey_id, created, data FROM %s WHERE resource_path=$1 AND project_id=$2 LIMIT $3 OFFSET $4",
-			tableProjectResourceObjects,
-		),
-		pathName,
-		projectID,
-		limit,
-		offset,
+		query,
+		args...,
 	)
+
 	if err != nil {
 		return nil, errors.New(errors.UnknownError, err)
 	}
@@ -330,16 +401,16 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 
 	objects := make([]map[string]interface{}, 0)
 	for rows.Next() {
-		var id, creator, creatorType string
-		var userID, apikeyID sql.NullString
+		var id, creatorType string
+		var creatorID sql.NullString
 		var created time.Time
 		obj := make(map[string]interface{})
 		byt := make([]byte, 0)
 
 		err = rows.Scan(
 			&id,
-			&userID,
-			&apikeyID,
+			&creatorID,
+			&creatorType,
 			&created,
 			&byt,
 		)
@@ -353,17 +424,9 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 			return nil, errors.New(errors.UnknownError, err)
 		}
 
-		if userID.Valid {
-			creator = userID.String
-			creatorType = models.CreatorUser
-		} else if apikeyID.Valid {
-			creator = apikeyID.String
-			creatorType = models.CreatorAPIKey
-		}
-
 		obj["_metadata"] = models.MetaData{
 			Created:     created.Unix(),
-			Creator:     creator,
+			Creator:     creatorID.String,
 			CreatorType: creatorType,
 		}
 		obj["id"] = id
@@ -376,8 +439,8 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 
 // GetDefDocument retrieves a single document
 func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
-	var id, creator, creatorType string
-	var userID, apikeyID sql.NullString
+	var id, creatorType string
+	var creatorID sql.NullString
 	var created time.Time
 
 	obj := make(map[string]interface{})
@@ -385,14 +448,14 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT id, user_id, apikey_id, created, data FROM %s WHERE id=$1",
+			"SELECT id, creator, creator_type, created, data FROM %s WHERE id=$1",
 			tableProjectResourceObjects,
 		),
 		documentID,
 	).Scan(
 		&id,
-		&userID,
-		&apikeyID,
+		&creatorID,
+		&creatorType,
 		&created,
 		&byt,
 	)
@@ -406,17 +469,9 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 		return nil, errors.New(errors.UnknownError, err)
 	}
 
-	if userID.Valid {
-		creator = userID.String
-		creatorType = models.CreatorUser
-	} else if apikeyID.Valid {
-		creator = apikeyID.String
-		creatorType = models.CreatorAPIKey
-	}
-
 	obj["_metadata"] = models.MetaData{
 		Created:     created.Unix(),
-		Creator:     creator,
+		Creator:     creatorID.String,
 		CreatorType: creatorType,
 	}
 	obj["id"] = id

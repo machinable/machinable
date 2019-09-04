@@ -14,7 +14,7 @@ func (d *Database) GetAPIKeyByKey(projectID, hash string) (*models.ProjectAPIKey
 	key := models.ProjectAPIKey{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT id, project_id, key_hash, read, write, role, created FROM %s WHERE project_id=$1 and key_hash=$2",
+			"SELECT id, project_id, key_hash, description, read, write, role, created FROM %s WHERE project_id=$1 and key_hash=$2",
 			tableProjectAPIKeys,
 		),
 		projectID,
@@ -23,6 +23,7 @@ func (d *Database) GetAPIKeyByKey(projectID, hash string) (*models.ProjectAPIKey
 		&key.ID,
 		&key.ProjectID,
 		&key.KeyHash,
+		&key.Description,
 		&key.Read,
 		&key.Write,
 		&key.Role,
@@ -72,7 +73,7 @@ func (d *Database) UpdateAPIKey(projectID, keyID string, read, write bool, role 
 func (d *Database) ListAPIKeys(projectID string) ([]*models.ProjectAPIKey, error) {
 	rows, err := d.db.Query(
 		fmt.Sprintf(
-			"SELECT id, project_id, key_hash, read, write, role, created FROM %s WHERE project_id=$1",
+			"SELECT id, project_id, key_hash, description, read, write, role, created FROM %s WHERE project_id=$1",
 			tableProjectAPIKeys,
 		),
 		projectID,
@@ -89,6 +90,7 @@ func (d *Database) ListAPIKeys(projectID string) ([]*models.ProjectAPIKey, error
 			&key.ID,
 			&key.ProjectID,
 			&key.KeyHash,
+			&key.Description,
 			&key.Read,
 			&key.Write,
 			&key.Role,

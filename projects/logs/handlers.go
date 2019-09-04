@@ -46,7 +46,7 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 	old := time.Now().Add(-time.Hour * time.Duration(24))
 	filter := &models.Filters{
 		"created": models.Value{
-			models.GTE: old.Unix(),
+			models.GTE: old,
 		},
 	}
 	sort := make(map[string]int)
