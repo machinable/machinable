@@ -69,6 +69,7 @@ CREATE TABLE project_logs (
     path VARCHAR,
     status_code INT NOT NULL DEFAULT -1,
     created TIMESTAMP NOT NULL DEFAULT NOW(),
+    aligned TIMESTAMP NOT NULL,
     response_time INT NOT NULL DEFAULT -1,
     initiator VARCHAR,
     initiator_type VARCHAR,

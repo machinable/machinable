@@ -23,7 +23,7 @@ func (d *Documents) ListCollectionUsage(c *gin.Context) {
 	old := time.Now().Add(-time.Hour * time.Duration(1))
 	filter := &models.Filters{
 		"created": models.Value{
-			models.GTE: old.Unix(),
+			models.GTE: old,
 		},
 		"endpoint_type": models.Value{
 			models.EQ: models.EndpointResource,

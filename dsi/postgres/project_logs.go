@@ -14,7 +14,7 @@ const tableProjectLogs = "project_logs"
 func (d *Database) AddProjectLog(projectID string, log *models.Log) error {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"INSERT INTO %s (project_id, endpoint_type, verb, path, status_code, created, response_time, initiator, initiator_type, initiator_id, target_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)",
+			"INSERT INTO %s (project_id, endpoint_type, verb, path, status_code, created, aligned, response_time, initiator, initiator_type, initiator_id, target_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)",
 			tableProjectLogs,
 		),
 		projectID,
@@ -22,7 +22,8 @@ func (d *Database) AddProjectLog(projectID string, log *models.Log) error {
 		log.Verb,
 		log.Path,
 		log.StatusCode,
-		time.Now(),
+		time.Unix(log.Created, 0),
+		time.Unix(log.AlignedCreated, 0),
 		log.ResponseTime,
 		log.Initiator,
 		log.InitiatorType,
@@ -49,7 +50,7 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 	index++
 
 	// valid filter/sort
-	validFields := map[string]bool{"created": true, "initiator_type": true, "status_code": true}
+	validFields := map[string]bool{"created": true, "initiator_type": true, "status_code": true, "endpoint_type": true}
 
 	// filters
 	filterErr := d.filterToQuery(filter, validFields, &filterString, &args, &index)
@@ -84,13 +85,18 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 		index++
 	}
 
-	queryFields := "id, project_id, endpoint_type, verb, path, status_code, created, response_time, initiator, initiator_type, initiator_id, target_id"
+	queryFields := "id, project_id, endpoint_type, verb, path, status_code, created, aligned, response_time, initiator, initiator_type, initiator_id, target_id"
+	orderBy := ""
+	if len(sortString) > 0 {
+		orderBy = fmt.Sprintf(" ORDER BY %s", strings.Join(sortString, ", "))
+	}
+
 	query := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE %s ORDER BY %s%s",
+		"SELECT %s FROM %s WHERE %s%s%s",
 		queryFields,
 		tableProjectLogs,
 		strings.Join(filterString, " AND "),
-		strings.Join(sortString, ", "),
+		orderBy,
 		pageString,
 	)
 
@@ -107,6 +113,7 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 	for rows.Next() {
 		log := models.Log{}
 		created := time.Time{}
+		aligned := time.Time{}
 		err = rows.Scan(
 			&log.ID,
 			&log.ProjectID,
@@ -115,6 +122,7 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 			&log.Path,
 			&log.StatusCode,
 			&created,
+			&aligned,
 			&log.ResponseTime,
 			&log.Initiator,
 			&log.InitiatorType,
@@ -122,6 +130,7 @@ func (d *Database) ListProjectLogs(projectID string, limit, offset int64, filter
 			&log.TargetID,
 		)
 		log.Created = created.Unix()
+		log.AlignedCreated = aligned.Unix()
 		if err != nil {
 			return nil, err
 		}
