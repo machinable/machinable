@@ -7,6 +7,8 @@ import (
 
 	// db dependency should me transparent to the application
 	"github.com/anothrnick/machinable/dsi/models"
+
+	// postgres driver
 	_ "github.com/lib/pq"
 )
 

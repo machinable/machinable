@@ -3,11 +3,12 @@ package postgres
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi/errors"
+	dsiErrors "github.com/anothrnick/machinable/dsi/errors"
 	"github.com/anothrnick/machinable/dsi/models"
 )
 
@@ -23,7 +24,7 @@ var objectFilterTranslation = map[string]string{
 }
 
 // AddDefinition creates a new definition
-func (d *Database) AddDefinition(projectID string, definition *models.ResourceDefinition) (string, *errors.DatastoreError) {
+func (d *Database) AddDefinition(projectID string, definition *models.ResourceDefinition) (string, *dsiErrors.DatastoreError) {
 	err := d.db.QueryRow(
 		fmt.Sprintf(
 			"INSERT INTO %s (project_id, name, path_name, parallel_read, parallel_write, \"create\", \"read\", \"update\", \"delete\", schema, created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
@@ -42,11 +43,11 @@ func (d *Database) AddDefinition(projectID string, definition *models.ResourceDe
 		time.Now(),
 	).Scan(&definition.ID)
 
-	return definition.ID, errors.New(errors.UnknownError, err)
+	return definition.ID, dsiErrors.New(dsiErrors.UnknownError, err)
 }
 
 // UpdateDefinition updates the access fields of a definition
-func (d *Database) UpdateDefinition(projectID, definitionID string, definition *models.ResourceDefinition) *errors.DatastoreError {
+func (d *Database) UpdateDefinition(projectID, definitionID string, definition *models.ResourceDefinition) *dsiErrors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
 			"UPDATE %s SET parallel_read=$1, parallel_write=$2, \"create\"=$3, \"read\"=$4, \"update\"=$5, \"delete\"=$6 WHERE id=$7",
@@ -61,11 +62,11 @@ func (d *Database) UpdateDefinition(projectID, definitionID string, definition *
 		definitionID,
 	)
 
-	return errors.New(errors.UnknownError, err)
+	return dsiErrors.New(dsiErrors.UnknownError, err)
 }
 
 // ListDefinitions lists all definitions for a project
-func (d *Database) ListDefinitions(projectID string) ([]*models.ResourceDefinition, *errors.DatastoreError) {
+func (d *Database) ListDefinitions(projectID string) ([]*models.ResourceDefinition, *dsiErrors.DatastoreError) {
 	rows, err := d.db.Query(
 		fmt.Sprintf(
 			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, \"create\", \"read\", \"update\", \"delete\", schema, created FROM %s WHERE project_id=$1",
@@ -74,7 +75,7 @@ func (d *Database) ListDefinitions(projectID string) ([]*models.ResourceDefiniti
 		projectID,
 	)
 	if err != nil {
-		return nil, errors.New(errors.UnknownError, err)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 	defer rows.Close()
 
@@ -96,17 +97,17 @@ func (d *Database) ListDefinitions(projectID string) ([]*models.ResourceDefiniti
 			&def.Created,
 		)
 		if err != nil {
-			return nil, errors.New(errors.UnknownError, err)
+			return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 		}
 
 		definitions = append(definitions, &def)
 	}
 
-	return definitions, errors.New(errors.UnknownError, rows.Err())
+	return definitions, dsiErrors.New(dsiErrors.UnknownError, rows.Err())
 }
 
 // GetDefinition returns a single definition by ID.
-func (d *Database) GetDefinition(projectID, definitionID string) (*models.ResourceDefinition, *errors.DatastoreError) {
+func (d *Database) GetDefinition(projectID, definitionID string) (*models.ResourceDefinition, *dsiErrors.DatastoreError) {
 	def := models.ResourceDefinition{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
@@ -129,14 +130,14 @@ func (d *Database) GetDefinition(projectID, definitionID string) (*models.Resour
 		&def.Created,
 	)
 	if err != nil {
-		return nil, errors.New(errors.UnknownError, err)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 
 	return &def, nil
 }
 
 // GetResourceStats returns stats for a resource collection
-func (d *Database) GetResourceStats(projectID, definitionID string) (*models.Stats, *errors.DatastoreError) {
+func (d *Database) GetResourceStats(projectID, definitionID string) (*models.Stats, *dsiErrors.DatastoreError) {
 	stats := models.Stats{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
@@ -150,7 +151,7 @@ func (d *Database) GetResourceStats(projectID, definitionID string) (*models.Sta
 		&stats.Count,
 	)
 	if err != nil {
-		return nil, errors.New(errors.UnknownError, err)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 
 	// TODO get stats for all objects...
@@ -159,7 +160,7 @@ func (d *Database) GetResourceStats(projectID, definitionID string) (*models.Sta
 }
 
 // GetDefinitionByPathName returns a definition based on `PathName`
-func (d *Database) GetDefinitionByPathName(projectID, pathName string) (*models.ResourceDefinition, *errors.DatastoreError) {
+func (d *Database) GetDefinitionByPathName(projectID, pathName string) (*models.ResourceDefinition, *dsiErrors.DatastoreError) {
 	def := models.ResourceDefinition{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
@@ -182,14 +183,14 @@ func (d *Database) GetDefinitionByPathName(projectID, pathName string) (*models.
 		&def.Created,
 	)
 	if err != nil {
-		return nil, errors.New(errors.UnknownError, err)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 
 	return &def, nil
 }
 
 // DeleteDefinition deletes a definition as well as any data stored for that definition
-func (d *Database) DeleteDefinition(projectID, definitionID string) *errors.DatastoreError {
+func (d *Database) DeleteDefinition(projectID, definitionID string) *dsiErrors.DatastoreError {
 
 	// get resource to delete objects
 	resource, dErr := d.GetDefinition(projectID, definitionID)
@@ -205,7 +206,7 @@ func (d *Database) DeleteDefinition(projectID, definitionID string) *errors.Data
 		definitionID,
 	)
 	if err != nil {
-		return errors.New(errors.UnknownError, err)
+		return dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 
 	// delete all objects for resource
@@ -215,7 +216,7 @@ func (d *Database) DeleteDefinition(projectID, definitionID string) *errors.Data
 }
 
 // DropProjectResources drops all resource data as well as the definition
-func (d *Database) DropProjectResources(projectID string) *errors.DatastoreError {
+func (d *Database) DropProjectResources(projectID string) *dsiErrors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
 			"DELETE FROM %s WHERE project_id=$1",
@@ -224,7 +225,7 @@ func (d *Database) DropProjectResources(projectID string) *errors.DatastoreError
 		projectID,
 	)
 	if err != nil {
-		return errors.New(errors.UnknownError, err)
+		return dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 
 	// delete all objects for each resource
@@ -238,7 +239,7 @@ func (d *Database) DropProjectResources(projectID string) *errors.DatastoreError
 /******************************/
 
 // AddDefDocument creates a new document for the existing resource, specified by the path.
-func (d *Database) AddDefDocument(projectID, pathName string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError) {
+func (d *Database) AddDefDocument(projectID, pathName string, fields models.ResourceObject, metadata *models.MetaData) (string, *dsiErrors.DatastoreError) {
 	var id string
 	var creatorID interface{}
 
@@ -249,18 +250,18 @@ func (d *Database) AddDefDocument(projectID, pathName string, fields models.Reso
 	// Get field definitions for this resource
 	resourceDefinition, defErr := d.GetDefinitionByPathName(projectID, pathName)
 	if defErr != nil {
-		return "", errors.New(errors.NotFound, fmt.Errorf("resource does not exist"))
+		return "", dsiErrors.New(dsiErrors.NotFound, fmt.Errorf("resource does not exist"))
 	}
 
 	// validate schema
 	schemaErr := fields.Validate(resourceDefinition)
 	if schemaErr != nil {
-		return "", errors.New(errors.BadParameter, schemaErr)
+		return "", dsiErrors.New(dsiErrors.BadParameter, schemaErr)
 	}
 
 	data, der := json.Marshal(fields)
 	if der != nil {
-		return "", errors.New(errors.UnknownError, der)
+		return "", dsiErrors.New(dsiErrors.UnknownError, der)
 	}
 
 	err := d.db.QueryRow(
@@ -276,26 +277,26 @@ func (d *Database) AddDefDocument(projectID, pathName string, fields models.Reso
 		data,
 	).Scan(&id)
 
-	return id, errors.New(errors.UnknownError, err)
+	return id, dsiErrors.New(dsiErrors.UnknownError, err)
 }
 
 // UpdateDefDocument updates an existing document if it exists
-func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) *errors.DatastoreError {
+func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) *dsiErrors.DatastoreError {
 	// Get field definitions for this resource
 	resourceDefinition, defErr := d.GetDefinitionByPathName(projectID, pathName)
 	if defErr != nil {
-		return errors.New(errors.NotFound, fmt.Errorf("resource does not exist"))
+		return dsiErrors.New(dsiErrors.NotFound, fmt.Errorf("resource does not exist"))
 	}
 
 	// validate schema
 	schemaErr := updatedFields.Validate(resourceDefinition)
 	if schemaErr != nil {
-		return errors.New(errors.BadParameter, schemaErr)
+		return dsiErrors.New(dsiErrors.BadParameter, schemaErr)
 	}
 
 	data, der := json.Marshal(updatedFields)
 	if der != nil {
-		return errors.New(errors.UnknownError, der)
+		return dsiErrors.New(dsiErrors.UnknownError, der)
 	}
 
 	_, err := d.db.Exec(
@@ -307,11 +308,11 @@ func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, upd
 		documentID,
 	)
 
-	return errors.New(errors.UnknownError, err)
+	return dsiErrors.New(dsiErrors.UnknownError, err)
 }
 
 // ListDefDocuments retrieves all definition documents for the give project and path
-func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError) {
+func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *dsiErrors.DatastoreError) {
 	// translate filters
 	for key, value := range filter {
 		if translated, ok := objectFilterTranslation[key]; ok {
@@ -345,7 +346,7 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 	// filters
 	filterErr := d.mapToQuery(filter, validFields, &filterString, &args, &index)
 	if filterErr != nil {
-		return nil, errors.New(errors.UnknownError, filterErr)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}
 
 	// sort
@@ -395,7 +396,7 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 	)
 
 	if err != nil {
-		return nil, errors.New(errors.UnknownError, err)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 	defer rows.Close()
 
@@ -416,12 +417,12 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 		)
 
 		if err != nil {
-			return nil, errors.New(errors.UnknownError, err)
+			return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 		}
 
 		err = json.Unmarshal(byt, &obj)
 		if err != nil {
-			return nil, errors.New(errors.UnknownError, err)
+			return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 		}
 
 		obj["_metadata"] = models.MetaData{
@@ -434,11 +435,50 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 		objects = append(objects, obj)
 	}
 
-	return objects, errors.New(errors.UnknownError, rows.Err())
+	return objects, dsiErrors.New(dsiErrors.UnknownError, rows.Err())
 }
 
 // GetDefDocument retrieves a single document
-func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError) {
+func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *dsiErrors.DatastoreError) {
+	// translate filters
+	for key, value := range filter {
+		if translated, ok := objectFilterTranslation[key]; ok {
+			if _, ok := filter[translated]; !ok {
+				filter[translated] = value
+			}
+			delete(filter, key)
+		}
+	}
+
+	args := make([]interface{}, 0)
+	index := 1
+
+	// query builders
+	filterString := make([]string, 0)
+
+	// document id
+	args = append(args, documentID)
+	filterString = append(filterString, fmt.Sprintf("id=$%d", index))
+	index++
+
+	// valid sort/filter
+	validFields := map[string]bool{"creator": true}
+
+	// filters
+	filterErr := d.mapToQuery(filter, validFields, &filterString, &args, &index)
+	if filterErr != nil {
+		return nil, dsiErrors.New(dsiErrors.UnknownError, filterErr)
+	}
+
+	queryFields := "id, creator, creator_type, created, data"
+
+	query := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s",
+		queryFields,
+		tableProjectResourceObjects,
+		strings.Join(filterString, " AND "),
+	)
+
 	var id, creatorType string
 	var creatorID sql.NullString
 	var created time.Time
@@ -447,11 +487,8 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 	byt := make([]byte, 0)
 
 	err := d.db.QueryRow(
-		fmt.Sprintf(
-			"SELECT id, creator, creator_type, created, data FROM %s WHERE id=$1",
-			tableProjectResourceObjects,
-		),
-		documentID,
+		query,
+		args...,
 	).Scan(
 		&id,
 		&creatorID,
@@ -461,12 +498,12 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 	)
 
 	if err != nil {
-		return nil, errors.New(errors.UnknownError, err)
+		return nil, dsiErrors.New(dsiErrors.NotFound, errors.New("not found"))
 	}
 
 	err = json.Unmarshal(byt, &obj)
 	if err != nil {
-		return nil, errors.New(errors.UnknownError, err)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 
 	obj["_metadata"] = models.MetaData{
@@ -480,28 +517,67 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 }
 
 // CountDefDocuments returns the count of all documents for a project resource
-func (d *Database) CountDefDocuments(projectID, pathName string, filter map[string]interface{}) (int64, *errors.DatastoreError) {
+func (d *Database) CountDefDocuments(projectID, pathName string, filter map[string]interface{}) (int64, *dsiErrors.DatastoreError) {
+	// translate filters
+	for key, value := range filter {
+		if translated, ok := objectFilterTranslation[key]; ok {
+			if _, ok := filter[translated]; !ok {
+				filter[translated] = value
+			}
+			delete(filter, key)
+		}
+	}
+
+	args := make([]interface{}, 0)
+	index := 1
+
+	// query builders
+	filterString := make([]string, 0)
+
+	// path name
+	args = append(args, pathName)
+	filterString = append(filterString, fmt.Sprintf("resource_path=$%d", index))
+	index++
+	// projectID
+	args = append(args, projectID)
+	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
+	// valid sort/filter
+	validFields := map[string]bool{"creator": true}
+
+	// filters
+	filterErr := d.mapToQuery(filter, validFields, &filterString, &args, &index)
+	if filterErr != nil {
+		return 0, dsiErrors.New(dsiErrors.UnknownError, filterErr)
+	}
+
+	queryFields := "count(id)"
+
+	query := fmt.Sprintf(
+		"SELECT %s FROM %s WHERE %s",
+		queryFields,
+		tableProjectResourceObjects,
+		strings.Join(filterString, " AND "),
+	)
+
 	var count int64
 	err := d.db.QueryRow(
-		fmt.Sprintf(
-			"SELECT count(id) FROM %s WHERE resource_path=$1 AND project_id=$2",
-			tableProjectResourceObjects,
-		),
-		pathName,
-		projectID,
+		query,
+		args...,
 	).Scan(
 		&count,
 	)
 
 	if err != nil {
-		return 0, errors.New(errors.UnknownError, err)
+		return 0, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 
 	return count, nil
 }
 
 // DeleteDefDocument deletes a single document
-func (d *Database) DeleteDefDocument(projectID, path, documentID string, filter map[string]interface{}) *errors.DatastoreError {
+func (d *Database) DeleteDefDocument(projectID, path, documentID string, filter map[string]interface{}) *dsiErrors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
 			"DELETE FROM %s WHERE id=$1",
@@ -510,11 +586,11 @@ func (d *Database) DeleteDefDocument(projectID, path, documentID string, filter 
 		documentID,
 	)
 
-	return errors.New(errors.UnknownError, err)
+	return dsiErrors.New(dsiErrors.UnknownError, err)
 }
 
 // DropDefDocuments drops documents for a resource
-func (d *Database) DropDefDocuments(projectID, path string) *errors.DatastoreError {
+func (d *Database) DropDefDocuments(projectID, path string) *dsiErrors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
 			"DELETE FROM %s WHERE resource_path=$1 AND project_id=$2",
@@ -524,11 +600,11 @@ func (d *Database) DropDefDocuments(projectID, path string) *errors.DatastoreErr
 		projectID,
 	)
 
-	return errors.New(errors.UnknownError, err)
+	return dsiErrors.New(dsiErrors.UnknownError, err)
 }
 
 // DropProjectDefDocuments drops the entire collection of documents for a project
-func (d *Database) DropProjectDefDocuments(projectID string) *errors.DatastoreError {
+func (d *Database) DropProjectDefDocuments(projectID string) *dsiErrors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
 			"DELETE FROM %s WHERE project_id=$1",
@@ -537,5 +613,5 @@ func (d *Database) DropProjectDefDocuments(projectID string) *errors.DatastoreEr
 		projectID,
 	)
 
-	return errors.New(errors.UnknownError, err)
+	return dsiErrors.New(dsiErrors.UnknownError, err)
 }
