@@ -12,7 +12,7 @@ type ResourcesDatastore interface {
 	UpdateDefinition(projectID, definitionID string, def *models.ResourceDefinition) *errors.DatastoreError
 	ListDefinitions(projectID string) ([]*models.ResourceDefinition, *errors.DatastoreError)
 	GetDefinition(projectID, definitionID string) (*models.ResourceDefinition, *errors.DatastoreError)
-	GetResourceStats(projectID, name string) (*models.Stats, *errors.DatastoreError)
+	GetResourceStats(projectID, pathName string) (*models.Stats, *errors.DatastoreError)
 	GetDefinitionByPathName(projectID, pathName string) (*models.ResourceDefinition, *errors.DatastoreError)
 	DeleteDefinition(projectID, definitionID string) *errors.DatastoreError
 	DropProjectResources(projectID string) *errors.DatastoreError

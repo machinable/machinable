@@ -144,21 +144,14 @@ func (h *Documents) ListObjects(c *gin.Context) {
 			}
 		}
 
-		prop, ok := validSchema.Properties[k]
+		_, ok := validSchema.Properties[k]
 		if !ok {
-			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("unable to filter on '%s', field does not exist", k)})
+			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("unable to filter on '%s'", k)})
 			return
 		}
 
-		// cast filters to their actual types, based on definition
-
-		trueValue, err := dsi.CastInterfaceToType(prop["type"].(string), v[0])
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		filter[k] = trueValue
+		// no need to cast type, let the DSI layer do that (if needed)
+		filter[k] = v[0]
 	}
 
 	// Apply authorization filters

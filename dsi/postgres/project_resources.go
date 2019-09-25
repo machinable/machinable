@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -17,7 +18,9 @@ const (
 	tableProjectResourceObjects     = "project_resource_objects"
 )
 
+// objectFilterTranslation translates metadata keys to their respective field name in the database
 var objectFilterTranslation = map[string]string{
+	"_id":                    "id",
 	"_metadata.creator":      "creator",
 	"_metadata.creator_type": "creator_type",
 	"_metadata.created":      "created",
@@ -137,15 +140,16 @@ func (d *Database) GetDefinition(projectID, definitionID string) (*models.Resour
 }
 
 // GetResourceStats returns stats for a resource collection
-func (d *Database) GetResourceStats(projectID, definitionID string) (*models.Stats, *dsiErrors.DatastoreError) {
+func (d *Database) GetResourceStats(projectID, pathName string) (*models.Stats, *dsiErrors.DatastoreError) {
 	stats := models.Stats{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT sum(pg_column_size(%s)), count(*) FROM %s WHERE id=$1",
-			tableProjectResourceDefinitions,
-			tableProjectResourceDefinitions,
+			"SELECT sum(pg_column_size(%s)), count(*) FROM %s WHERE resource_path=$1 AND project_id=$2",
+			tableProjectResourceObjects,
+			tableProjectResourceObjects,
 		),
-		definitionID,
+		pathName,
+		projectID,
 	).Scan(
 		&stats.Size,
 		&stats.Count,
@@ -153,8 +157,6 @@ func (d *Database) GetResourceStats(projectID, definitionID string) (*models.Sta
 	if err != nil {
 		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
-
-	// TODO get stats for all objects...
 
 	return &stats, nil
 }
@@ -314,12 +316,17 @@ func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, upd
 // ListDefDocuments retrieves all definition documents for the give project and path
 func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *dsiErrors.DatastoreError) {
 	// translate filters
+	translatedFilters := make(map[string]interface{})
 	for key, value := range filter {
 		if translated, ok := objectFilterTranslation[key]; ok {
 			if _, ok := filter[translated]; !ok {
-				filter[translated] = value
+				translatedFilters[translated] = value
 			}
-			delete(filter, key)
+		} else {
+			// this is a data key, translate key to JSONB filter
+			// this assumes the caller has validated this field
+			dataField := fmt.Sprintf("data->>'%s'", key)
+			translatedFilters[dataField] = value
 		}
 	}
 
@@ -341,10 +348,10 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 	index++
 
 	// valid sort/filter
-	validFields := map[string]bool{"creator": true}
+	validFields := map[string]bool{"*": true}
 
 	// filters
-	filterErr := d.mapToQuery(filter, validFields, &filterString, &args, &index)
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
 	if filterErr != nil {
 		return nil, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}
@@ -390,6 +397,7 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 		pageString,
 	)
 
+	log.Println(query)
 	rows, err := d.db.Query(
 		query,
 		args...,
@@ -441,12 +449,17 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 // GetDefDocument retrieves a single document
 func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *dsiErrors.DatastoreError) {
 	// translate filters
+	translatedFilters := make(map[string]interface{})
 	for key, value := range filter {
 		if translated, ok := objectFilterTranslation[key]; ok {
 			if _, ok := filter[translated]; !ok {
-				filter[translated] = value
+				translatedFilters[translated] = value
 			}
-			delete(filter, key)
+		} else {
+			// this is a data key, translate key to JSONB filter
+			// this assumes the caller has validated this field
+			dataField := fmt.Sprintf("data->>'%s'", key)
+			translatedFilters[dataField] = value
 		}
 	}
 
@@ -462,10 +475,10 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 	index++
 
 	// valid sort/filter
-	validFields := map[string]bool{"creator": true}
+	validFields := map[string]bool{"*": true}
 
 	// filters
-	filterErr := d.mapToQuery(filter, validFields, &filterString, &args, &index)
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
 	if filterErr != nil {
 		return nil, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}
@@ -519,12 +532,17 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 // CountDefDocuments returns the count of all documents for a project resource
 func (d *Database) CountDefDocuments(projectID, pathName string, filter map[string]interface{}) (int64, *dsiErrors.DatastoreError) {
 	// translate filters
+	translatedFilters := make(map[string]interface{})
 	for key, value := range filter {
 		if translated, ok := objectFilterTranslation[key]; ok {
 			if _, ok := filter[translated]; !ok {
-				filter[translated] = value
+				translatedFilters[translated] = value
 			}
-			delete(filter, key)
+		} else {
+			// this is a data key, translate key to JSONB filter
+			// this assumes the caller has validated this field
+			dataField := fmt.Sprintf("data->>'%s'", key)
+			translatedFilters[dataField] = value
 		}
 	}
 
@@ -544,10 +562,10 @@ func (d *Database) CountDefDocuments(projectID, pathName string, filter map[stri
 	index++
 
 	// valid sort/filter
-	validFields := map[string]bool{"creator": true}
+	validFields := map[string]bool{"*": true}
 
 	// filters
-	filterErr := d.mapToQuery(filter, validFields, &filterString, &args, &index)
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
 	if filterErr != nil {
 		return 0, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}

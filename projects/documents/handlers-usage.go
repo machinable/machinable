@@ -83,7 +83,7 @@ func (d *Documents) GetStats(c *gin.Context) {
 	totalStats := &models.Stats{}
 	resourceStats := map[string]*models.Stats{}
 	for _, col := range collections {
-		stats, err := d.store.GetResourceStats(projectID, col.ID)
+		stats, err := d.store.GetResourceStats(projectID, col.PathName)
 		if err != nil {
 			c.JSON(err.Code(), gin.H{"error": err.Error()})
 			return

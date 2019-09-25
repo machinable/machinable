@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	// db dependency should me transparent to the application
+	// db dependency should be transparent to the application
 	"github.com/anothrnick/machinable/dsi/models"
 
 	// postgres driver
@@ -32,9 +32,11 @@ func New(user, password, host, database string) (*Database, error) {
 
 func (d *Database) mapToQuery(filter map[string]interface{}, validFields map[string]bool, filterString *[]string, args *[]interface{}, index *int) error {
 	for key, value := range filter {
-		if _, ok := validFields[key]; !ok {
-			// not a valid field, move on
-			continue
+		if _, acceptsAny := validFields["*"]; !acceptsAny{
+			if _, ok := validFields[key]; !ok {
+				// not a valid field, move on
+				continue
+			}
 		}
 
 		*args = append(*args, value)
