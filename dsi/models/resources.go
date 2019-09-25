@@ -61,7 +61,8 @@ type JSONSchemaObject struct {
 
 // ResourceDefinition defines an API resource
 type ResourceDefinition struct {
-	ID            string    `json:"id"`        // ID is the unique identifier for this resource definition
+	ID            string    `json:"id"` // ID is the unique identifier for this resource definition
+	ProjectID     string    `json:"project_id"`
 	Title         string    `json:"title"`     // Title of this resource
 	PathName      string    `json:"path_name"` // PathName is the name that will appear in the URL path
 	ParallelRead  bool      `json:"parallel_read"`
@@ -91,7 +92,8 @@ func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(&struct {
-		ID            string           `json:"id"`        // ID is the unique identifier for this resource definition
+		ID            string           `json:"id"` // ID is the unique identifier for this resource definition
+		ProjectID     string           `json:"project_id"`
 		Title         string           `json:"title"`     // Title of this resource
 		PathName      string           `json:"path_name"` // PathName is the name that will appear in the URL path
 		ParallelRead  bool             `json:"parallel_read"`
@@ -104,6 +106,7 @@ func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
 		Schema        JSONSchemaObject `json:"schema"`  // Properties is the string representation of the JSON schema properties
 	}{
 		ID:            def.ID,
+		ProjectID:     def.ProjectID,
 		Title:         def.Title,
 		PathName:      def.PathName,
 		ParallelRead:  def.ParallelRead,
@@ -120,7 +123,8 @@ func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON is a custom unmarshaller
 func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 	payload := struct {
-		Title         string          `json:"title"`     // Title of this resource
+		Title         string          `json:"title"` // Title of this resource
+		ProjectID     string          `json:"project_id"`
 		PathName      string          `json:"path_name"` // PathName is the name that will appear in the URL path
 		Schema        json.RawMessage `json:"schema"`    // Schema is the string representation of the JSON schema
 		ParallelRead  bool            `json:"parallel_read"`
@@ -137,6 +141,7 @@ func (def *ResourceDefinition) UnmarshalJSON(b []byte) error {
 		panic(err)
 	}
 
+	def.ProjectID = payload.ProjectID
 	def.Title = payload.Title
 	def.PathName = payload.PathName
 	def.Schema = string(payload.Schema)

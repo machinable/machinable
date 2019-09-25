@@ -27,11 +27,20 @@ func AppUserProjectAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 
 			if err == nil {
 				// get project from context, inserted into context from subdomain
-				project := c.GetString("project")
-				if project == "" {
+				projectSlug := c.GetString("project")
+				if projectSlug == "" {
 					respondWithError(http.StatusUnauthorized, "invalid project", c)
 					return
 				}
+
+				// load the project and check the authn policy
+				project, err := store.GetProjectBySlug(projectSlug)
+				if err != nil {
+					respondWithError(http.StatusNotFound, "project not found", c)
+					return
+				}
+
+				c.Set("projectId", project.ID)
 
 				// token is valid, get claims and perform authorization
 				claims := token.Claims.(jwt.MapClaims)
@@ -50,12 +59,12 @@ func AppUserProjectAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 					return
 				}
 
-				_, ok = projects[project]
+				_, ok = projects[projectSlug]
 				if !ok {
 					// the project is not in the claims, look in the database in case it was created with the last 5 minutes
 					userID := user["id"].(string)
 
-					_, err := store.GetProjectBySlugAndUserID(project, userID)
+					_, err := store.GetProjectBySlugAndUserID(projectSlug, userID)
 
 					if err != nil {
 						respondWithError(http.StatusNotFound, "project not found", c)

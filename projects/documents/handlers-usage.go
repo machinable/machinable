@@ -17,13 +17,13 @@ type Usage struct {
 
 // ListCollectionUsage returns the list of activity logs for a project
 func (d *Documents) ListCollectionUsage(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
 	// filter anything within x hours
 	old := time.Now().Add(-time.Hour * time.Duration(1))
 	filter := &models.Filters{
 		"created": models.Value{
-			models.GTE: old.Unix(),
+			models.GTE: old,
 		},
 		"endpoint_type": models.Value{
 			models.EQ: models.EndpointResource,
@@ -32,7 +32,7 @@ func (d *Documents) ListCollectionUsage(c *gin.Context) {
 
 	// TODO: base this on the api limit for the customer tier
 	iLimit := int64(10000)
-	logs, err := d.store.ListProjectLogs(projectSlug, iLimit, 0, filter, nil)
+	logs, err := d.store.ListProjectLogs(projectID, iLimit, 0, filter, nil)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -70,10 +70,10 @@ func (d *Documents) ListCollectionUsage(c *gin.Context) {
 
 // GetStats returns the size of the collections
 func (d *Documents) GetStats(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
 	// retrieve the list of resources
-	collections, err := d.store.ListDefinitions(projectSlug)
+	collections, err := d.store.ListDefinitions(projectID)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -83,7 +83,7 @@ func (d *Documents) GetStats(c *gin.Context) {
 	totalStats := &models.Stats{}
 	resourceStats := map[string]*models.Stats{}
 	for _, col := range collections {
-		stats, err := d.store.GetResourceStats(projectSlug, col.PathName)
+		stats, err := d.store.GetResourceStats(projectID, col.PathName)
 		if err != nil {
 			c.JSON(err.Code(), gin.H{"error": err.Error()})
 			return

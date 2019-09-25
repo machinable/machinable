@@ -3,6 +3,7 @@ package users
 import (
 	"encoding/base64"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -32,7 +33,7 @@ func (u *Users) createAccessToken(user *models.User) (string, error) {
 	claims := jwt.MapClaims{
 		"projects": make(map[string]interface{}),
 		"user": map[string]interface{}{
-			"id":     user.ID.Hex(),
+			"id":     user.ID,
 			"name":   user.Username,
 			"type":   "app",
 			"active": true,
@@ -56,13 +57,13 @@ func (u *Users) createTokensAndSession(user *models.User, c *gin.Context) (strin
 	}
 
 	// create session in database (refresh token)
-	session := as.CreateSession(user.ID.Hex(), c.ClientIP(), c.Request.UserAgent())
+	session := as.CreateSession(user.ID, c.ClientIP(), c.Request.UserAgent())
 	err = u.store.CreateAppSession(session)
 	if err != nil {
 		return "", "", nil, errors.New("failed to create session")
 	}
 
-	refreshToken, err := auth.CreateRefreshToken(session.ID.Hex(), user.ID.Hex())
+	refreshToken, err := auth.CreateRefreshToken(session.ID, user.ID)
 	if err != nil {
 		return "", "", nil, errors.New("failed to create refresh token")
 	}
@@ -93,8 +94,7 @@ func (u *Users) RegisterUser(c *gin.Context) {
 	newUser.Password = ""
 
 	// check for duplicate username
-	existingUser, _ := u.store.GetAppUserByUsername(newUser.Username)
-	if existingUser != nil {
+	if _, err := u.store.GetAppUserByUsername(newUser.Username); err == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "username already exists"})
 		return
 	}
@@ -125,7 +125,7 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		"message":       "Successfully registered",
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
-		"session_id":    session.ID.Hex(),
+		"session_id":    session.ID,
 	})
 }
 
@@ -183,7 +183,7 @@ func (u *Users) LoginUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
-		"session_id":    session.ID.Hex(),
+		"session_id":    session.ID,
 	})
 }
 
@@ -208,6 +208,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	_, err := u.store.GetAppSession(sessionID)
 
 	if err != nil {
+		log.Println(err)
 		// no documents in result, user does not exist
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
@@ -216,6 +217,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	// verify user exists
 	user, err := u.store.GetAppUserByID(userID)
 	if err != nil {
+		log.Println(err)
 		// no documents in result, user does not exist
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
@@ -224,6 +226,7 @@ func (u *Users) RefreshToken(c *gin.Context) {
 	// create new access jwt
 	accessToken, err := u.createAccessToken(user)
 	if err != nil {
+		log.Println(err)
 		c.JSON(http.StatusNotFound, gin.H{"message": "error creating access token."})
 		return
 	}

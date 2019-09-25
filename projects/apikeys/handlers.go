@@ -25,7 +25,7 @@ type APIKeys struct {
 func (k *APIKeys) UpdateKey(c *gin.Context) {
 	var newKey NewProjectKey
 	keyID := c.Param("keyID")
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
 	c.BindJSON(&newKey)
 
@@ -36,7 +36,7 @@ func (k *APIKeys) UpdateKey(c *gin.Context) {
 	}
 
 	err = k.store.UpdateAPIKey(
-		projectSlug,
+		projectID,
 		keyID,
 		newKey.Read,
 		newKey.Write,
@@ -54,7 +54,7 @@ func (k *APIKeys) UpdateKey(c *gin.Context) {
 // AddKey creates a new api key for this project
 func (k *APIKeys) AddKey(c *gin.Context) {
 	var newKey NewProjectKey
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
 	c.BindJSON(&newKey)
 
@@ -69,7 +69,7 @@ func (k *APIKeys) AddKey(c *gin.Context) {
 	newKey.Key = ""
 
 	key, err := k.store.CreateAPIKey(
-		projectSlug,
+		projectID,
 		keyHash,
 		newKey.Description,
 		newKey.Read,
@@ -87,9 +87,9 @@ func (k *APIKeys) AddKey(c *gin.Context) {
 
 // ListKeys lists all api tokens of this project
 func (k *APIKeys) ListKeys(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	keys, err := k.store.ListAPIKeys(projectSlug)
+	keys, err := k.store.ListAPIKeys(projectID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -112,9 +112,9 @@ func (k *APIKeys) GenerateKey(c *gin.Context) {
 // DeleteKey removes an api token by ID
 func (k *APIKeys) DeleteKey(c *gin.Context) {
 	keyID := c.Param("keyID")
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
-	err := k.store.DeleteAPIKey(projectSlug, keyID)
+	err := k.store.DeleteAPIKey(projectID, keyID)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

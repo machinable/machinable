@@ -4,11 +4,11 @@ import "github.com/anothrnick/machinable/dsi/models"
 
 // ProjectUsersDatastore exposes functions to manage project users
 type ProjectUsersDatastore interface {
-	GetUserByUsername(project, userName string) (*models.ProjectUser, error)
-	GetUserByID(project, userID string) (*models.ProjectUser, error)
-	CreateUser(project string, user *models.ProjectUser) error
-	UpdateUser(project, userID string, user *models.ProjectUser) error
-	ListUsers(project string) ([]*models.ProjectUser, error)
-	DeleteUser(project, userID string) error
-	DropProjectUsers(project string) error
+	GetUserByUsername(projectID, userName string) (*models.ProjectUser, error)
+	GetUserByID(projectID, userID string) (*models.ProjectUser, error)
+	CreateUser(projectID string, user *models.ProjectUser) error
+	UpdateUser(projectID, userID string, user *models.ProjectUser) error
+	ListUsers(projectID string) ([]*models.ProjectUser, error)
+	DeleteUser(projectID, userID string) error
+	DropProjectUsers(projectID string) error
 }

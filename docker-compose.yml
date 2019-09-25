@@ -1,8 +1,32 @@
 version: '2'
 services:
+  database:
+    image: postgres:12
+    container_name: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./sql/create.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '127.0.0.1:5432:5432'
+    environment:
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_USER=testuser
+      - POSTGRES_DB=testdb
+ 
   api:
     build: 
       context: .
       dockerfile: Dockerfile
+    container_name: machinable_api
+    depends_on:
+      - 'database'
     ports:
     - "127.0.0.1:5001:5001"
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PW=1234
+      - POSTGRES_HOST=database
+      - POSTGRES_DB=testdb
+
+volumes:
+  db-data:

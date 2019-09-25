@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
-	"github.com/anothrnick/machinable/dsi/mongo"
-	"github.com/anothrnick/machinable/dsi/mongo/database"
+	"github.com/anothrnick/machinable/dsi/postgres"
 	"github.com/anothrnick/machinable/management"
 	"github.com/anothrnick/machinable/projects"
 )
@@ -40,10 +40,20 @@ func (hs HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	// use mongoDB connector
-	// if another connector is needed, the Datastore interface can be implemented and these 2 lines changes to instantiate the new connector
-	// potential connectors: InfluxDB, Postgres JSON, Redis, CouchDB
-	mongoDB := database.Connect()
-	datastore := mongo.New(mongoDB)
+	// mongoDB := database.Connect()
+	// datastore := mongo.New(mongoDB)
+
+	// use Postgres connector
+	datastore, err := postgres.New(
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PW"),
+		os.Getenv("POSTGRES_HOST"),
+		os.Getenv("POSTGRES_DB"),
+	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// switch routers based on subdomain
 	hostSwitch := make(HostSwitch)

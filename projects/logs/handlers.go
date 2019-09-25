@@ -26,7 +26,7 @@ type Logs struct {
 
 // ListProjectLogs returns the list of activity logs for a project
 func (l *Logs) ListProjectLogs(c *gin.Context) {
-	projectSlug := c.MustGet("project").(string)
+	projectID := c.MustGet("projectId").(string)
 
 	// Get pagination parameters
 	values := c.Request.URL.Query()
@@ -46,7 +46,7 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 	old := time.Now().Add(-time.Hour * time.Duration(24))
 	filter := &models.Filters{
 		"created": models.Value{
-			models.GTE: old.Unix(),
+			models.GTE: old,
 		},
 	}
 	sort := make(map[string]int)
@@ -85,7 +85,7 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 	}
 
 	// get count for pagination
-	logCount, err := l.store.CountProjectLogs(projectSlug, filter)
+	logCount, err := l.store.CountProjectLogs(projectID, filter)
 
 	pageMax := (logCount % iLimit) + logCount
 	if (iLimit+iOffset) > pageMax && iOffset >= logCount && logCount != 0 {
@@ -93,7 +93,7 @@ func (l *Logs) ListProjectLogs(c *gin.Context) {
 		return
 	}
 
-	logs, err := l.store.ListProjectLogs(projectSlug, iLimit, iOffset, filter, sort)
+	logs, err := l.store.ListProjectLogs(projectID, iLimit, iOffset, filter, sort)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
