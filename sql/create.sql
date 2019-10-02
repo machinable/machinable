@@ -3,9 +3,6 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- todo: indexes
--- todo: views
-
 CREATE TABLE app_users (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     email VARCHAR NOT NULL UNIQUE,
@@ -37,7 +34,7 @@ CREATE TABLE app_projects (
     created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE project_users (
+CREATE TABLE project_users_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
     email VARCHAR,
@@ -49,9 +46,9 @@ CREATE TABLE project_users (
     created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE project_sessions (
+CREATE TABLE project_sessions_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-    user_id uuid NOT NULL REFERENCES project_users(id),
+    user_id uuid NOT NULL REFERENCES project_users_real(id),
     project_id uuid NOT NULL REFERENCES app_projects(id),
     location VARCHAR, 
     mobile BOOLEAN DEFAULT false, 
@@ -61,7 +58,7 @@ CREATE TABLE project_sessions (
     os VARCHAR
 );
 
-CREATE TABLE project_logs (
+CREATE TABLE project_logs_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
     endpoint_type VARCHAR,
@@ -77,7 +74,7 @@ CREATE TABLE project_logs (
     target_id VARCHAR
 );
 
-CREATE TABLE project_apikeys (
+CREATE TABLE project_apikeys_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id), 
     key_hash VARCHAR NOT NULL,
@@ -88,7 +85,7 @@ CREATE TABLE project_apikeys (
     created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE project_resource_definitions (
+CREATE TABLE project_resource_definitions_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
     name VARCHAR NOT NULL,
@@ -105,7 +102,7 @@ CREATE TABLE project_resource_definitions (
     UNIQUE(project_id, path_name)
 );
 
-CREATE TABLE project_resource_objects (
+CREATE TABLE project_resource_objects_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
     resource_path VARCHAR NOT NULL,
@@ -115,5 +112,65 @@ CREATE TABLE project_resource_objects (
     data JSONB
 );
 
-CREATE INDEX project_resource_objects_idx ON project_resource_objects (resource_path, project_id);
+CREATE INDEX project_resource_objects_idx ON project_resource_objects_real (resource_path, project_id);
 
+/* PARTITIONING */
+
+CREATE OR REPLACE FUNCTION create_partition_and_insert() RETURNS trigger AS
+  $BODY$
+    DECLARE
+      partition TEXT;
+    BEGIN
+      partition := TG_RELNAME || '_' || MD5(NEW.project_id::VARCHAR);
+      IF NOT EXISTS(SELECT relname FROM pg_class WHERE relname=partition) THEN
+        RAISE NOTICE 'A partition has been created %',partition;
+        EXECUTE 'CREATE TABLE ' || partition || ' (check (project_id = ''' || NEW.project_id || ''')) INHERITS (' || TG_RELNAME || '_real' || ');';
+      END IF;
+      EXECUTE 'INSERT INTO ' || partition || ' SELECT(' || TG_RELNAME || ' ' || quote_literal(NEW) || ').* RETURNING id;';
+      RETURN NEW;
+    END;
+  $BODY$
+LANGUAGE plpgsql VOLATILE
+COST 100;
+
+/* project_resource_definitions */
+CREATE view project_resource_definitions as select * from project_resource_definitions_real;
+ALTER view project_resource_definitions ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_resource_definitions_insert_trigger
+INSTEAD OF INSERT ON project_resource_definitions
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_resource_objects */
+CREATE view project_resource_objects as select * from project_resource_objects_real;
+ALTER view project_resource_objects ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_resource_objects_insert_trigger
+INSTEAD OF INSERT ON project_resource_objects
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_apikeys */
+CREATE view project_apikeys as select * from project_apikeys_real;
+ALTER view project_apikeys ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_apikeys_insert_trigger
+INSTEAD OF INSERT ON project_apikeys
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_logs */
+CREATE view project_logs as select * from project_logs_real;
+ALTER view project_logs ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_logs_insert_trigger
+INSTEAD OF INSERT ON project_logs
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_sessions */
+CREATE view project_sessions as select * from project_sessions_real;
+ALTER view project_sessions ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_sessions_insert_trigger
+INSTEAD OF INSERT ON project_sessions
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_users */
+CREATE view project_users as select * from project_users_real;
+ALTER view project_users ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_users_insert_trigger
+INSTEAD OF INSERT ON project_users
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();

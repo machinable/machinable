@@ -144,7 +144,7 @@ func (d *Database) GetResourceStats(projectID, pathName string) (*models.Stats, 
 	stats := models.Stats{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT sum(pg_column_size(%s)), count(*) FROM %s WHERE resource_path=$1 AND project_id=$2",
+			"SELECT COALESCE(sum(pg_column_size(%s)), 0), count(*) FROM %s WHERE resource_path=$1 AND project_id=$2",
 			tableProjectResourceObjects,
 			tableProjectResourceObjects,
 		),
