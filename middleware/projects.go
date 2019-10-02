@@ -69,7 +69,7 @@ func ProjectUserRegistrationMiddleware(store interfaces.Datastore) gin.HandlerFu
 		}
 
 		// inject projectId
-		c.Set("projectId", project.ID)
+		c.Set("projectId", prj.ID)
 
 		c.Next()
 	}
