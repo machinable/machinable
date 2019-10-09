@@ -359,15 +359,31 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 	// sort
 	for key, val := range sort {
 		// validate fields
-		if _, ok := validFields[key]; !ok {
-			// not a valid field, move on
-			continue
+		if _, acceptsAny := validFields["*"]; !acceptsAny {
+			if _, ok := validFields[key]; !ok {
+				// not a valid field, move on
+				continue
+			}
 		}
+
+		// determine direction
 		direction := "DESC"
 		if val > 0 {
 			direction = "ASC"
 		}
-		sortString = append(sortString, fmt.Sprintf("%s %s", key, direction))
+
+		// translate key from metadata or to JSONB
+		realKey := key
+
+		if translated, ok := objectFilterTranslation[key]; ok {
+			realKey = translated
+		} else {
+			// this is a data key, translate key to JSONB filter
+			// this assumes the caller has validated this field
+			realKey = fmt.Sprintf("data->>'%s'", key)
+		}
+
+		sortString = append(sortString, fmt.Sprintf("%s %s", realKey, direction))
 	}
 
 	// paginate
