@@ -90,10 +90,10 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 			respondWithError(http.StatusBadRequest, "malformed request - invalid store", c)
 			return
 		}
-		store := storei.(StoreConfig)
+		storeConfig := storei.(StoreConfig)
 
 		// check verb authentication policy
-		requiresAuthn, err := store.VerbRequiresAuthn(verb)
+		requiresAuthn, err := storeConfig.VerbRequiresAuthn(verb)
 		if err != nil {
 			respondWithError(http.StatusNotImplemented, "unexpected HTTP verb when checking for authentication", c)
 			return
@@ -109,9 +109,9 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 
 		// based on the requester's role and collection/resource access policies, build filters
 		if rRole == auth.RoleUser {
-			if verb == "GET" && store.ParallelRead == false {
+			if verb == "GET" && storeConfig.ParallelRead == false {
 				filters["_metadata.creator"] = rID
-			} else if (verb == "PUT" || verb == "DELETE") && store.ParallelWrite == false {
+			} else if (verb == "PUT" || verb == "DELETE") && storeConfig.ParallelWrite == false {
 				filters["_metadata.creator"] = rID
 			}
 

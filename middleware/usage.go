@@ -67,13 +67,16 @@ func loggingMiddleware(store interfaces.Datastore, endpointType string) gin.Hand
 			InitiatorID:    authID,
 		}
 
-		// save the log
-		err := store.AddProjectLog(projectID, plog)
+		// save in go routine, do not block request
+		go func(projectID string, plog *models.Log) {
+			// save the log
+			err := store.AddProjectLog(projectID, plog)
 
-		if err != nil {
-			log.Println("an error occured trying to save the log")
-			log.Println(err.Error())
-		}
+			if err != nil {
+				log.Println("an error occured trying to save the log")
+				log.Println(err.Error())
+			}
+		}(projectID, plog)
 	}
 }
 
