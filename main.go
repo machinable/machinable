@@ -9,6 +9,7 @@ import (
 	"github.com/anothrnick/machinable/dsi/postgres"
 	"github.com/anothrnick/machinable/management"
 	"github.com/anothrnick/machinable/projects"
+	"github.com/go-redis/redis"
 )
 
 // HostSwitch is used to switch routers based on sub domain
@@ -39,11 +40,7 @@ func (hs HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	// use mongoDB connector
-	// mongoDB := database.Connect()
-	// datastore := mongo.New(mongoDB)
-
-	// use Postgres connector
+	// use postgres client
 	datastore, err := postgres.New(
 		os.Getenv("POSTGRES_USER"),
 		os.Getenv("POSTGRES_PW"),
@@ -55,13 +52,28 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// create a new redis client
+	client := redis.NewClient(&redis.Options{
+		Addr:     "cache:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	// ping the redis server
+	pong, err := client.Ping().Result()
+
+	// fail quickly if ping fails
+	if err != nil {
+		log.Fatal(pong, err)
+	}
+
 	// switch routers based on subdomain
 	hostSwitch := make(HostSwitch)
 
 	// manage is for the management application api, i.e. project/team management
 	hostSwitch["manage"] = management.CreateRoutes(datastore)
 	// all other subdomains will be treated as project names, and use the project routes
-	hostSwitch["*"] = projects.CreateRoutes(datastore)
+	hostSwitch["*"] = projects.CreateRoutes(datastore, client)
 
 	log.Fatal(http.ListenAndServe(":5001", hostSwitch))
 }

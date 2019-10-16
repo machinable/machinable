@@ -1,14 +1,14 @@
-hash: 8d3de2696fad2a2c42ab42636fbd5daa095e287d760db2e73d0864e041aef381
-updated: 2019-08-24T01:46:58.482643736Z
+hash: da46163c8e777a7f19f575f386ccf227525278edcb04c8e0af61915ecacbd218
+updated: 2019-10-16T02:02:21.455302387Z
 imports:
 - name: github.com/asaskevich/govalidator
   version: f61b66f89f4a311bef65f13e575bcf1a2ffadda6
 - name: github.com/dgrijalva/jwt-go
   version: 5e25c22bd5d6de03265bbe5462dcd162f85046f6
 - name: github.com/gin-contrib/sse
-  version: 54d8467d122d380a14768b6b4e5cd7ca4755938f
+  version: 43f0f29dbd2b3f0feeebff91fd9cda22db296938
 - name: github.com/gin-gonic/gin
-  version: 9a820cf0054bcd769f785457b7dbd149a7b29fdd
+  version: 1a1cf655bd72f769e680270f2d39e43f1b82b2ad
   subpackages:
   - binding
   - internal/json
@@ -19,19 +19,19 @@ imports:
   - bson
   - internal/json
 - name: github.com/go-openapi/analysis
-  version: 47fc820a84d431c1eecfe34ec77978e0b08501a9
+  version: 9864a87593df5ab83eac00921906932d1d77fae2
   subpackages:
   - internal
 - name: github.com/go-openapi/errors
   version: 9b273e805998abc751853b4e1574d66e5df888b4
 - name: github.com/go-openapi/jsonpointer
-  version: a67b0cdac37a3489417baf74a7c7802673395a2d
+  version: ed123515f087412cd7ef02e49b0b0a5e6a79a360
 - name: github.com/go-openapi/jsonreference
-  version: 2903bfd4bfbaf188694f1edf731f2725a8fa344f
+  version: 82f31475a8f7a12bc26962f6e26ceade8ea6f66a
 - name: github.com/go-openapi/loads
-  version: 8548893a17237be4a5b2f74773f23002f4179bbe
+  version: c763e5411fc5c14c69d5d44f02b9d92e6f122d2c
 - name: github.com/go-openapi/runtime
-  version: 882fa18ad52bee24eb77d2312d1929580e894013
+  version: 61a733db7911caee78a842d991810efdda21e0f8
 - name: github.com/go-openapi/spec
   version: 5b6cdde3200976e3ecceb2868706ee39b6aff3e4
 - name: github.com/go-openapi/strfmt
@@ -40,29 +40,42 @@ imports:
   version: c3d0f7896d589f3babb99eea24bbc7de98108e72
 - name: github.com/go-openapi/validate
   version: d2eab7d93009e9215fc85b2faa2c2f2a98c2af48
-- name: github.com/go-stack/stack
-  version: 2fee6af1a9795aafbe0253a0cfbdf668e1fb8a9a
+- name: github.com/go-playground/locales
+  version: 630ebbb602847eba93e75ae38bbc7bb7abcf1ff3
+  subpackages:
+  - currency
+- name: github.com/go-playground/universal-translator
+  version: 71201497bace774495daed26a3874fd339e0b538
+- name: github.com/go-redis/redis
+  version: 7f69d5e32072d151eb6936cbe2306413e8117488
+  subpackages:
+  - internal
+  - internal/consistenthash
+  - internal/hashtag
+  - internal/pool
+  - internal/proto
+  - internal/util
 - name: github.com/golang/protobuf
-  version: 4c88cc3f1a34ffade77b79abc53335d1e511f25b
+  version: 1680a479a2cfb3fa22b972af7e36d0a0fde47bf8
   subpackages:
   - proto
-- name: github.com/golang/snappy
-  version: 2a8bb927dd31d8daada140a5d09578521ce5c36a
 - name: github.com/json-iterator/go
-  version: 27518f6661eba504be5a7a9a9f6d9460d892ade3
+  version: 03217c3e97663914aec3faafde50d081f197a0a2
+- name: github.com/leodido/go-urn
+  version: a0f5013415294bb94553821ace21a1a74c0298cc
 - name: github.com/lib/pq
   version: 3427c32cb71afc948325f299f040e53c1dd78979
   subpackages:
   - oid
   - scram
 - name: github.com/mailru/easyjson
-  version: b2ccc519800e761ac8000b95e5d57c80a897ff9e
+  version: 6c0755d89d1e153c9986ad90e886a626bd66aad0
   subpackages:
   - buffer
   - jlexer
   - jwriter
 - name: github.com/mattn/go-isatty
-  version: bf9a1dea1961e1d831824fb135332bfb8c10e8b8
+  version: 0e9ddb7c0c0aef74fa25eaba4141e6b5ab7aca2a
 - name: github.com/mitchellh/mapstructure
   version: 3536a929edddb9a5b34bd6861dc4a9647cb459fe
 - name: github.com/modern-go/concurrent
@@ -71,63 +84,8 @@ imports:
   version: 94122c33edd36123c84d5368cfb2b69df93a0ec8
 - name: github.com/mongodb/mongo-go-driver
   version: 8db96a607cde2fea156d9a72c26aa09271592591
-  subpackages:
-  - bson
-  - bson/bsoncodec
-  - bson/bsoncore
-  - bson/bsonrw
-  - bson/bsontype
-  - bson/decimal
-  - bson/elements
-  - bson/objectid
-  - bson/parser
-  - bson/parser/ast
-  - core/address
-  - core/auth
-  - core/auth/internal/gssapi
-  - core/command
-  - core/compressor
-  - core/connection
-  - core/connstring
-  - core/description
-  - core/dispatch
-  - core/event
-  - core/option
-  - core/readconcern
-  - core/readpref
-  - core/result
-  - core/session
-  - core/tag
-  - core/topology
-  - core/uuid
-  - core/version
-  - core/wiremessage
-  - core/writeconcern
-  - internal
-  - mongo
-  - mongo/aggregateopt
-  - mongo/bulkwriteopt
-  - mongo/changestreamopt
-  - mongo/clientopt
-  - mongo/collectionopt
-  - mongo/countopt
-  - mongo/dbopt
-  - mongo/deleteopt
-  - mongo/distinctopt
-  - mongo/dropcollopt
-  - mongo/findopt
-  - mongo/indexopt
-  - mongo/insertopt
-  - mongo/listcollectionopt
-  - mongo/listdbopt
-  - mongo/mongoopt
-  - mongo/replaceopt
-  - mongo/runcmdopt
-  - mongo/sessionopt
-  - mongo/transactionopt
-  - mongo/updateopt
 - name: github.com/mssola/user_agent
-  version: 74451004a1beb37221bccd8a3931c6acf4a2e80e
+  version: 98a7664b1b0966ac5e99e1c1faf64e9baa2d9486
 - name: github.com/PuerkitoBio/purell
   version: 44968752391892e1b0d0b821ee79e9a85fa13049
 - name: github.com/PuerkitoBio/urlesc
@@ -138,38 +96,29 @@ imports:
   version: 42bc974514ff101a54c6b72a0e4dee29d96c0b26
   subpackages:
   - codec
-- name: github.com/xdg/scram
-  version: 7eeb5667e42c09cb51bf7b7c28aea8c56767da90
-- name: github.com/xdg/stringprep
-  version: 73f8eece6fdcd902c185bf651de50f3828bed5ed
 - name: golang.org/x/crypto
-  version: 60c769a6c58655dab1b9adac0d58967dd517cfba
+  version: 87dc89f01550277dc22b74ffcf4cd89fa2f40f4c
   subpackages:
   - bcrypt
   - blowfish
-  - pbkdf2
 - name: golang.org/x/net
-  version: 74dc4d7220e7acc4e100824340f3e66577424772
+  version: da9a3fd4c5820e74b24a6cb7fb438dc9b0dd377c
   subpackages:
   - idna
-- name: golang.org/x/sync
-  version: 112230192c580c3556b8cee6403af37a4fc5f28c
-  subpackages:
-  - semaphore
 - name: golang.org/x/sys
-  version: fde4db37ae7ad8191b03d30d27f258b5291ae4e3
+  version: b09406accb4736d857a32bf9444cd7edae2ffa79
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: 342b2e1fbaa52c93f31447ad2c6abc048c63e475
+  version: 3d0f7978add91030e5e8976ff65ccdd828286cba
   subpackages:
   - secure/bidirule
   - transform
   - unicode/bidi
   - unicode/norm
   - width
-- name: gopkg.in/go-playground/validator.v8
-  version: 5f1438d3fca68893a817e4a66806cea46a9e4ebf
+- name: gopkg.in/go-playground/validator.v9
+  version: cd1bd581694a11c089aea885a26247c5f783a4cf
 - name: gopkg.in/yaml.v2
-  version: 51d6538a90f86fe93ac480b35f37b2be17fef232
+  version: f221b8435cfb71e54062f6c6e99e9ade30b124d5
 testImports: []

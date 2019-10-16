@@ -1,5 +1,6 @@
 version: '2'
 services:
+
   database:
     image: postgres:12
     container_name: postgres
@@ -12,6 +13,12 @@ services:
       - POSTGRES_PASSWORD=1234
       - POSTGRES_USER=testuser
       - POSTGRES_DB=testdb
+
+  redis:
+    image: redis
+    container_name: cache
+    expose:
+      - 6379
  
   api:
     build: 
@@ -20,6 +27,7 @@ services:
     container_name: machinable_api
     depends_on:
       - 'database'
+      - 'redis'
     ports:
     - "127.0.0.1:5001:5001"
     environment:
