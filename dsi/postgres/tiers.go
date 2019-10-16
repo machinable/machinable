@@ -12,7 +12,7 @@ const tableAppTiers = "app_tiers"
 func (d *Database) ListTiers() ([]*models.Tier, error) {
 	rows, err := d.db.Query(
 		fmt.Sprintf(
-			"SELECT id, name, cost, requests, projects, storage FROM %s",
+			"SELECT id, name, cost, requests, projects, storage FROM %s ORDER BY projects ASC",
 			tableAppTiers,
 		),
 	)
