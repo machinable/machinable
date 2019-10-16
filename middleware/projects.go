@@ -1,16 +1,18 @@
 package middleware
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/anothrnick/machinable/auth"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 )
 
 // Resources is the constant value for the URL parameter
@@ -98,6 +100,7 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 			respondWithError(http.StatusNotImplemented, "unexpected HTTP verb when checking for authentication", c)
 			return
 		}
+		// if this verb does not require authn, or the user is creating an object (no need for creator filter), let it on by!
 		if !requiresAuthn || verb == "POST" {
 			c.Set("filters", filters)
 			c.Next()
@@ -107,7 +110,7 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 		rRole := c.GetString("authRole")
 		rID := c.GetString("authID")
 
-		// based on the requester's role and collection/resource access policies, build filters
+		// based on the requester's role and resource access policies, build filters
 		if rRole == auth.RoleUser {
 			if verb == "GET" && storeConfig.ParallelRead == false {
 				filters["_metadata.creator"] = rID
@@ -125,13 +128,6 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 			c.Next()
 			return
 		}
-		// else if rRole == auth.RoleAnon {
-		// 	// `anon` role:
-		// 	//    no filter needed, trust that the previous middleware checked the project policy
-
-		// 	c.Next()
-		// 	return
-		// }
 
 		// unknown role, cancel request
 		respondWithError(http.StatusForbidden, "unknown role", c)
@@ -154,15 +150,17 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		}
 
 		// load the project and check the authn policy
-		project, err := store.GetProjectBySlug(projectSlug)
+		project, err := store.GetProjectDetailBySlug(projectSlug)
 		if err != nil {
 			respondWithError(http.StatusNotFound, "project not found", c)
 			return
 		}
 
 		c.Set("projectId", project.ID)
+		c.Set("accountRequestLimit", project.Requests)
+		c.Set("accountId", project.UserID)
 
-		//	  > Load collection/resource access policies
+		// load resource access policies
 		params := strings.Split(c.Request.URL.Path, "/")
 
 		if len(params) < 3 {
@@ -171,13 +169,14 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		}
 
 		storeType := params[1]
-		collectionName := params[2]
+		resourceName := params[2]
 
 		storeConfig := StoreConfig{}
 
 		// check store type, load store and get config for access policies
 		if storeType == Resources {
-			def, err := store.GetDefinitionByPathName(project.ID, collectionName)
+			// TODO: Perhaps move this to a view with the project so we only make one DB query?
+			def, err := store.GetDefinitionByPathName(project.ID, resourceName)
 			if err != nil {
 				respondWithError(http.StatusNotFound, "error retrieving resource - does not exist", c)
 				return
@@ -333,20 +332,41 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	}
 }
 
-type logWriter struct {
-	gin.ResponseWriter
-	body *bytes.Buffer
-}
-
-func (w logWriter) Write(b []byte) (int, error) {
-	w.body.Write(b)
-	return w.ResponseWriter.Write(b)
-}
-
-// ProjectLoggingMiddleware logs the request
-func ProjectLoggingMiddleware(store interfaces.Datastore) gin.HandlerFunc {
+// RequestRateLimit checks the account rate limit and returns 429 if over app tier limit
+func RequestRateLimit(store interfaces.Datastore, cache redis.UniversalClient) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// continue handler chain
+		accountLimit := c.GetInt("accountRequestLimit")
+		accountID := c.GetString("accountId")
+		hour := time.Now().Hour()
+		currentKey := fmt.Sprintf("requestCount:%s:%d", accountID, hour)
+
+		// get the request count key for the current window
+		val, err := cache.Get(currentKey).Int()
+
+		if err == redis.Nil {
+			// {currentKey} does not exist
+		} else if err != nil {
+			log.Println("could not read from cache ", err.Error())
+			// continue handler chain as to not disrupt user experience
+			c.Next()
+		}
+
+		if val > accountLimit {
+			respondWithError(http.StatusTooManyRequests, "request count exceeded account rate limit", c)
+			return
+		}
+
+		// increment and set request count in redis
+		val++
+		// expire key after 1 hour
+		err = cache.Set(currentKey, val, time.Hour*1).Err()
+		if err != nil {
+			log.Println("could not write to cache ", err.Error())
+			// continue handler chain as to not disrupt user experience
+			c.Next()
+		}
+
+		// currently under rate limit, continue handler chain
 		c.Next()
 	}
 }

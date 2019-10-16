@@ -614,9 +614,10 @@ func (d *Database) CountDefDocuments(projectID, pathName string, filter map[stri
 func (d *Database) DeleteDefDocument(projectID, path, documentID string, filter map[string]interface{}) *dsiErrors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"DELETE FROM %s WHERE id=$1",
+			"DELETE FROM %s WHERE project_id=$1 AND id=$2",
 			tableProjectResourceObjects,
 		),
+		projectID,
 		documentID,
 	)
 

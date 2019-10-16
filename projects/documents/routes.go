@@ -4,18 +4,19 @@ import (
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 )
 
 // SetRoutes sets all of the appropriate routes to handlers for project collections
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient) error {
 	// create new Resources handler with datastore
 	handler := New(datastore)
 
 	// project/user routes
 	api := engine.Group("/api")
 	api.Use(middleware.ResourceStatsMiddleware(datastore))
-	api.Use(middleware.ProjectLoggingMiddleware(datastore))
 	api.Use(middleware.ProjectUserAuthzMiddleware(datastore))
+	api.Use(middleware.RequestRateLimit(datastore, cache))
 	api.Use(middleware.ProjectAuthzBuildFiltersMiddleware(datastore))
 
 	api.POST("/:resourcePathName", handler.AddObject)
@@ -33,16 +34,11 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	mgmtStats.GET("/", handler.ListCollectionUsage)
 	mgmtStats.GET("/stats", handler.GetStats)
 
-	mgmt.Use(middleware.ProjectLoggingMiddleware(datastore))
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
 	mgmtAPI := mgmt.Group("/api")
-	// mgmtAPI.POST("/:resourcePathName", handler.AddObject)
 	mgmtAPI.GET("/:resourcePathName", handler.ListObjects)
-	// mgmtAPI.GET("/:resourcePathName/:resourceID", handler.GetObject)
-	// mgmtAPI.PUT("/:resourcePathName/:resourceID", handler.PutObject)
-	// mgmtAPI.DELETE("/:resourcePathName/:resourceID", handler.DeleteObject)
 
 	return nil
 }

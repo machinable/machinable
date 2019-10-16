@@ -7,6 +7,7 @@ import (
 )
 
 const tableAppProjects = "app_projects"
+const tableAppProjectLimits = "app_project_limits"
 
 // UpdateProject updates the project's name, description, icon, and user_registration
 func (d *Database) UpdateProject(slug, userID string, project *models.Project) (*models.Project, error) {
@@ -123,6 +124,34 @@ func (d *Database) GetProjectBySlug(slug string) (*models.Project, error) {
 		&project.Icon,
 		&project.UserRegistration,
 		&project.Created,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &project, err
+}
+
+// GetProjectDetailBySlug retrieves the project by slug from the app_project_limits view
+func (d *Database) GetProjectDetailBySlug(slug string) (*models.ProjectDetail, error) {
+	project := models.ProjectDetail{}
+
+	err := d.db.QueryRow(
+		fmt.Sprintf(
+			"SELECT id, user_id, slug, name, description, icon, user_registration, created, requests FROM %s WHERE slug=$1",
+			tableAppProjectLimits,
+		),
+		slug,
+	).Scan(
+		&project.ID,
+		&project.UserID,
+		&project.Slug,
+		&project.Name,
+		&project.Description,
+		&project.Icon,
+		&project.UserRegistration,
+		&project.Created,
+		&project.Requests,
 	)
 	if err != nil {
 		return nil, err

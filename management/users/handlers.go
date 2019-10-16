@@ -3,10 +3,13 @@ package users
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/go-redis/redis"
 
 	"github.com/anothrnick/machinable/auth"
 	"github.com/anothrnick/machinable/dsi/interfaces"
@@ -17,15 +20,17 @@ import (
 )
 
 // New returns a pointer to a new `Users`
-func New(db interfaces.Datastore) *Users {
+func New(db interfaces.Datastore, cache redis.UniversalClient) *Users {
 	return &Users{
 		store: db,
+		cache: cache,
 	}
 }
 
 // Users contains the datastore and any HTTP handlers needed for application users
 type Users struct {
 	store interfaces.Datastore
+	cache redis.UniversalClient
 }
 
 func (u *Users) createAccessToken(user *models.User) (string, error) {
@@ -332,6 +337,42 @@ func (u *Users) GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"user": user})
+}
+
+// ListTiers retrieves the list available tiers for this account/user
+func (u *Users) ListTiers(c *gin.Context) {
+	tiers, err := u.store.ListTiers()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"tiers": tiers})
+}
+
+// GetUsage returns the current usage for the account/user
+func (u *Users) GetUsage(c *gin.Context) {
+	userID, ok := c.MustGet("user_id").(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "no user"})
+		return
+	}
+
+	hour := time.Now().Hour()
+	currentKey := fmt.Sprintf("requestCount:%s:%d", userID, hour)
+
+	// get the request count key for the current window
+	val, err := u.cache.Get(currentKey).Int()
+
+	if err == redis.Nil {
+		// {currentKey} does not exist
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "unexpected error retrieving usage"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"requests": val, "projects": 0, "storage": 0})
 }
 
 // GetSession retrieves the user's current session information.

@@ -12,7 +12,6 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	handler := New(datastore)
 
 	users := engine.Group("/users")
-	users.Use(middleware.ProjectLoggingMiddleware(datastore))
 	users.Use(middleware.ProjectUserRegistrationMiddleware(datastore))
 	users.POST("/register", handler.AddLimitedUser) // create a new user with the role 'user'
 

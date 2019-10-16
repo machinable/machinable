@@ -10,6 +10,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type logWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (w logWriter) Write(b []byte) (int, error) {
+	w.body.Write(b)
+	return w.ResponseWriter.Write(b)
+}
+
 // CollectionStatsMiddleware logs collection stats for reporting
 func CollectionStatsMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return loggingMiddleware(store, models.EndpointCollection)

@@ -35,7 +35,7 @@ func (d *Database) GetAppUserByID(userID string) (*models.User, error) {
 
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT id, email, username, password_hash, created from %s WHERE id=$1",
+			"SELECT id, email, username, password_hash, created, tier_id from %s WHERE id=$1",
 			tableAppUsers,
 		),
 		userID,
@@ -45,6 +45,7 @@ func (d *Database) GetAppUserByID(userID string) (*models.User, error) {
 		&user.Username,
 		&user.PasswordHash,
 		&user.Created,
+		&user.Tier,
 	)
 
 	return user, err
