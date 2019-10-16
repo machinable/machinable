@@ -71,7 +71,7 @@ func main() {
 	hostSwitch := make(HostSwitch)
 
 	// manage is for the management application api, i.e. project/team management
-	hostSwitch["manage"] = management.CreateRoutes(datastore)
+	hostSwitch["manage"] = management.CreateRoutes(datastore, client)
 	// all other subdomains will be treated as project names, and use the project routes
 	hostSwitch["*"] = projects.CreateRoutes(datastore, client)
 
