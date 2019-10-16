@@ -334,6 +334,18 @@ func (u *Users) GetUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": user})
 }
 
+// ListTiers retrieves the list available tiers for this account/user
+func (u *Users) ListTiers(c *gin.Context) {
+	tiers, err := u.store.ListTiers()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"tiers": tiers})
+}
+
 // GetSession retrieves the user's current session information.
 func (u *Users) GetSession(c *gin.Context) {
 	sessionID := c.Param("sessionID")

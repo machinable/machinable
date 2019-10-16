@@ -21,4 +21,6 @@ type Datastore interface {
 	UsersDatastore
 	// Sessions
 	SessionsDatastore
+	// Tiers
+	TiersDatastore
 }

@@ -13,6 +13,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	// user endpoints
 	users := engine.Group("/users")
 	users.GET("/", middleware.AppUserJwtAuthzMiddleware(), handler.GetUser)
+	users.GET("/tiers", middleware.AppUserJwtAuthzMiddleware(), handler.ListTiers)
 	users.POST("/register", handler.RegisterUser)
 	users.POST("/sessions", handler.LoginUser)
 	users.GET("/sessions", middleware.AppUserJwtAuthzMiddleware(), handler.ListUserSessions)
