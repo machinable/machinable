@@ -3,12 +3,27 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE TABLE app_tiers (
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name VARCHAR NOT NULL UNIQUE,
+  cost VARCHAR NOT NULL DEFAULT '0',
+  requests INTEGER,
+  projects INTEGER,
+  storage INTEGER
+);
+
+INSERT INTO app_tiers (id, name, cost, requests, projects, storage) VALUES 
+  ('9473a732-dd95-4b98-b776-e2d77e1966fe', 'Free', '0', 1000, 3, 256),
+  ('fdabaf45-bd8f-4a2d-994e-f5bf79b2034f', 'Basic', '10', 3000, 10, 5000),
+  ('bbe1450f-aaf5-497b-9f20-c2c09b64ebd8', 'Professional', '30', 10000, 25, 20000);
+
 CREATE TABLE app_users (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     email VARCHAR NOT NULL UNIQUE,
     username VARCHAR NOT NULL UNIQUE,
     password_hash VARCHAR NOT NULL,
     created TIMESTAMP NOT NULL DEFAULT NOW(),
+    tier_id uuid NOT NULL REFERENCES app_tiers(id) DEFAULT '9473a732-dd95-4b98-b776-e2d77e1966fe', 
     admin BOOLEAN DEFAULT false
 );
 
@@ -33,6 +48,12 @@ CREATE TABLE app_projects (
     user_registration BOOLEAN DEFAULT false,
     created TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+CREATE view app_project_limits AS 
+  SELECT p.*, u.id as account_id, t.requests 
+  FROM app_users as u 
+  INNER JOIN app_projects as p ON p.user_id = u.id 
+  INNER JOIN app_tiers as t ON u.tier_id = t.id;
 
 CREATE TABLE project_users_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,

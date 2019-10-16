@@ -162,7 +162,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 
 		c.Set("projectId", project.ID)
 
-		//	  > Load collection/resource access policies
+		// load resource access policies
 		params := strings.Split(c.Request.URL.Path, "/")
 
 		if len(params) < 3 {
@@ -171,13 +171,13 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		}
 
 		storeType := params[1]
-		collectionName := params[2]
+		resourceName := params[2]
 
 		storeConfig := StoreConfig{}
 
 		// check store type, load store and get config for access policies
 		if storeType == Resources {
-			def, err := store.GetDefinitionByPathName(project.ID, collectionName)
+			def, err := store.GetDefinitionByPathName(project.ID, resourceName)
 			if err != nil {
 				respondWithError(http.StatusNotFound, "error retrieving resource - does not exist", c)
 				return
