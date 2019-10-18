@@ -338,13 +338,14 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 	sortString := make([]string, 0)
 	pageString := ""
 
-	// path name
-	args = append(args, pathName)
-	filterString = append(filterString, fmt.Sprintf("resource_path=$%d", index))
-	index++
 	// projectID
 	args = append(args, projectID)
 	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
+	// path name
+	args = append(args, pathName)
+	filterString = append(filterString, fmt.Sprintf("resource_path=$%d", index))
 	index++
 
 	// valid sort/filter
@@ -568,13 +569,14 @@ func (d *Database) CountDefDocuments(projectID, pathName string, filter map[stri
 	// query builders
 	filterString := make([]string, 0)
 
-	// path name
-	args = append(args, pathName)
-	filterString = append(filterString, fmt.Sprintf("resource_path=$%d", index))
-	index++
 	// projectID
 	args = append(args, projectID)
 	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
+	// path name
+	args = append(args, pathName)
+	filterString = append(filterString, fmt.Sprintf("resource_path=$%d", index))
 	index++
 
 	// valid sort/filter
