@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/anothrNick/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/lib/pq"
 )
 

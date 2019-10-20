@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/anothrNick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/gin-gonic/gin"
 )
 

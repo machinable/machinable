@@ -1,8 +1,10 @@
 package jsontree
 
 import (
-	"github.com/anothrNick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/go-redis/redis"
 )
 
 // Handler is an interface to the JSON key/val HTTP handler functions.
@@ -18,17 +20,22 @@ type Handler interface {
 }
 
 // SetRoutes sets all of the appropriate routes to handlers for the application
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient) error {
 	handler := NewHandlers(datastore)
 
-	return setRoutes(engine, handler)
+	return setRoutes(engine, handler, datastore, cache)
 }
 
-func setRoutes(engine *gin.Engine, h Handler) error {
+// abstraction for dependency injection
+func setRoutes(engine *gin.Engine, h Handler, datastore interfaces.Datastore, cache redis.UniversalClient) error {
 	jsonKeys := engine.Group("/json")
 
-	// TODO middleware
+	// set middleware on json key resources
+	jsonKeys.Use(middleware.JSONStatsMiddleware(datastore))
+	jsonKeys.Use(middleware.ProjectUserAuthzMiddleware(datastore))
+	jsonKeys.Use(middleware.RequestRateLimit(datastore, cache))
 
+	// initialize routes
 	jsonKeys.GET("/", h.ListRootKeys)             // returns entire root tree
 	jsonKeys.GET("/:rootKey", h.ReadRootKey)      // returns entire root tree
 	jsonKeys.POST("/:rootKey", h.CreateRootKey)   // create a new tree at `rootKey`

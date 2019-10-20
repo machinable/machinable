@@ -142,9 +142,7 @@ CREATE TABLE project_json_real(
   "read" BOOLEAN DEFAULT false,
   "update" BOOLEAN DEFAULT false,
   "delete" BOOLEAN DEFAULT false,
-  data jsonb, 
-
-  UNIQUE(project_id, root_key)
+  data jsonb
 );
 CREATE INDEX project_json_idx ON project_json_real (project_id, root_key);
 

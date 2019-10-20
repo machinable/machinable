@@ -18,6 +18,9 @@ import (
 // Resources is the constant value for the URL parameter
 var Resources = "api"
 
+// JSONKey is the constant value for the URL parameter
+var JSONKey = "json"
+
 // BEARER is the key for the bearer authorization token
 var BEARER = "bearer"
 
@@ -169,12 +172,11 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		}
 
 		storeType := params[1]
-		resourceName := params[2]
-
 		storeConfig := StoreConfig{}
 
 		// check store type, load store and get config for access policies
 		if storeType == Resources {
+			resourceName := params[2]
 			// TODO: Perhaps move this to a view with the project so we only make one DB query?
 			def, err := store.GetDefinitionByPathName(project.ID, resourceName)
 			if err != nil {
@@ -187,6 +189,20 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			storeConfig.Delete = def.Delete
 			storeConfig.ParallelRead = def.ParallelRead
 			storeConfig.ParallelWrite = def.ParallelWrite
+		} else if storeType == JSONKey {
+			rootKeyStr := params[2]
+			rootKey, err := store.GetRootKey(project.ID, rootKeyStr)
+			if err != nil {
+				respondWithError(http.StatusNotFound, "error retrieving root key - does not exist", c)
+				return
+			}
+			storeConfig.Create = rootKey.Create
+			storeConfig.Read = rootKey.Read
+			storeConfig.Update = rootKey.Update
+			storeConfig.Delete = rootKey.Delete
+		} else {
+			respondWithError(http.StatusNotFound, "not found", c)
+			return
 		}
 
 		// put store in context

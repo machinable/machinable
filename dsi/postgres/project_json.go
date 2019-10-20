@@ -4,10 +4,33 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/anothrNick/machinable/dsi/models"
+	"github.com/anothrnick/machinable/dsi/models"
 )
 
 const tableProjectJSON = "project_json"
+
+// GetRootKey retrieves a single root key by the key name
+func (d *Database) GetRootKey(projectID, rootKey string) (*models.RootKey, error) {
+	newKey := models.RootKey{}
+	err := d.db.QueryRow(
+		fmt.Sprintf(
+			"SELECT id, project_id, root_key, \"create\", \"read\", \"update\", \"delete\" FROM %s WHERE project_id=$1 and root_key=$2",
+			tableProjectJSON,
+		),
+		projectID,
+		rootKey,
+	).Scan(
+		&newKey.ID,
+		&newKey.ProjectID,
+		&newKey.Key,
+		&newKey.Create,
+		&newKey.Read,
+		&newKey.Update,
+		&newKey.Delete,
+	)
+
+	return &newKey, err
+}
 
 // ListRootKeys lists all root keys with associated metadata, does not include jsonb
 func (d *Database) ListRootKeys(projectID string) ([]*models.RootKey, error) {

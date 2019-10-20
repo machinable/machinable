@@ -4,6 +4,7 @@ import "github.com/anothrnick/machinable/dsi/models"
 
 // ProjectJSONDatastore exposes functions to the project json trees
 type ProjectJSONDatastore interface {
+	GetRootKey(projectID, rootKey string) (*models.RootKey, error)
 	ListRootKeys(projectID string) ([]*models.RootKey, error)
 	CreateRootKey(projectID, rootKey string, data []byte) error
 	DeleteRootKey(projectID, rootKey string) error
