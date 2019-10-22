@@ -39,7 +39,12 @@ func (h *Handlers) ListRootKeys(c *gin.Context) {
 func (h *Handlers) CreateRootKey(c *gin.Context) {
 	rootKey := c.Param("rootKey")
 	projectID := c.MustGet("projectId").(string)
-	b, _ := c.GetRawData()
+
+	b, rErr := c.GetRawData()
+	if rErr != nil {
+		c.JSON(http.StatusInternalServerError, "error parsing data")
+		return
+	}
 
 	err := h.db.CreateRootKey(projectID, rootKey, b)
 	if err != nil {
@@ -108,7 +113,11 @@ func (h *Handlers) CreateJSONKey(c *gin.Context) {
 	projectID := c.MustGet("projectId").(string)
 	keys := c.Param("keys")
 
-	b, _ := c.GetRawData()
+	b, rErr := c.GetRawData()
+	if rErr != nil {
+		c.JSON(http.StatusInternalServerError, "error parsing data")
+		return
+	}
 
 	keys = strings.TrimRight(strings.TrimLeft(keys, "/"), "/")
 	if keys == "" {
@@ -132,7 +141,11 @@ func (h *Handlers) UpdateJSONKey(c *gin.Context) {
 	projectID := c.MustGet("projectId").(string)
 	keys := c.Param("keys")
 
-	b, _ := c.GetRawData()
+	b, rErr := c.GetRawData()
+	if rErr != nil {
+		c.JSON(http.StatusInternalServerError, "error parsing data")
+		return
+	}
 
 	keys = strings.TrimRight(strings.TrimLeft(keys, "/"), "/")
 	if keys == "" {
