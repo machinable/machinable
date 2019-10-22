@@ -132,8 +132,20 @@ CREATE TABLE project_resource_objects_real (
     created TIMESTAMP NOT NULL DEFAULT NOW(),
     data JSONB
 );
+CREATE INDEX project_resource_objects_idx ON project_resource_objects_real (project_id, resource_path);
 
-CREATE INDEX project_resource_objects_idx ON project_resource_objects_real (resource_path, project_id);
+CREATE TABLE project_json_real(
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id uuid NOT NULL REFERENCES app_projects(id),
+  root_key VARCHAR NOT NULL, 
+  "create" BOOLEAN DEFAULT false,
+  "read" BOOLEAN DEFAULT false,
+  "update" BOOLEAN DEFAULT false,
+  "delete" BOOLEAN DEFAULT false,
+  data jsonb
+);
+CREATE INDEX project_json_idx ON project_json_real (project_id, root_key);
+
 
 /* PARTITIONING */
 
@@ -166,6 +178,13 @@ CREATE view project_resource_objects as select * from project_resource_objects_r
 ALTER view project_resource_objects ALTER column id set DEFAULT uuid_generate_v4();
 CREATE TRIGGER project_resource_objects_insert_trigger
 INSTEAD OF INSERT ON project_resource_objects
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_json */
+CREATE view project_json as select * from project_json_real;
+ALTER view project_json ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_json
+INSTEAD OF INSERT ON project_json
 FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
 
 /* project_apikeys */

@@ -3,8 +3,8 @@ package models
 import "strconv"
 
 const (
-	EndpointResource   string = "resource"
-	EndpointCollection string = "collection"
+	EndpointResource string = "resource"
+	EndpointJSON     string = "json"
 )
 
 // Log is any user/api key initiated event that should be recorded

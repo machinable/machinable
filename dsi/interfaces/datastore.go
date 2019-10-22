@@ -1,5 +1,7 @@
 package interfaces
 
+import "github.com/anothrnick/machinable/dsi/models"
+
 // Datastore exposes the necessary functions to interact with the Machinable datastore.
 // Functions are grouped logically based on their purpose and the collections they interact with.
 // implemented connectors: MongoDB
@@ -7,6 +9,8 @@ package interfaces
 type Datastore interface {
 	// Project resources/definitions
 	ResourcesDatastore
+	// JSON Key/val
+	ProjectJSONDatastore
 	// Project users
 	ProjectUsersDatastore
 	// Project apikeys
@@ -23,4 +27,6 @@ type Datastore interface {
 	SessionsDatastore
 	// Tiers
 	TiersDatastore
+	// Errors
+	TranslateError(err error) *models.TranslatedError
 }

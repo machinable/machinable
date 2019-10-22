@@ -20,9 +20,9 @@ func (w logWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-// CollectionStatsMiddleware logs collection stats for reporting
-func CollectionStatsMiddleware(store interfaces.Datastore) gin.HandlerFunc {
-	return loggingMiddleware(store, models.EndpointCollection)
+// JSONStatsMiddleware logs json stats for reporting
+func JSONStatsMiddleware(store interfaces.Datastore) gin.HandlerFunc {
+	return loggingMiddleware(store, models.EndpointJSON)
 }
 
 // ResourceStatsMiddleware logs resource stats and logging for reporting
