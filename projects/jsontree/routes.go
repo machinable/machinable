@@ -36,15 +36,20 @@ func setRoutes(engine *gin.Engine, h Handler, datastore interfaces.Datastore, ca
 	jsonKeys.Use(middleware.RequestRateLimit(datastore, cache))
 
 	// initialize routes
-	jsonKeys.GET("/", h.ListRootKeys)             // returns entire root tree
-	jsonKeys.GET("/:rootKey", h.ReadRootKey)      // returns entire root tree
-	jsonKeys.POST("/:rootKey", h.CreateRootKey)   // create a new tree at `rootKey`
-	jsonKeys.DELETE("/:rootKey", h.DeleteRootKey) // root tree must be empty to delete
-
 	jsonKeys.GET("/:rootKey/*keys", h.ReadJSONKey)
 	jsonKeys.POST("/:rootKey/*keys", h.CreateJSONKey)
 	jsonKeys.PUT("/:rootKey/*keys", h.UpdateJSONKey)
 	jsonKeys.DELETE("/:rootKey/*keys", h.DeleteJSONKey)
+
+	// App mgmt routes with different authz policy
+	mgmt := engine.Group("/mgmt")
+	mgmtAPI := mgmt.Group("/json")
+	mgmtAPI.Use(middleware.AppUserJwtAuthzMiddleware())
+	mgmtAPI.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+	mgmtAPI.GET("/", h.ListRootKeys)             // returns all root keys
+	mgmtAPI.GET("/:rootKey", h.ReadRootKey)      // returns entire root tree
+	mgmtAPI.POST("/:rootKey", h.CreateRootKey)   // create a new tree at `rootKey`
+	mgmtAPI.DELETE("/:rootKey", h.DeleteRootKey) // root tree must be empty to delete
 
 	return nil
 }

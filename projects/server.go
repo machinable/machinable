@@ -7,6 +7,7 @@ import (
 	"github.com/anothrnick/machinable/middleware"
 	"github.com/anothrnick/machinable/projects/apikeys"
 	"github.com/anothrnick/machinable/projects/documents"
+	"github.com/anothrnick/machinable/projects/jsontree"
 	"github.com/anothrnick/machinable/projects/logs"
 	"github.com/anothrnick/machinable/projects/resources"
 	"github.com/anothrnick/machinable/projects/sessions"
@@ -28,6 +29,7 @@ func CreateRoutes(datastore interfaces.Datastore, cache redis.UniversalClient) *
 	users.SetRoutes(router, datastore)
 	sessions.SetRoutes(router, datastore)
 	apikeys.SetRoutes(router, datastore)
+	jsontree.SetRoutes(router, datastore, cache)
 
 	return router
 }
