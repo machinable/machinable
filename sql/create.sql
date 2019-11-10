@@ -142,7 +142,9 @@ CREATE TABLE project_json_real(
   "read" BOOLEAN DEFAULT false,
   "update" BOOLEAN DEFAULT false,
   "delete" BOOLEAN DEFAULT false,
-  data jsonb
+  data jsonb,
+
+  UNIQUE(project_id, root_key)
 );
 CREATE INDEX project_json_idx ON project_json_real (project_id, root_key);
 
@@ -183,6 +185,10 @@ FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
 /* project_json */
 CREATE view project_json as select * from project_json_real;
 ALTER view project_json ALTER column id set DEFAULT uuid_generate_v4();
+ALTER view project_json ALTER column "create" set DEFAULT false;
+ALTER view project_json ALTER column "read" set DEFAULT false;
+ALTER view project_json ALTER column "update" set DEFAULT false;
+ALTER view project_json ALTER column "delete" set DEFAULT false;
 CREATE TRIGGER project_json
 INSTEAD OF INSERT ON project_json
 FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();

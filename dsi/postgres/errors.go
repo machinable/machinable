@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -16,6 +17,7 @@ func (p *Database) TranslateError(err error) *models.TranslatedError {
 	originalError := err.Error()
 
 	// log original error
+	log.Println(err)
 
 	if err, ok := err.(*pq.Error); ok {
 		// postgres specific errors

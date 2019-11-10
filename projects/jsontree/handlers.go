@@ -28,7 +28,7 @@ func (h *Handlers) ListRootKeys(c *gin.Context) {
 	rootKeys, err := h.db.ListRootKeys(projectID)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
-		c.JSON(tErr.Code, tErr.Error())
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *Handlers) CreateRootKey(c *gin.Context) {
 	err := h.db.CreateRootKey(projectID, rootKey, b)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
-		c.JSON(tErr.Code, tErr.Error())
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
 
@@ -64,7 +64,7 @@ func (h *Handlers) ReadRootKey(c *gin.Context) {
 	byt, err := h.db.GetJSONKey(projectID, rootKey)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
-		c.JSON(tErr.Code, tErr.Error())
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
 
@@ -81,7 +81,7 @@ func (h *Handlers) DeleteRootKey(c *gin.Context) {
 	err := h.db.DeleteRootKey(projectID, rootKey)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
-		c.JSON(tErr.Code, tErr.Error())
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
 
@@ -98,7 +98,7 @@ func (h *Handlers) ReadJSONKey(c *gin.Context) {
 	byt, err := h.db.GetJSONKey(projectID, rootKey, strings.Split(keys, "/")...)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
-		c.JSON(tErr.Code, tErr.Error())
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
 
@@ -128,7 +128,7 @@ func (h *Handlers) CreateJSONKey(c *gin.Context) {
 	err := h.db.CreateJSONKey(projectID, rootKey, b, strings.Split(keys, "/")...)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
-		c.JSON(tErr.Code, tErr.Error())
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
 
@@ -156,7 +156,7 @@ func (h *Handlers) UpdateJSONKey(c *gin.Context) {
 	err := h.db.UpdateJSONKey(projectID, rootKey, b, strings.Split(keys, "/")...)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
-		c.JSON(tErr.Code, tErr.Error())
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
 
@@ -177,7 +177,7 @@ func (h *Handlers) DeleteJSONKey(c *gin.Context) {
 	err := h.db.DeleteJSONKey(projectID, rootKey, strings.Split(keys, "/")...)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
-		c.JSON(tErr.Code, tErr.Error())
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
 
