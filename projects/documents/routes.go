@@ -27,16 +27,15 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.U
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
-
-	mgmtStats := mgmt.Group("/resourceUsage")
-	mgmtStats.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmtStats.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
-	mgmtStats.GET("/", handler.ListCollectionUsage)
-	mgmtStats.GET("/stats", handler.GetStats)
-
 	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
 	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 
+	// mgmt resource usage
+	mgmtStats := mgmt.Group("/resourceUsage")
+	mgmtStats.GET("/", handler.ListCollectionUsage)
+	mgmtStats.GET("/stats", handler.GetStats)
+
+	// mgmt get objects
 	mgmtAPI := mgmt.Group("/api")
 	mgmtAPI.GET("/:resourcePathName", handler.ListObjects)
 

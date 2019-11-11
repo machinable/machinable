@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lib/pq"
+
 	"github.com/anothrnick/machinable/dsi/models"
 )
 
@@ -70,14 +72,40 @@ func (d *Database) ListRootKeys(projectID string) ([]*models.RootKey, error) {
 
 // CreateRootKey creates a new rootkey with a JSON tree
 func (d *Database) CreateRootKey(projectID, rootKey string, data []byte) error {
+	// check for root key
+	_, err := d.GetRootKey(projectID, rootKey)
+
+	if err != nil {
+		_, err = d.db.Exec(
+			fmt.Sprintf(
+				"INSERT INTO %s (project_id, root_key, data) VALUES ($1, $2, $3)",
+				tableProjectJSON,
+			),
+			projectID,
+			rootKey,
+			data,
+		)
+	} else {
+		perr := &pq.Error{Code: pq.ErrorCode("22023")}
+		return perr
+	}
+
+	return err
+}
+
+// UpdateRootKey updates the data at the key path. Creates a new key if it does not already exist.
+func (d *Database) UpdateRootKey(projectID string, rootKey *models.RootKey) error {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
-			"INSERT INTO %s (project_id, root_key, data) VALUES ($1, $2, $3)",
+			"UPDATE %s set \"create\"=$1, \"read\"=$2, \"update\"=$3, \"delete\"=$4 WHERE project_id=$5 and root_key=$6",
 			tableProjectJSON,
 		),
+		rootKey.Create,
+		rootKey.Read,
+		rootKey.Update,
+		rootKey.Delete,
 		projectID,
-		rootKey,
-		data,
+		rootKey.Key,
 	)
 	return err
 }
