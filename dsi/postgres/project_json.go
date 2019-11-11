@@ -93,6 +93,23 @@ func (d *Database) CreateRootKey(projectID, rootKey string, data []byte) error {
 	return err
 }
 
+// UpdateRootKey updates the data at the key path. Creates a new key if it does not already exist.
+func (d *Database) UpdateRootKey(projectID string, rootKey *models.RootKey) error {
+	_, err := d.db.Exec(
+		fmt.Sprintf(
+			"UPDATE %s set \"create\"=$1, \"read\"=$2, \"update\"=$3, \"delete\"=$4 WHERE project_id=$5 and root_key=$6",
+			tableProjectJSON,
+		),
+		rootKey.Create,
+		rootKey.Read,
+		rootKey.Update,
+		rootKey.Delete,
+		projectID,
+		rootKey.Key,
+	)
+	return err
+}
+
 //DeleteRootKey permanently deletes an entire rootkey's tree
 func (d *Database) DeleteRootKey(projectID, rootKey string) error {
 	_, err := d.db.Exec(

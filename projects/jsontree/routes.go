@@ -11,12 +11,15 @@ import (
 type Handler interface {
 	ListRootKeys(c *gin.Context)
 	CreateRootKey(c *gin.Context)
+	UpdateRootKey(c *gin.Context)
 	ReadRootKey(c *gin.Context)
 	DeleteRootKey(c *gin.Context)
 	ReadJSONKey(c *gin.Context)
 	CreateJSONKey(c *gin.Context)
 	UpdateJSONKey(c *gin.Context)
 	DeleteJSONKey(c *gin.Context)
+
+	ListUsage(c *gin.Context)
 }
 
 // SetRoutes sets all of the appropriate routes to handlers for the application
@@ -43,12 +46,18 @@ func setRoutes(engine *gin.Engine, h Handler, datastore interfaces.Datastore, ca
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
+	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
+	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+
+	// stats
+	mgmtStats := mgmt.Group("/jsonUsage")
+	mgmtStats.GET("/", h.ListUsage)
+
 	mgmtAPI := mgmt.Group("/json")
-	mgmtAPI.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmtAPI.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
 	mgmtAPI.GET("/", h.ListRootKeys)             // returns all root keys
 	mgmtAPI.GET("/:rootKey", h.ReadRootKey)      // returns entire root tree
 	mgmtAPI.POST("/:rootKey", h.CreateRootKey)   // create a new tree at `rootKey`
+	mgmtAPI.PUT("/:rootKey", h.UpdateRootKey)    // create a new tree at `rootKey`
 	mgmtAPI.DELETE("/:rootKey", h.DeleteRootKey) // root tree must be empty to delete
 
 	return nil

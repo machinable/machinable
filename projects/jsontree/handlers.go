@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,6 +34,28 @@ func (h *Handlers) ListRootKeys(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"items": rootKeys})
+}
+
+// UpdateRootKey updates the access policies
+func (h *Handlers) UpdateRootKey(c *gin.Context) {
+	rootKey := c.Param("rootKey")
+	projectID := c.MustGet("projectId").(string)
+
+	keyData := &models.RootKey{}
+	c.BindJSON(keyData)
+
+	if keyData.Key != rootKey {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid key"})
+	}
+
+	err := h.db.UpdateRootKey(projectID, keyData)
+	if err != nil {
+		tErr := h.db.TranslateError(err)
+		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, keyData)
 }
 
 // CreateRootKey creates a new JSON tree for a rootKey name

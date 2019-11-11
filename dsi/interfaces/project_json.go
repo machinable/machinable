@@ -7,6 +7,7 @@ type ProjectJSONDatastore interface {
 	GetRootKey(projectID, rootKey string) (*models.RootKey, error)
 	ListRootKeys(projectID string) ([]*models.RootKey, error)
 	CreateRootKey(projectID, rootKey string, data []byte) error
+	UpdateRootKey(projectID string, rootKey *models.RootKey) error
 	DeleteRootKey(projectID, rootKey string) error
 
 	GetJSONKey(projectID, rootKey string, keys ...string) ([]byte, error)
