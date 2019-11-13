@@ -15,7 +15,8 @@ jobs:
       id: bump_version
     - name: Build and publish Docker Image
       run: |
-        make install && make build
+        docker run --rm -v $(shell pwd):/go/src/github.com/anothrnick/machinable -w /go/src/github.com/anothrnick/machinable instrumentisto/glide install
+        make build
         docker login docker.pkg.github.com -u anothrNick -p "${GITHUB_PACKAGE_REGISTRY_TOKEN}"
         docker tag api:latest docker.pkg.github.com/anothrNick/machinable/machinable:$VERSION
         docker push docker.pkg.github.com/anothrNick/machinable/machinable:$VERSION
