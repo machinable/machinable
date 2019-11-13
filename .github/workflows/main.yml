@@ -22,4 +22,4 @@ jobs:
         docker push docker.pkg.github.com/anothrNick/machinable/machinable:$VERSION
       env:
         VERSION: ${{ steps.bump_version.outputs.new_tag }}
-        GITHUB_PACKAGE_REGISTRY_TOKEN: ${{ secrets.GITHUB_PACKAGE_REGISTRY_TOKEN }}
+        GITHUB_PACKAGE_REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
