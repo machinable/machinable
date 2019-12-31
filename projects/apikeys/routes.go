@@ -30,7 +30,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	)
 }
 
-func setRoutes(engine *gin.Engine, handler Handler, datastore interfaces.Datastore, mw ...gin.HandlerFunc) error {
+func setRoutes(engine *gin.Engine, handler Handler, datastore interfaces.ProjectAPIKeysDatastore, mw ...gin.HandlerFunc) error {
 	// Only app users have access to api key management
 	keys := engine.Group("/keys")
 	keys.Use(mw...)
