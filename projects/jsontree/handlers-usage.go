@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Usage wraps usage statistics for JSON keys
 type Usage struct {
 	RequestCount      int64         `json:"request_count"`
 	TotalResponseTime int64         `json:"-"`
