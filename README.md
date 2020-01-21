@@ -29,6 +29,10 @@ $ make test
 $ go test ../... -v
 ```
 
+#### CI
+
+Github Action
+
 ### Local Development
 
 `make install && make build && make up` will install dependencies, build images, and run the necessary containers for a local environment. This includes the posgres, redis, and api containers. The containers are defined in `docker-compose.yml`.
