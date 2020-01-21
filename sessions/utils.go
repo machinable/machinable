@@ -7,14 +7,14 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/mssola/user_agent"
 )
 
+// GetGeoIP retrieves location information of the client ip from IP Stack
 func GetGeoIP(ip string) (string, error) {
-	// ... this should be changed to get the access key from a config or environment variable
-	accessKey := "85a38b87f3b696c7dcbf8f6f58c3c6a9"
-	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s", ip, accessKey)
+	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s", ip, config.IPStackKey)
 
 	ipStackData := struct {
 		City       string `json:"city"`
