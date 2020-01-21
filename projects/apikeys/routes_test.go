@@ -21,6 +21,14 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func TestUpdateKey(t *testing.T) {
+
+}
+
+func TestAddKey(t *testing.T) {
+
+}
+
 func TestListKeys(t *testing.T) {
 	ds := &interfaces.MockProjectAPIKeysDatastore{}
 	handler := New(ds)
