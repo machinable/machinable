@@ -13,15 +13,6 @@ import (
 
 // RecaptchaSiteVerify verifies the client response with recaptcha
 func RecaptchaSiteVerify(clientResponse string) error {
-	// payload := map[string]interface{}{
-	// 	"secret":   config.ReCaptchaSecret,
-	// 	"response": clientResponse,
-	// }
-
-	// b, err := json.Marshal(payload)
-	// if err != nil {
-	// 	log.Fatalln(err)
-	// }
 
 	resp, err := http.Post(fmt.Sprintf("https://www.google.com/recaptcha/api/siteverify?secret=%s&response=%s", config.ReCaptchaSecret, clientResponse), "application/json", nil)
 	if err != nil {
@@ -41,9 +32,6 @@ func RecaptchaSiteVerify(clientResponse string) error {
 	}
 
 	json.NewDecoder(resp.Body).Decode(&result)
-
-	fmt.Println("RecaptchaSiteVerify response:")
-	fmt.Println(result)
 
 	if !result.Success {
 		return errors.New("invalid reCaptcha")

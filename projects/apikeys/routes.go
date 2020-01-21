@@ -6,15 +6,34 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Handler is an interface to the API Key HTTP handler functions.
+type Handler interface {
+	UpdateKey(c *gin.Context)
+	AddKey(c *gin.Context)
+	ListKeys(c *gin.Context)
+	GenerateKey(c *gin.Context)
+	DeleteKey(c *gin.Context)
+}
+
 // SetRoutes sets all of the appropriate routes to handlers for project users
 func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 	// create new Resources handler with datastore
 	handler := New(datastore)
 
+	// di for testing
+	return setRoutes(
+		engine,
+		handler,
+		datastore,
+		middleware.AppUserJwtAuthzMiddleware(),
+		middleware.AppUserProjectAuthzMiddleware(datastore),
+	)
+}
+
+func setRoutes(engine *gin.Engine, handler Handler, datastore interfaces.ProjectAPIKeysDatastore, mw ...gin.HandlerFunc) error {
 	// Only app users have access to api key management
 	keys := engine.Group("/keys")
-	keys.Use(middleware.AppUserJwtAuthzMiddleware())
-	keys.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+	keys.Use(mw...)
 
 	keys.GET("/generate", handler.GenerateKey) // generate a valid uuid for a potential api key
 	keys.GET("/", handler.ListKeys)            // get list of api keys for this project

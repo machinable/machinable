@@ -25,3 +25,6 @@ remove:
 
 clean:
 	docker-compose down --rmi all -v --remove-orphans
+
+test:
+	go test ./...

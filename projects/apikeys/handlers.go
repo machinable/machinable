@@ -101,11 +101,7 @@ func (k *APIKeys) ListKeys(c *gin.Context) {
 
 // GenerateKey retrieves a single api token of this project by ID
 func (k *APIKeys) GenerateKey(c *gin.Context) {
-	UUID, err := uuid.NewV4()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	UUID := uuid.NewV4()
 	c.JSON(http.StatusOK, gin.H{"key": UUID.String()})
 }
 

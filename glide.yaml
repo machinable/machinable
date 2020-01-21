@@ -14,3 +14,4 @@ import:
   version: ^1.2.0
 - package: github.com/go-redis/redis
   version: v6.15.6
+- package: github.com/stretchr/testify/assert
