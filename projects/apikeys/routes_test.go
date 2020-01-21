@@ -1,6 +1,7 @@
 package apikeys
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -22,11 +23,113 @@ func TestMain(m *testing.M) {
 }
 
 func TestUpdateKey(t *testing.T) {
+	ds := &interfaces.MockProjectAPIKeysDatastore{}
+	handler := New(ds)
 
+	tables := []struct {
+		name       string
+		updateErr  error
+		newKey     *NewProjectKey
+		statusCode int
+	}{
+		{
+			"success",
+			nil,
+			&NewProjectKey{Role: "admin"},
+			200,
+		},
+		{
+			"empty role",
+			nil,
+			&NewProjectKey{Role: ""},
+			200,
+		},
+		{
+			"validation error - invalid role",
+			nil,
+			&NewProjectKey{Role: "Batman"},
+			400,
+		},
+		{
+			"update error",
+			errors.New("unexpected error"),
+			&NewProjectKey{Role: "user"},
+			500,
+		},
+	}
+
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.Default()
+			ds.UpdateAPIKeyFunc = func(projectID, keyId string, read, write bool, role string) error {
+				return tt.updateErr
+			}
+
+			setRoutes(router, handler, ds, func(c *gin.Context) { c.Set("projectId", "testing") })
+			w := httptest.NewRecorder()
+
+			jsonStr, _ := json.Marshal(tt.newKey)
+			req, _ := http.NewRequest("PUT", "/keys/a-key-id", bytes.NewBuffer(jsonStr))
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.statusCode, w.Code)
+		})
+	}
 }
 
 func TestAddKey(t *testing.T) {
+	ds := &interfaces.MockProjectAPIKeysDatastore{}
+	handler := New(ds)
 
+	tables := []struct {
+		name       string
+		addErr     error
+		newKey     *NewProjectKey
+		statusCode int
+	}{
+		{
+			"success",
+			nil,
+			&NewProjectKey{Key: "1b7dfd69-bd3f-46c7-ac94-10bbdec1d96b"},
+			201,
+		},
+		{
+			"validation error",
+			nil,
+			&NewProjectKey{Key: "invalid-uuid-key"},
+			400,
+		},
+		{
+			"validation error - empty key",
+			nil,
+			&NewProjectKey{Key: ""},
+			400,
+		},
+		{
+			"create error",
+			errors.New("unexpected error"),
+			&NewProjectKey{Key: "1b7dfd69-bd3f-46c7-ac94-10bbdec1d96b"},
+			500,
+		},
+	}
+
+	for _, tt := range tables {
+		t.Run(tt.name, func(t *testing.T) {
+			router := gin.Default()
+			ds.CreateAPIKeyFunc = func(projectID, hash, description string, read, write bool, role string) (*models.ProjectAPIKey, error) {
+				return nil, tt.addErr
+			}
+
+			setRoutes(router, handler, ds, func(c *gin.Context) { c.Set("projectId", "testing") })
+			w := httptest.NewRecorder()
+
+			jsonStr, _ := json.Marshal(tt.newKey)
+			req, _ := http.NewRequest("POST", "/keys/", bytes.NewBuffer(jsonStr))
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.statusCode, w.Code)
+		})
+	}
 }
 
 func TestListKeys(t *testing.T) {
