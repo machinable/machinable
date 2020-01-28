@@ -161,14 +161,15 @@ func (d *Database) GetResourceStats(projectID, pathName string) (*models.Stats, 
 	return &stats, nil
 }
 
-// GetDefinitionByPathName returns a definition based on `PathName`
+// GetDefinitionByPathName returns a definition based on `PathName` and `ProjectID`
 func (d *Database) GetDefinitionByPathName(projectID, pathName string) (*models.ResourceDefinition, *dsiErrors.DatastoreError) {
 	def := models.ResourceDefinition{}
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, \"create\", \"read\", \"update\", \"delete\", schema, created FROM %s WHERE path_name=$1",
+			"SELECT id, project_id, name, path_name, parallel_read, parallel_write, \"create\", \"read\", \"update\", \"delete\", schema, created FROM %s WHERE project_id=$1 AND path_name=$2",
 			tableProjectResourceDefinitions,
 		),
+		projectID,
 		pathName,
 	).Scan(
 		&def.ID,
@@ -301,13 +302,54 @@ func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, upd
 		return dsiErrors.New(dsiErrors.UnknownError, der)
 	}
 
+	// translate filters
+	translatedFilters := make(map[string]interface{})
+	for key, value := range filter {
+		// auth filters only
+		if translated, ok := objectFilterTranslation[key]; ok {
+			if _, ok := filter[translated]; !ok {
+				translatedFilters[translated] = value
+			}
+		}
+	}
+
+	args := make([]interface{}, 0)
+	index := 2
+
+	// query builders
+	filterString := make([]string, 0)
+
+	// append update data
+	args = append(args, data)
+
+	// project id
+	args = append(args, projectID)
+	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
+	// object id
+	args = append(args, documentID)
+	filterString = append(filterString, fmt.Sprintf("id=$%d", index))
+	index++
+
+	// valid sort/filter
+	validFields := map[string]bool{"*": true}
+
+	// filters
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
+	if filterErr != nil {
+		return dsiErrors.New(dsiErrors.UnknownError, filterErr)
+	}
+
+	query := fmt.Sprintf(
+		"UPDATE %s SET data=$1 WHERE %s",
+		tableProjectResourceObjects,
+		strings.Join(filterString, " AND "),
+	)
+
 	_, err := d.db.Exec(
-		fmt.Sprintf(
-			"UPDATE %s SET data=$1 WHERE id=$2",
-			tableProjectResourceObjects,
-		),
-		data,
-		documentID,
+		query,
+		args...,
 	)
 
 	return dsiErrors.New(dsiErrors.UnknownError, err)
@@ -614,13 +656,51 @@ func (d *Database) CountDefDocuments(projectID, pathName string, filter map[stri
 
 // DeleteDefDocument deletes a single document
 func (d *Database) DeleteDefDocument(projectID, path, documentID string, filter map[string]interface{}) *dsiErrors.DatastoreError {
+	// translate filters
+	translatedFilters := make(map[string]interface{})
+	for key, value := range filter {
+		// auth filters only
+		if translated, ok := objectFilterTranslation[key]; ok {
+			if _, ok := filter[translated]; !ok {
+				translatedFilters[translated] = value
+			}
+		}
+	}
+
+	args := make([]interface{}, 0)
+	index := 1
+
+	// query builders
+	filterString := make([]string, 0)
+
+	// project id
+	args = append(args, projectID)
+	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
+	// object id
+	args = append(args, documentID)
+	filterString = append(filterString, fmt.Sprintf("id=$%d", index))
+	index++
+
+	// valid sort/filter
+	validFields := map[string]bool{"*": true}
+
+	// filters
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
+	if filterErr != nil {
+		return dsiErrors.New(dsiErrors.UnknownError, filterErr)
+	}
+
+	query := fmt.Sprintf(
+		"DELETE FROM %s WHERE %s",
+		tableProjectResourceObjects,
+		strings.Join(filterString, " AND "),
+	)
+
 	_, err := d.db.Exec(
-		fmt.Sprintf(
-			"DELETE FROM %s WHERE project_id=$1 AND id=$2",
-			tableProjectResourceObjects,
-		),
-		projectID,
-		documentID,
+		query,
+		args...,
 	)
 
 	return dsiErrors.New(dsiErrors.UnknownError, err)
