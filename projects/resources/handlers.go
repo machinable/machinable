@@ -34,9 +34,16 @@ func (h *Resources) AddResourceDefinition(c *gin.Context) {
 	resourceDefinition.Update = true
 	resourceDefinition.Delete = true
 
-	// Validate the definition
+	// validate the definition
 	if err := resourceDefinition.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// verify uniqueness
+	if _, dne := h.store.GetDefinitionByPathName(projectID, resourceDefinition.PathName); dne == nil {
+		// path name already exists for project and path name
+		c.JSON(http.StatusBadRequest, gin.H{"error": "path name already in use for project"})
 		return
 	}
 
