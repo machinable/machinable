@@ -84,7 +84,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 	// find project
 	project, err := s.store.GetProjectBySlug(projectSlug)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "project does not exist"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "project does not exist"})
 		return
 	}
 
