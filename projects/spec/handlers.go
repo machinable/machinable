@@ -21,7 +21,23 @@ type Spec struct {
 
 // GetSpec retrieves the openapi spec for the project
 func (s *Spec) GetSpec(c *gin.Context) {
-	spec := baseSpec()
+	projectID := c.MustGet("projectId").(string)
+	projectName := c.MustGet("projectName").(string)
+	projectPath := c.MustGet("projectPath").(string)
+	projectDescription := c.MustGet("projectDescription").(string)
+
+	resources, err := s.store.ListDefinitions(projectID)
+
+	if err != nil {
+		c.JSON(err.Code(), gin.H{"error": err.Error()})
+		return
+	}
+
+	spec := baseSpec(projectPath)
+
+	injectProjectSchema(spec, resources)
+	spec.Info.Title = projectName
+	spec.Info.Description = projectDescription
 
 	c.IndentedJSON(http.StatusOK, gin.H{"spec": spec})
 }

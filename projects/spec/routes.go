@@ -2,6 +2,7 @@ package spec
 
 import (
 	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,6 +21,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 		engine,
 		handler,
 		datastore,
+		middleware.ProjectIDAuthzMiddleware(datastore),
 	)
 }
 

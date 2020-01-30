@@ -1,6 +1,249 @@
 package spec
 
-func baseSpec() *ProjectSpec {
+import (
+	"fmt"
+
+	"github.com/anothrnick/machinable/dsi/models"
+)
+
+func injectProjectSchema(spec *ProjectSpec, resources []*models.ResourceDefinition) {
+	// update spec info
+	for _, resource := range resources {
+		tag := Tag{
+			Name:        resource.Title,
+			Description: resource.Title,
+		}
+		spec.Tags = append(spec.Tags, tag)
+		groupTags := spec.XTagGroups[1].Tags
+		spec.XTagGroups[1].Tags = append(groupTags, tag.Name)
+		injectPaths(spec, resource)
+		injectComponents(spec, resource)
+	}
+}
+
+func injectComponents(spec *ProjectSpec, resource *models.ResourceDefinition) {
+	schema, _ := resource.GetSchemaMap()
+	// TODO: Title could have spaces?
+	spec.Components.Schemas[resource.Title] = schema
+	spec.Components.Responses[fmt.Sprintf("%sList", resource.Title)] = map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"count": map[string]interface{}{
+				"description": "Total item count",
+				"type":        "integer",
+			},
+			"links": map[string]interface{}{
+				"description": "Absolute pagination links",
+				"type":        "object",
+				"properties": map[string]interface{}{
+					"self": map[string]interface{}{
+						"type": "string",
+					},
+					"next": map[string]interface{}{
+						"type": "string",
+					},
+					"prev": map[string]interface{}{
+						"type": "string",
+					},
+				},
+			},
+			"items": map[string]interface{}{
+				"type": "array",
+				"items": map[string]interface{}{
+					"$ref": fmt.Sprintf("#/components/schemas/%s", resource.Title),
+				},
+			},
+		},
+	}
+}
+
+func injectPaths(spec *ProjectSpec, resource *models.ResourceDefinition) {
+	componentLink := fmt.Sprintf("#/components/schemas/%s", resource.Title)
+	listLink := fmt.Sprintf("#/components/responses/%sList", resource.Title)
+	paths := map[string]map[string]Verb{
+		fmt.Sprintf("/api/%s/{%sId}", resource.PathName, resource.PathName): {
+			"get": {
+				Tags:        []string{resource.Title},
+				Summary:     fmt.Sprintf("Get %s", resource.Title),
+				OperationID: fmt.Sprintf("Get%s", resource.Title),
+				Security: []map[string][]interface{}{
+					{
+						"JWT": []interface{}{},
+					},
+				},
+				Responses: map[string]interface{}{
+					"200": map[string]interface{}{
+						"description": "Resource retrieved successfully",
+						"headers":     map[string]interface{}{},
+						"content": map[string]interface{}{
+							"application/json": map[string]interface{}{
+								"schema": map[string]interface{}{
+									"$ref": componentLink,
+								},
+							},
+						},
+					},
+					"400": map[string]interface{}{
+						"$ref": "#/components/responses/BadRequest",
+					},
+					"401": map[string]interface{}{
+						"$ref": "#/components/responses/UnauthorizedError",
+					},
+					"404": map[string]interface{}{
+						"$ref": "#/components/responses/NotFound",
+					},
+				},
+			},
+			"put": {
+				Tags:        []string{resource.Title},
+				Summary:     fmt.Sprintf("Update %s", resource.Title),
+				OperationID: fmt.Sprintf("Update%s", resource.Title),
+				Security: []map[string][]interface{}{
+					{
+						"JWT": []interface{}{},
+					},
+				},
+				RequestBody: map[string]interface{}{
+					"content": map[string]interface{}{
+						"application/json": map[string]interface{}{
+							"schema": map[string]interface{}{
+								"$ref": componentLink,
+							},
+						},
+					},
+				},
+				Responses: map[string]interface{}{
+					"200": map[string]interface{}{
+						"description": "Resource created successfully",
+						"headers":     map[string]interface{}{},
+						"content": map[string]interface{}{
+							"application/json": map[string]interface{}{
+								"schema": map[string]interface{}{
+									"$ref": componentLink,
+								},
+							},
+						},
+					},
+					"400": map[string]interface{}{
+						"$ref": "#/components/responses/BadRequest",
+					},
+					"401": map[string]interface{}{
+						"$ref": "#/components/responses/UnauthorizedError",
+					},
+					"404": map[string]interface{}{
+						"$ref": "#/components/responses/NotFound",
+					},
+				},
+			},
+			"delete": {
+				Tags:        []string{resource.Title},
+				Summary:     fmt.Sprintf("Delete %s", resource.Title),
+				OperationID: fmt.Sprintf("Delete%s", resource.Title),
+				Security:    []map[string][]interface{}{},
+				Responses: map[string]interface{}{
+					"204": map[string]interface{}{
+						"description": "Resource was deleted successfully",
+						"headers":     map[string]interface{}{},
+						"content": map[string]interface{}{
+							"application/json": map[string]interface{}{
+								"schema": map[string]interface{}{
+									"type": "object",
+								},
+							},
+						},
+					},
+					"401": map[string]interface{}{
+						"$ref": "#/components/responses/UnauthorizedError",
+					},
+					"404": map[string]interface{}{
+						"$ref": "#/components/responses/NotFound",
+					},
+				},
+			},
+		},
+		fmt.Sprintf("/api/%s", resource.PathName): {
+			"get": {
+				Tags:        []string{resource.Title},
+				Summary:     fmt.Sprintf("List %s", resource.Title),
+				OperationID: fmt.Sprintf("List%s", resource.Title),
+				Security: []map[string][]interface{}{
+					{
+						"JWT": []interface{}{},
+					},
+				},
+				Responses: map[string]interface{}{
+					"200": map[string]interface{}{
+						"description": "Resource list retrieved successfully",
+						"headers":     map[string]interface{}{},
+						"content": map[string]interface{}{
+							"application/json": map[string]interface{}{
+								"schema": map[string]interface{}{
+									"$ref": listLink,
+								},
+							},
+						},
+					},
+					"400": map[string]interface{}{
+						"$ref": "#/components/responses/BadRequest",
+					},
+					"401": map[string]interface{}{
+						"$ref": "#/components/responses/UnauthorizedError",
+					},
+					"404": map[string]interface{}{
+						"$ref": "#/components/responses/NotFound",
+					},
+				},
+			},
+			"post": {
+				Tags:        []string{resource.Title},
+				Summary:     fmt.Sprintf("Create %s", resource.Title),
+				OperationID: fmt.Sprintf("Create%s", resource.Title),
+				Security: []map[string][]interface{}{
+					{
+						"JWT": []interface{}{},
+					},
+				},
+				RequestBody: map[string]interface{}{
+					"content": map[string]interface{}{
+						"application/json": map[string]interface{}{
+							"schema": map[string]interface{}{
+								"$ref": componentLink,
+							},
+						},
+					},
+				},
+				Responses: map[string]interface{}{
+					"200": map[string]interface{}{
+						"description": "Resource created successfully",
+						"headers":     map[string]interface{}{},
+						"content": map[string]interface{}{
+							"application/json": map[string]interface{}{
+								"schema": map[string]interface{}{
+									"$ref": componentLink,
+								},
+							},
+						},
+					},
+					"400": map[string]interface{}{
+						"$ref": "#/components/responses/BadRequest",
+					},
+					"401": map[string]interface{}{
+						"$ref": "#/components/responses/UnauthorizedError",
+					},
+					"404": map[string]interface{}{
+						"$ref": "#/components/responses/NotFound",
+					},
+				},
+			},
+		},
+	}
+
+	for key, val := range paths {
+		spec.Paths[key] = val
+	}
+}
+
+func baseSpec(projectPath string) *ProjectSpec {
 	return &ProjectSpec{
 		Openapi: "3.0.0",
 		Info: Info{
@@ -13,13 +256,13 @@ func baseSpec() *ProjectSpec {
 			XLogo: XLogo{
 				URL:             "test",
 				BackgroundColor: "#fafafa",
-				AltText:         "Test Project",
+				AltText:         projectPath,
 			},
 			Description: "Sample OpenAPI specification for Machinable project.",
 		},
 		Servers: []Server{
 			{
-				URL:         "https://project.machinable.io",
+				URL:         fmt.Sprintf("https://%s.machinable.io", projectPath),
 				Description: "Live Server",
 			},
 		},
@@ -35,6 +278,10 @@ func baseSpec() *ProjectSpec {
 				Tags: []string{
 					"JWT Session",
 				},
+			},
+			{
+				Name: "API Resources",
+				Tags: []string{},
 			},
 		},
 		Security: []map[string][]interface{}{
@@ -92,7 +339,7 @@ func baseSpec() *ProjectSpec {
 					CodeSamples: []CodeSample{
 						{
 							Lang:   "bash",
-							Source: "# base64 encode username|password to make HTTP Basic authn request\n$ echo \"testUser:hunter2\" | base64\ndGVzdFVzZXI6aHVudGVyMgo=\n\n# POST credentials to /sessions/ endpoint to recieve access token\n$ curl -X POST \\\n\thttps://pet-demo.machinable.io/sessions/ \\\n\t-H 'authorization: Basic dGVzdFVzZXI6aHVudGVyMg=='",
+							Source: fmt.Sprintf("# base64 encode username|password to make HTTP Basic authn request\n$ echo \"testUser:hunter2\" | base64\ndGVzdFVzZXI6aHVudGVyMgo=\n\n# POST credentials to /sessions/ endpoint to recieve access token\n$ curl -X POST \\\n\thttps://%s.machinable.io/sessions/ \\\n\t-H 'authorization: Basic dGVzdFVzZXI6aHVudGVyMg=='", projectPath),
 						},
 					},
 				},
@@ -117,7 +364,7 @@ func baseSpec() *ProjectSpec {
 										"type": "object",
 										"properties": map[string]interface{}{
 											"access_token": map[string]interface{}{
-												"description": "The new ccess token which is used to authenticate future requests. The `access_token` has an expiration of 5 minutes.",
+												"description": "The new access token which is used to authenticate future requests. The `access_token` has an expiration of 5 minutes.",
 												"type":        "string",
 											},
 										},
@@ -135,7 +382,7 @@ func baseSpec() *ProjectSpec {
 					CodeSamples: []CodeSample{
 						{
 							Lang:   "bash",
-							Source: "curl -X POST \\\n https://pet-demo.machinable.io/sessions/refresh/ \\\n -H 'authorization: Bearer {refresh_token}'",
+							Source: fmt.Sprintf("curl -X POST \\\n https://%s.machinable.io/sessions/refresh/ \\\n -H 'authorization: Bearer {refresh_token}'", projectPath),
 						},
 					},
 				},

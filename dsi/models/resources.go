@@ -83,6 +83,14 @@ func (def *ResourceDefinition) GetSchema() (*JSONSchemaObject, error) {
 	return schema, err
 }
 
+// GetSchemaMap returns the schema as a `map[string]interface{}`
+func (def *ResourceDefinition) GetSchemaMap() (map[string]interface{}, error) {
+	schema := map[string]interface{}{}
+	err := json.Unmarshal([]byte(def.Schema), &schema)
+
+	return schema, err
+}
+
 // MarshalJSON custom marshaller to marshall properties to json
 func (def *ResourceDefinition) MarshalJSON() ([]byte, error) {
 	schema := JSONSchemaObject{}
