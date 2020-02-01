@@ -17,6 +17,33 @@ func respondWithError(code int, message string, c *gin.Context) {
 	c.Abort()
 }
 
+// ProjectIDAuthzMiddleware retrieves the project ID
+func ProjectIDAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// get project from context, inserted into context from subdomain
+		projectSlug := c.GetString("project")
+		if projectSlug == "" {
+			respondWithError(http.StatusUnauthorized, "invalid project", c)
+			return
+		}
+
+		// load the project and check the authn policy
+		project, err := store.GetProjectBySlug(projectSlug)
+		if err != nil {
+			respondWithError(http.StatusNotFound, "project not found", c)
+			return
+		}
+
+		c.Set("projectId", project.ID)
+		c.Set("projectName", project.Name)
+		c.Set("projectPath", project.Slug)
+		c.Set("projectIcon", project.Icon)
+		c.Set("projectDescription", project.Description)
+		c.Next()
+		return
+	}
+}
+
 // AppUserProjectAuthzMiddleware validates this app user has access to the project
 func AppUserProjectAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 	return func(c *gin.Context) {
