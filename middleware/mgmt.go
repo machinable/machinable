@@ -37,6 +37,7 @@ func ProjectIDAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 		c.Set("projectId", project.ID)
 		c.Set("projectName", project.Name)
 		c.Set("projectPath", project.Slug)
+		c.Set("projectIcon", project.Icon)
 		c.Set("projectDescription", project.Description)
 		c.Next()
 		return

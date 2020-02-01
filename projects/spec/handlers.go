@@ -24,6 +24,7 @@ func (s *Spec) GetSpec(c *gin.Context) {
 	projectID := c.MustGet("projectId").(string)
 	projectName := c.MustGet("projectName").(string)
 	projectPath := c.MustGet("projectPath").(string)
+	projectIcon := c.MustGet("projectIcon").(string)
 	projectDescription := c.MustGet("projectDescription").(string)
 
 	resources, err := s.store.ListDefinitions(projectID)
@@ -38,6 +39,7 @@ func (s *Spec) GetSpec(c *gin.Context) {
 	injectProjectSchema(spec, resources)
 	spec.Info.Title = projectName
 	spec.Info.Description = projectDescription
+	spec.Info.XLogo.URL = projectIcon
 
 	c.IndentedJSON(http.StatusOK, gin.H{"spec": spec})
 }
