@@ -133,6 +133,7 @@ CREATE TABLE project_resource_objects_real (
     data JSONB
 );
 CREATE INDEX project_resource_objects_idx ON project_resource_objects_real (project_id, resource_path);
+CREATE INDEX project_resource_objects_creator_idx ON project_resource_objects_real (project_id, resource_path, creator);
 
 CREATE TABLE project_json_real(
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
