@@ -25,6 +25,13 @@ func injectComponents(spec *ProjectSpec, resource *models.ResourceDefinition) {
 	schema, _ := resource.GetSchemaMap()
 	// TODO: Title could have spaces?
 	spec.Components.Schemas[resource.Title] = schema
+
+	spec.Components.Schemas[fmt.Sprintf("%sRecord", resource.Title)] = map[string][]map[string]interface{}{
+		"allOf": []map[string]interface{}{
+			map[string]interface{}{"$ref": "#/components/schemas/MetaData"},
+			schema,
+		},
+	}
 	spec.Components.Responses[fmt.Sprintf("%sList", resource.Title)] = map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
@@ -50,7 +57,7 @@ func injectComponents(spec *ProjectSpec, resource *models.ResourceDefinition) {
 			"items": map[string]interface{}{
 				"type": "array",
 				"items": map[string]interface{}{
-					"$ref": fmt.Sprintf("#/components/schemas/%s", resource.Title),
+					"$ref": fmt.Sprintf("#/components/schemas/%sRecord", resource.Title),
 				},
 			},
 		},
@@ -59,6 +66,7 @@ func injectComponents(spec *ProjectSpec, resource *models.ResourceDefinition) {
 
 func injectPaths(spec *ProjectSpec, resource *models.ResourceDefinition) {
 	componentLink := fmt.Sprintf("#/components/schemas/%s", resource.Title)
+	componentRecordLink := fmt.Sprintf("#/components/schemas/%sRecord", resource.Title)
 	listLink := fmt.Sprintf("#/components/responses/%sList", resource.Title)
 	paths := map[string]map[string]Verb{
 		fmt.Sprintf("/api/%s/{%sId}", resource.PathName, resource.PathName): {
@@ -78,7 +86,7 @@ func injectPaths(spec *ProjectSpec, resource *models.ResourceDefinition) {
 						"content": map[string]interface{}{
 							"application/json": map[string]interface{}{
 								"schema": map[string]interface{}{
-									"$ref": componentLink,
+									"$ref": componentRecordLink,
 								},
 							},
 						},
@@ -119,7 +127,7 @@ func injectPaths(spec *ProjectSpec, resource *models.ResourceDefinition) {
 						"content": map[string]interface{}{
 							"application/json": map[string]interface{}{
 								"schema": map[string]interface{}{
-									"$ref": componentLink,
+									"$ref": componentRecordLink,
 								},
 							},
 						},
@@ -219,7 +227,7 @@ func injectPaths(spec *ProjectSpec, resource *models.ResourceDefinition) {
 						"content": map[string]interface{}{
 							"application/json": map[string]interface{}{
 								"schema": map[string]interface{}{
-									"$ref": componentLink,
+									"$ref": componentRecordLink,
 								},
 							},
 						},
@@ -422,6 +430,38 @@ func baseSpec(projectPath string) *ProjectSpec {
 					"properties": map[string]interface{}{
 						"error": map[string]interface{}{
 							"type": "string",
+						},
+					},
+				},
+				"MetaData": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"id": map[string]interface{}{
+							"type":    "string",
+							"format":  "uuid",
+							"example": "5b4e5791-2cf2-41eb-9c29-6c33e30a59ee",
+						},
+						"_metadata": map[string]interface{}{
+							"type": "object",
+							"properties": map[string]interface{}{
+								"creator": map[string]interface{}{
+									"type":    "string",
+									"format":  "uuid",
+									"example": "5b4e5791-2cf2-41eb-9c29-6c33e30a59ee",
+								},
+								"creator_type": map[string]interface{}{
+									"type": "string",
+									"enum": []string{
+										"apikey",
+										"user",
+									},
+								},
+								"created": map[string]interface{}{
+									"type":    "integer",
+									"format":  "int64",
+									"example": 1580753521,
+								},
+							},
 						},
 					},
 				},
