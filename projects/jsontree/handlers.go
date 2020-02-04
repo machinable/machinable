@@ -148,7 +148,7 @@ func (h *Handlers) CreateJSONKey(c *gin.Context) {
 		return
 	}
 
-	err := h.db.CreateJSONKey(projectID, rootKey, b, strings.Split(keys, "/")...)
+	err := h.db.CreateJSONKey(projectID, rootKey, b, strings.Split(strings.Trim(keys, "/"), "/")...)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
 		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
@@ -170,13 +170,7 @@ func (h *Handlers) UpdateJSONKey(c *gin.Context) {
 		return
 	}
 
-	keys = strings.TrimRight(strings.TrimLeft(keys, "/"), "/")
-	if keys == "" {
-		c.JSON(http.StatusBadRequest, "no keys provided")
-		return
-	}
-
-	err := h.db.UpdateJSONKey(projectID, rootKey, b, strings.Split(keys, "/")...)
+	err := h.db.UpdateJSONKey(projectID, rootKey, b, strings.Split(strings.Trim(keys, "/"), "/")...)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
 		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
