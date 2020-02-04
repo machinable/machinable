@@ -170,12 +170,6 @@ func (h *Handlers) UpdateJSONKey(c *gin.Context) {
 		return
 	}
 
-	// keys = strings.TrimRight(strings.TrimLeft(keys, "/"), "/")
-	// if keys == "" {
-	// 	c.JSON(http.StatusBadRequest, "no keys provided")
-	// 	return
-	// }
-
 	err := h.db.UpdateJSONKey(projectID, rootKey, b, strings.Split(strings.Trim(keys, "/"), "/")...)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
