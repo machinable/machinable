@@ -27,6 +27,7 @@ CREATE TABLE app_users (
     admin BOOLEAN DEFAULT false
 );
 
+-- DELETE FROM app_sessions WHERE last_accessed < now()-'36 hours'::interval;
 CREATE TABLE app_sessions (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id uuid NOT NULL REFERENCES app_users(id), 
@@ -67,6 +68,7 @@ CREATE TABLE project_users_real (
     created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- DELETE FROM project_sessions WHERE last_accessed < now()-'36 hours'::interval;
 CREATE TABLE project_sessions_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id uuid NOT NULL REFERENCES project_users_real(id),
@@ -79,6 +81,7 @@ CREATE TABLE project_sessions_real (
     os VARCHAR
 );
 
+-- DELETE FROM project_logs WHERE created < now()-'24 hours'::interval;
 CREATE TABLE project_logs_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
@@ -149,6 +152,17 @@ CREATE TABLE project_json_real(
 );
 CREATE INDEX project_json_idx ON project_json_real (project_id, root_key);
 
+CREATE TYPE hook_type AS ENUM ('create', 'edit', 'delete');
+CREATE TYPE entity_type AS ENUM ('resource', 'json');
+CREATE TABLE project_webhooks(
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id uuid NOT NULL REFERENCES app_projects(id),
+  label VARCHAR,
+  isenabled BOOLEAN DEFAULT false,
+  entity entity_type,
+  entity_id uuid NOT NULL,
+  hook hook_type,
+);
 
 /* PARTITIONING */
 
