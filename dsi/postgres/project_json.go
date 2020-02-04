@@ -163,12 +163,23 @@ func (d *Database) CreateJSONKey(projectID, rootKey string, data []byte, keys ..
 func (d *Database) UpdateJSONKey(projectID, rootKey string, data []byte, keys ...string) error {
 	// escape?
 	keysFormat := strings.Join(keys, ",")
-	_, err := d.db.Exec(
-		fmt.Sprintf(
-			"UPDATE %s set data=jsonb_set(data, '{%s}', $1) WHERE project_id=$2 and root_key=$3",
+	qstr := "UPDATE %s set data=jsonb_set(data, '{%s}', $1) WHERE project_id=$2 and root_key=$3"
+	query := fmt.Sprintf(
+		qstr,
+		tableProjectJSON,
+		keysFormat,
+	)
+
+	if keysFormat == "" {
+		qstr = "UPDATE %s set data=$1 WHERE project_id=$2 and root_key=$3"
+		query = fmt.Sprintf(
+			qstr,
 			tableProjectJSON,
-			keysFormat,
-		),
+		)
+	}
+
+	_, err := d.db.Exec(
+		query,
 		data,
 		projectID,
 		rootKey,
