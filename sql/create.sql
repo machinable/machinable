@@ -146,7 +146,7 @@ CREATE TABLE project_json_real(
   "read" BOOLEAN DEFAULT false,
   "update" BOOLEAN DEFAULT false,
   "delete" BOOLEAN DEFAULT false,
-  data jsonb,
+  data JSONB,
 
   UNIQUE(project_id, root_key)
 );
@@ -162,6 +162,8 @@ CREATE TABLE project_webhooks(
   entity entity_type,
   entity_id uuid NOT NULL,
   hook hook_type,
+  headers JSONB,
+  hook_url VARCHAR NOT NULL
 );
 
 /* PARTITIONING */
