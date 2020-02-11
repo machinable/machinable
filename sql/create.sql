@@ -154,14 +154,14 @@ CREATE INDEX project_json_idx ON project_json_real (project_id, root_key);
 
 CREATE TYPE hook_type AS ENUM ('create', 'edit', 'delete');
 CREATE TYPE entity_type AS ENUM ('resource', 'json');
-CREATE TABLE project_webhooks(
+CREATE TABLE project_webhooks_real(
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   project_id uuid NOT NULL REFERENCES app_projects(id),
   label VARCHAR,
   isenabled BOOLEAN DEFAULT false,
   entity entity_type,
   entity_id uuid NOT NULL,
-  hook hook_type,
+  hook_event hook_type,
   headers JSONB,
   hook_url VARCHAR NOT NULL
 );
@@ -236,4 +236,12 @@ CREATE view project_users as select * from project_users_real;
 ALTER view project_users ALTER column id set DEFAULT uuid_generate_v4();
 CREATE TRIGGER project_users_insert_trigger
 INSTEAD OF INSERT ON project_users
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_webhooks */
+CREATE view project_webhooks as select * from project_webhooks_real;
+ALTER view project_webhooks ALTER column id set DEFAULT uuid_generate_v4();
+ALTER view project_webhooks ALTER column isenabled set DEFAULT false;
+CREATE TRIGGER project_webhooks_insert_trigger
+INSTEAD OF INSERT ON project_webhooks
 FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
