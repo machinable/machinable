@@ -50,6 +50,8 @@ func (h *Documents) AddObject(c *gin.Context) {
 	// Set the inserted ID for the response
 	fieldValues["id"] = newID
 
+	// TODO: queue webhook / websocket callback
+
 	c.JSON(http.StatusCreated, fieldValues)
 }
 
@@ -75,6 +77,8 @@ func (h *Documents) PutObject(c *gin.Context) {
 		c.JSON(dsiErr.Code(), gin.H{"error": "failed to save " + resourcePathName, "errors": strings.Split(dsiErr.Error(), ",")})
 		return
 	}
+
+	// TODO: queue webhook / websocket callback
 
 	c.JSON(http.StatusOK, fieldValues)
 }
@@ -215,6 +219,8 @@ func (h *Documents) DeleteObject(c *gin.Context) {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
 	}
+
+	// TODO: queue webhook / websocket callback
 
 	c.JSON(http.StatusNoContent, gin.H{})
 }
