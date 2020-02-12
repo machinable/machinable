@@ -63,10 +63,10 @@ func (w *WebHooks) ListHooks(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"hooks": &hooks})
+	c.JSON(http.StatusOK, gin.H{"items": &hooks})
 }
 
-// ListHooks lists all webhooks for a project
+// GetHook gets a single webhook for a project
 func (w *WebHooks) GetHook(c *gin.Context) {
 	hookID := c.Param("hookID")
 	projectID := c.MustGet("projectId").(string)
