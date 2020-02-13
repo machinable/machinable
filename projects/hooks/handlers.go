@@ -27,7 +27,15 @@ func (w *WebHooks) UpdateHook(c *gin.Context) {
 
 	hook := models.WebHook{}
 	c.BindJSON(&hook)
+	hook.ProjectID = projectID
 
+	// validate hook before storing
+	if err := hook.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// update hook in database for project
 	err := w.store.UpdateHook(projectID, hookID, &hook)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -43,7 +51,15 @@ func (w *WebHooks) AddHook(c *gin.Context) {
 
 	hook := models.WebHook{}
 	c.BindJSON(&hook)
+	hook.ProjectID = projectID
 
+	// validate hook before storing
+	if err := hook.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// save hook to database for project
 	err := w.store.AddHook(projectID, &hook)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -57,6 +73,7 @@ func (w *WebHooks) AddHook(c *gin.Context) {
 func (w *WebHooks) ListHooks(c *gin.Context) {
 	projectID := c.MustGet("projectId").(string)
 
+	// retrieve all hooks for the project
 	hooks, err := w.store.ListHooks(projectID)
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})

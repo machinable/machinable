@@ -17,6 +17,20 @@ $ make install
 $ make build
 ```
 
+#### Dev Environment
+
+##### hosts
+
+The Machinable API requires a valid hostname (with subdomain) to process requests, so you'll need to update your hosts file to include the following
+
+```
+127.0.0.1   manage.machinable.test
+127.0.0.1   some-project.machinable.test
+127.0.0.1   another-project.machinable.test
+```
+
+`127.0.0.1   manage.machinable.test` is required, the other lines are for any project slugs you need to test locally.
+
 #### Testing
 
 Run unit tests with the following command:
