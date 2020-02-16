@@ -159,6 +159,15 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			return
 		}
 
+		// TODO: query hooks as part of project detail view
+		hooks, err := store.ListHooks(project.ID)
+		if err != nil {
+			respondWithError(http.StatusNotFound, "error loading project details", c)
+			return
+		}
+		project.Hooks = hooks
+
+		c.Set("projectObject", project)
 		c.Set("projectId", project.ID)
 		c.Set("accountRequestLimit", project.Requests)
 		c.Set("accountId", project.UserID)

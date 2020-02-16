@@ -56,6 +56,8 @@ CREATE view app_project_limits AS
   INNER JOIN app_projects as p ON p.user_id = u.id 
   INNER JOIN app_tiers as t ON u.tier_id = t.id;
 
+  --json_agg(w) from app_projects as p INNER JOIN project_webhooks as w ON w.project_id = p.id group by p.slug;
+
 CREATE TABLE project_users_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
