@@ -2,6 +2,7 @@ package projects
 
 import (
 	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/events"
 	"github.com/go-redis/redis"
 
 	"github.com/anothrnick/machinable/middleware"
@@ -18,7 +19,7 @@ import (
 )
 
 // CreateRoutes creates a gin.Engine for the project routes
-func CreateRoutes(datastore interfaces.Datastore, cache redis.UniversalClient) *gin.Engine {
+func CreateRoutes(datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor) *gin.Engine {
 
 	router := gin.Default()
 	router.Use(middleware.OpenCORSMiddleware())
@@ -26,12 +27,12 @@ func CreateRoutes(datastore interfaces.Datastore, cache redis.UniversalClient) *
 
 	// set routes -> handlers for each package
 	resources.SetRoutes(router, datastore)
-	documents.SetRoutes(router, datastore, cache)
+	documents.SetRoutes(router, datastore, cache, processor)
 	logs.SetRoutes(router, datastore)
 	users.SetRoutes(router, datastore)
 	sessions.SetRoutes(router, datastore)
 	apikeys.SetRoutes(router, datastore)
-	jsontree.SetRoutes(router, datastore, cache)
+	jsontree.SetRoutes(router, datastore, cache, processor)
 	spec.SetRoutes(router, datastore)
 	hooks.SetRoutes(router, datastore)
 

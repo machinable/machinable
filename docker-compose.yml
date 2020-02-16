@@ -17,8 +17,8 @@ services:
   redis:
     image: redis
     container_name: cache
-    expose:
-      - 6379
+    ports:
+      - '127.0.0.1:6379:6379'
  
   api:
     build: 

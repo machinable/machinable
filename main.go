@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/anothrnick/machinable/dsi/postgres"
+	"github.com/anothrnick/machinable/events"
 	"github.com/anothrnick/machinable/management"
 	"github.com/anothrnick/machinable/projects"
 	"github.com/go-redis/redis"
@@ -53,27 +54,30 @@ func main() {
 	}
 
 	// create a new redis client
-	client := redis.NewClient(&redis.Options{
+	cache := redis.NewClient(&redis.Options{
 		Addr:     "cache:6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
 
 	// ping the redis server
-	pong, err := client.Ping().Result()
+	pong, err := cache.Ping().Result()
 
 	// fail quickly if ping fails
 	if err != nil {
 		log.Fatal(pong, err)
 	}
 
+	// create event processor
+	processor := events.NewProcessor(cache)
+
 	// switch routers based on subdomain
 	hostSwitch := make(HostSwitch)
 
 	// manage is for the management application api, i.e. project/team management
-	hostSwitch["manage"] = management.CreateRoutes(datastore, client)
+	hostSwitch["manage"] = management.CreateRoutes(datastore, cache)
 	// all other subdomains will be treated as project names, and use the project routes
-	hostSwitch["*"] = projects.CreateRoutes(datastore, client)
+	hostSwitch["*"] = projects.CreateRoutes(datastore, cache, processor)
 
 	log.Fatal(http.ListenAndServe(":5001", hostSwitch))
 }

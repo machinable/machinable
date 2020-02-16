@@ -3,10 +3,12 @@ package middleware
 import (
 	"bytes"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/anothrnick/machinable/events"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,16 +23,16 @@ func (w logWriter) Write(b []byte) (int, error) {
 }
 
 // JSONStatsMiddleware logs json stats for reporting
-func JSONStatsMiddleware(store interfaces.Datastore) gin.HandlerFunc {
-	return loggingMiddleware(store, models.EndpointJSON)
+func JSONStatsMiddleware(store interfaces.Datastore, emitter *events.Processor) gin.HandlerFunc {
+	return loggingMiddleware(store, emitter, models.EndpointJSON)
 }
 
 // ResourceStatsMiddleware logs resource stats and logging for reporting
-func ResourceStatsMiddleware(store interfaces.Datastore) gin.HandlerFunc {
-	return loggingMiddleware(store, models.EndpointResource)
+func ResourceStatsMiddleware(store interfaces.Datastore, emitter *events.Processor) gin.HandlerFunc {
+	return loggingMiddleware(store, emitter, models.EndpointResource)
 }
 
-func loggingMiddleware(store interfaces.Datastore, endpointType string) gin.HandlerFunc {
+func loggingMiddleware(store interfaces.Datastore, emitter *events.Processor, endpointType string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// inject custom writer
 		lw := &logWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
@@ -77,6 +79,31 @@ func loggingMiddleware(store interfaces.Datastore, endpointType string) gin.Hand
 			InitiatorID:    authID,
 		}
 
+		if verb != "GET" && (statusCode == 200 || statusCode == 201) {
+			projecti, exists := c.Get("projectObject")
+			if !exists {
+				respondWithError(http.StatusBadRequest, "malformed request - invalid project", c)
+				return
+			}
+			projectObj := projecti.(*models.ProjectDetail)
+
+			action := "create"
+			if verb == "PUT" {
+				action = "edit"
+			} else if verb == "DELETE" {
+				action = "delete"
+			}
+
+			// push event for webhook/websocket processing
+			emitter.PushEvent(
+				&events.Event{
+					Project: projectObj,
+					Entity:  endpointType,
+					Action:  action,
+					Payload: lw.body.Bytes(),
+				},
+			)
+		}
 		// save in go routine, do not block request
 		go func(projectID string, plog *models.Log) {
 			// save the log
@@ -86,6 +113,7 @@ func loggingMiddleware(store interfaces.Datastore, endpointType string) gin.Hand
 				log.Println("an error occured trying to save the log")
 				log.Println(err.Error())
 			}
+
 		}(projectID, plog)
 	}
 }
