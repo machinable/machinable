@@ -49,8 +49,7 @@ func (h *Documents) AddObject(c *gin.Context) {
 
 	// Set the inserted ID for the response
 	fieldValues["id"] = newID
-
-	// TODO: queue webhook / websocket callback
+	fieldValues["_metadata"] = meta
 
 	c.JSON(http.StatusCreated, fieldValues)
 }

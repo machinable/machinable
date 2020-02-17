@@ -192,6 +192,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				respondWithError(http.StatusNotFound, "error retrieving resource - does not exist", c)
 				return
 			}
+			c.Set("entityID", def.ID)
 			storeConfig.Create = def.Create
 			storeConfig.Read = def.Read
 			storeConfig.Update = def.Update
@@ -205,6 +206,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				respondWithError(http.StatusNotFound, "error retrieving root key - does not exist", c)
 				return
 			}
+			c.Set("entityID", rootKey.ID)
 			storeConfig.Create = rootKey.Create
 			storeConfig.Read = rootKey.Read
 			storeConfig.Update = rootKey.Update

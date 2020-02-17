@@ -80,6 +80,7 @@ func loggingMiddleware(store interfaces.Datastore, emitter *events.Processor, en
 		}
 
 		if verb != "GET" && (statusCode == 200 || statusCode == 201) {
+			entityID := c.GetString("entityID")
 			projecti, exists := c.Get("projectObject")
 			if !exists {
 				respondWithError(http.StatusBadRequest, "malformed request - invalid project", c)
@@ -94,16 +95,18 @@ func loggingMiddleware(store interfaces.Datastore, emitter *events.Processor, en
 				action = "delete"
 			}
 
-			// push event for webhook/websocket processing
-			emitter.PushEvent(
+			// push event for webhook/websocket processing (async)
+			go emitter.PushEvent(
 				&events.Event{
-					Project: projectObj,
-					Entity:  endpointType,
-					Action:  action,
-					Payload: lw.body.Bytes(),
+					Project:  projectObj,
+					Entity:   endpointType,
+					EntityID: entityID,
+					Action:   action,
+					Payload:  lw.body.Bytes(),
 				},
 			)
 		}
+
 		// save in go routine, do not block request
 		go func(projectID string, plog *models.Log) {
 			// save the log

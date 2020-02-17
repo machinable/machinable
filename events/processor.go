@@ -45,7 +45,10 @@ func (p *Processor) PushEvent(e *Event) error {
 	hooks := e.Project.Hooks
 	for _, hook := range hooks {
 		// emit event to redis for the event action
-		if hook.HookEvent == e.Action {
+		if hook.HookEvent == e.Action &&
+			hook.Entity == e.Entity &&
+			hook.EntityID == e.EntityID &&
+			hook.IsEnabled == true {
 
 			payload := map[string]interface{}{}
 			json.Unmarshal(e.Payload, &payload)
