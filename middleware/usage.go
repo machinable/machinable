@@ -102,6 +102,7 @@ func loggingMiddleware(store interfaces.Datastore, emitter *events.Processor, en
 					Entity:   endpointType,
 					EntityID: entityID,
 					Action:   action,
+					Keys:     c.GetStringSlice("jsonKeys"), // if exists
 					Payload:  lw.body.Bytes(),
 				},
 			)

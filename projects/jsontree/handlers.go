@@ -172,7 +172,10 @@ func (h *Handlers) UpdateJSONKey(c *gin.Context) {
 		return
 	}
 
-	err := h.db.UpdateJSONKey(projectID, rootKey, b, strings.Split(strings.Trim(keys, "/"), "/")...)
+	parseKeys := strings.Split(strings.Trim(keys, "/"), "/")
+	c.Set("jsonKeys", parseKeys)
+
+	err := h.db.UpdateJSONKey(projectID, rootKey, b, parseKeys...)
 	if err != nil {
 		tErr := h.db.TranslateError(err)
 		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})

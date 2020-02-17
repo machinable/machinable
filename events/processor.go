@@ -19,6 +19,7 @@ type Event struct {
 	Entity   string                `json:"entity"` // resource, json
 	EntityID string                `json:"entity_id"`
 	Action   string                `json:"action"` // create, edit, delete
+	Keys     []string              `json:"keys"`
 	Payload  []byte                `json:"payload"`
 }
 
@@ -49,12 +50,24 @@ func (p *Processor) PushEvent(e *Event) error {
 			hook.Entity == e.Entity &&
 			hook.EntityID == e.EntityID &&
 			hook.IsEnabled == true {
+			hookEvent := &HookEvent{}
 
-			var payload interface{}
-			json.Unmarshal(e.Payload, &payload)
-			hookEvent := &HookEvent{
-				Hook:    hook,
-				Payload: payload,
+			if hook.Entity == "json" {
+				var payload interface{}
+				json.Unmarshal(e.Payload, &payload)
+
+				container := map[string]interface{}{
+					"data": payload,
+					"keys": e.Keys,
+				}
+
+				hookEvent.Hook = hook
+				hookEvent.Payload = container
+			} else {
+				var payload interface{}
+				json.Unmarshal(e.Payload, &payload)
+				hookEvent.Hook = hook
+				hookEvent.Payload = payload
 			}
 
 			b, merr := json.Marshal(hookEvent)
