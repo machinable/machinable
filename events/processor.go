@@ -24,8 +24,8 @@ type Event struct {
 
 // HookEvent describes a single web hook event
 type HookEvent struct {
-	Hook    *models.WebHook        `json:"hook"`
-	Payload map[string]interface{} `json:"payload"`
+	Hook    *models.WebHook `json:"hook"`
+	Payload interface{}     `json:"payload"`
 }
 
 // Processor process and emits events for web hooks and websockets
@@ -50,7 +50,7 @@ func (p *Processor) PushEvent(e *Event) error {
 			hook.EntityID == e.EntityID &&
 			hook.IsEnabled == true {
 
-			payload := map[string]interface{}{}
+			var payload interface{}
 			json.Unmarshal(e.Payload, &payload)
 			hookEvent := &HookEvent{
 				Hook:    hook,

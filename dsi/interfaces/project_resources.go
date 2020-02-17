@@ -19,7 +19,7 @@ type ResourcesDatastore interface {
 
 	// Project definition documents
 	AddDefDocument(projectID, path string, fields models.ResourceObject, metadata *models.MetaData) (string, *errors.DatastoreError)
-	UpdateDefDocument(projectID, path, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) *errors.DatastoreError
+	UpdateDefDocument(projectID, path, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) (*models.ResourceObject, *errors.DatastoreError)
 	ListDefDocuments(projectID, path string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *errors.DatastoreError)
 	GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *errors.DatastoreError)
 	CountDefDocuments(projectID, path string, filter map[string]interface{}) (int64, *errors.DatastoreError)

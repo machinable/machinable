@@ -155,9 +155,9 @@ func (h *Handlers) CreateJSONKey(c *gin.Context) {
 		return
 	}
 
-	// TODO: queue webhook / websocket callback
-
-	c.JSON(http.StatusCreated, gin.H{})
+	var bod interface{}
+	json.Unmarshal(b, &bod)
+	c.JSON(http.StatusCreated, bod)
 }
 
 // UpdateJSONKey updates a root key at the key path. The key is created if it does not already exist.
@@ -179,9 +179,9 @@ func (h *Handlers) UpdateJSONKey(c *gin.Context) {
 		return
 	}
 
-	// TODO: queue webhook / websocket callback
-
-	c.JSON(http.StatusCreated, gin.H{})
+	var bod interface{}
+	json.Unmarshal(b, &bod)
+	c.JSON(http.StatusCreated, bod)
 }
 
 // DeleteJSONKey deletes a project key at the key path
@@ -201,8 +201,6 @@ func (h *Handlers) DeleteJSONKey(c *gin.Context) {
 		c.JSON(tErr.Code, gin.H{"error": tErr.Error()})
 		return
 	}
-
-	// TODO: queue webhook / websocket callback
 
 	c.JSON(http.StatusCreated, gin.H{})
 }

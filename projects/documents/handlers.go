@@ -59,8 +59,6 @@ func (h *Documents) PutObject(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
 	resourceID := c.Param("resourceID")
 	projectID := c.MustGet("projectId").(string)
-	// creator := c.MustGet("authID").(string)
-	// creatorType := c.MustGet("authType").(string)
 	authFilters := c.MustGet("filters").(map[string]interface{})
 
 	fieldValues := models.ResourceObject{}
@@ -71,15 +69,13 @@ func (h *Documents) PutObject(c *gin.Context) {
 		return
 	}
 
-	dsiErr := h.store.UpdateDefDocument(projectID, resourcePathName, resourceID, fieldValues, authFilters)
+	object, dsiErr := h.store.UpdateDefDocument(projectID, resourcePathName, resourceID, fieldValues, authFilters)
 	if dsiErr != nil {
 		c.JSON(dsiErr.Code(), gin.H{"error": "failed to save " + resourcePathName, "errors": strings.Split(dsiErr.Error(), ",")})
 		return
 	}
 
-	// TODO: queue webhook / websocket callback
-
-	c.JSON(http.StatusOK, fieldValues)
+	c.JSON(http.StatusOK, object)
 }
 
 // ListObjects returns the list of objects for a resource
@@ -218,8 +214,6 @@ func (h *Documents) DeleteObject(c *gin.Context) {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
 		return
 	}
-
-	// TODO: queue webhook / websocket callback
 
 	c.JSON(http.StatusNoContent, gin.H{})
 }
