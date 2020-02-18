@@ -8,15 +8,21 @@ import (
 
 // WebHook defines the structure of a project web hook
 type WebHook struct {
-	ID        string `json:"id"`
-	ProjectID string `json:"project_id"`
-	Label     string `json:"label"`
-	IsEnabled bool   `json:"is_enabled"`
-	Entity    string `json:"entity"`
-	EntityID  string `json:"entity_id"`
-	HookEvent string `json:"event"`
-	Headers   []byte `json:"headers"`
-	HookURL   string `json:"hook_url"`
+	ID        string   `json:"id"`
+	ProjectID string   `json:"project_id"`
+	Label     string   `json:"label"`
+	IsEnabled bool     `json:"is_enabled"`
+	Entity    string   `json:"entity"`
+	EntityID  string   `json:"entity_id"`
+	HookEvent string   `json:"event"`
+	Headers   []Header `json:"headers"`
+	HookURL   string   `json:"hook_url"`
+}
+
+// Header is a http header for a web hook
+type Header struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // validURL parses the string as a url and verifies it is valid
