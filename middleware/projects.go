@@ -193,6 +193,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				return
 			}
 			c.Set("entityID", def.ID)
+			c.Set("entityKey", resourceName)
 			storeConfig.Create = def.Create
 			storeConfig.Read = def.Read
 			storeConfig.Update = def.Update
@@ -207,6 +208,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				return
 			}
 			c.Set("entityID", rootKey.ID)
+			c.Set("entityKey", rootKeyStr)
 			storeConfig.Create = rootKey.Create
 			storeConfig.Read = rootKey.Read
 			storeConfig.Update = rootKey.Update

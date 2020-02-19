@@ -15,18 +15,20 @@ const (
 
 // Event defines the event(s) to be processed
 type Event struct {
-	Project  *models.ProjectDetail `json:"project"`
-	Entity   string                `json:"entity"` // resource, json
-	EntityID string                `json:"entity_id"`
-	Action   string                `json:"action"` // create, edit, delete
-	Keys     []string              `json:"keys"`
-	Payload  []byte                `json:"payload"`
+	Project   *models.ProjectDetail `json:"project"`
+	Entity    string                `json:"entity"` // resource, json
+	EntityKey string                `json:"entity_key"`
+	EntityID  string                `json:"entity_id"`
+	Action    string                `json:"action"` // create, edit, delete
+	Keys      []string              `json:"keys"`
+	Payload   []byte                `json:"payload"`
 }
 
 // HookEvent describes a single web hook event
 type HookEvent struct {
-	Hook    *models.WebHook `json:"hook"`
-	Payload interface{}     `json:"payload"`
+	Hook      *models.WebHook `json:"hook"`
+	EntityKey string          `json:"entity_key"`
+	Payload   interface{}     `json:"payload"`
 }
 
 // Processor process and emits events for web hooks and websockets
@@ -69,6 +71,7 @@ func (p *Processor) PushEvent(e *Event) error {
 				hookEvent.Hook = hook
 				hookEvent.Payload = payload
 			}
+			hookEvent.EntityKey = e.EntityKey
 
 			b, merr := json.Marshal(hookEvent)
 			if merr != nil {
