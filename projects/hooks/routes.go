@@ -13,6 +13,7 @@ type Handler interface {
 	ListHooks(c *gin.Context)
 	GetHook(c *gin.Context)
 	DeleteHook(c *gin.Context)
+	ListResults(c *gin.Context)
 }
 
 // SetRoutes sets all of the appropriate routes to handlers for project users
@@ -35,11 +36,12 @@ func setRoutes(engine *gin.Engine, handler Handler, datastore interfaces.Project
 	keys := engine.Group("/hooks")
 	keys.Use(mw...)
 
-	keys.GET("/", handler.ListHooks)            // get list of project web hooks
-	keys.POST("/", handler.AddHook)             // create a new project web hook
-	keys.DELETE("/:hookID", handler.DeleteHook) // delete a project web hook
-	keys.PUT("/:hookID", handler.UpdateHook)    // update a project web hook
-	keys.GET("/:hookID", handler.GetHook)       // update a project web hook
+	keys.GET("/", handler.ListHooks)                  // get list of project web hooks
+	keys.POST("/", handler.AddHook)                   // create a new project web hook
+	keys.DELETE("/:hookID", handler.DeleteHook)       // delete a project web hook
+	keys.PUT("/:hookID", handler.UpdateHook)          // update a project web hook
+	keys.GET("/:hookID", handler.GetHook)             // get a project web hook
+	keys.GET("/:hookID/results", handler.ListResults) // get list of hook results
 
 	return nil
 }

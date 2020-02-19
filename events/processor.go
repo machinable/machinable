@@ -4,13 +4,16 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/go-redis/redis"
 )
 
 const (
-	// WebhookQueue is the queue name for web hook callbacks
-	WebhookQueue = "hook_queue"
+	// QueueHooks is the redis queue for web hooks
+	QueueHooks = "hook_queue"
+	// QueueHookResults is the redis queue for web hook result messages
+	QueueHookResults = "hook_result_queue"
 )
 
 // Event defines the event(s) to be processed
@@ -34,12 +37,41 @@ type HookEvent struct {
 // Processor process and emits events for web hooks and websockets
 type Processor struct {
 	cache redis.UniversalClient
+	store interfaces.ProjectHooksDatastore
 }
 
 // NewProcessor creates and returns a new instance of `Processor` with the given redis client
-func NewProcessor(cache redis.UniversalClient) *Processor {
+func NewProcessor(cache redis.UniversalClient, store interfaces.ProjectHooksDatastore) *Processor {
 	return &Processor{
 		cache: cache,
+		store: store,
+	}
+}
+
+// ProcessResults listens for web hook results on the redis queue. This function should be run as a goroutine.
+func (p *Processor) ProcessResults() error {
+	for {
+		// endlessly read from queue
+		result, err := p.cache.BLPop(0, QueueHookResults).Result()
+
+		// exit on a read error
+		if err != nil {
+			log.Println(err)
+			return err
+		}
+
+		// unmarshal event
+		hookResult := &models.HookResult{}
+		if err := json.Unmarshal([]byte(result[1]), hookResult); err != nil {
+			log.Println(err)
+			continue
+		}
+
+		// save hook result
+		if err := p.store.AddResult(hookResult); err != nil {
+			log.Println(err)
+			continue
+		}
 	}
 }
 
@@ -78,7 +110,7 @@ func (p *Processor) PushEvent(e *Event) error {
 				log.Println(merr)
 				continue
 			}
-			if err := p.cache.RPush(WebhookQueue, b).Err(); err != nil {
+			if err := p.cache.RPush(QueueHooks, b).Err(); err != nil {
 				log.Println(err)
 			}
 		}

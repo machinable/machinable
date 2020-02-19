@@ -12,4 +12,7 @@ type ProjectHooksDatastore interface {
 	GetHook(projectID, hookID string) (*models.WebHook, *errors.DatastoreError)
 	UpdateHook(projectID, hookID string, hook *models.WebHook) *errors.DatastoreError
 	DeleteHook(projectID, hookID string) *errors.DatastoreError
+
+	AddResult(result *models.HookResult) *errors.DatastoreError
+	ListResults(projectID, hookID string) ([]*models.HookResult, *errors.DatastoreError)
 }

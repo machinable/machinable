@@ -168,6 +168,16 @@ CREATE TABLE project_webhooks_real(
   hook_url VARCHAR NOT NULL
 );
 
+CREATE TABLE project_webhook_results_real(
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id uuid NOT NULL REFERENCES app_projects(id),
+  webhook_id uuid NOT NULL REFERENCES project_webhooks_real(id),
+  status_code INT NOT NULL DEFAULT -1,
+  response_time INT NOT NULL DEFAULT -1,
+  error_message VARCHAR,
+  created TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 /* PARTITIONING */
 
 CREATE OR REPLACE FUNCTION create_partition_and_insert() RETURNS trigger AS
@@ -246,4 +256,11 @@ ALTER view project_webhooks ALTER column id set DEFAULT uuid_generate_v4();
 ALTER view project_webhooks ALTER column isenabled set DEFAULT false;
 CREATE TRIGGER project_webhooks_insert_trigger
 INSTEAD OF INSERT ON project_webhooks
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_webhook_results */
+CREATE view project_webhook_results as select * from project_webhook_results_real;
+ALTER view project_webhook_results ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_webhook_results_insert_trigger
+INSTEAD OF INSERT ON project_webhook_results
 FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();

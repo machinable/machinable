@@ -4,7 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
+	"time"
 )
+
+// HookResult contains relevant information regarding the http response of a web hook
+type HookResult struct {
+	WebHookID    string    `json:"webhook_id"`
+	ProjectID    string    `json:"project_id"`
+	StatusCode   int       `json:"status_code"`
+	ResponseTime int64     `json:"response_time"`
+	ErrorMessage string    `json:"error_message"`
+	Created      time.Time `json:"created"`
+}
 
 // WebHook defines the structure of a project web hook
 type WebHook struct {

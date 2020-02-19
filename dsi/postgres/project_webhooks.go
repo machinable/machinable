@@ -2,12 +2,68 @@ package postgres
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/anothrnick/machinable/dsi/errors"
 	"github.com/anothrnick/machinable/dsi/models"
 )
 
+const tableProjectWebhookResults = "project_webhook_results"
 const tableProjectWebHooks = "project_webhooks"
+
+// AddResult creates a new webhook result
+func (d *Database) AddResult(result *models.HookResult) *errors.DatastoreError {
+	_, err := d.db.Exec(
+		fmt.Sprintf(
+			"INSERT INTO %s (project_id, webhook_id, status_code, response_time, error_message, created) VALUES ($1, $2, $3, $4, $5, $6)",
+			tableProjectWebhookResults,
+		),
+		result.ProjectID,
+		result.WebHookID,
+		result.StatusCode,
+		result.ResponseTime,
+		result.ErrorMessage,
+		time.Now(),
+	)
+
+	return errors.New(errors.UnknownError, err)
+}
+
+// ListResults lists all webhook results for a web hook
+func (d *Database) ListResults(projectID, hookID string) ([]*models.HookResult, *errors.DatastoreError) {
+	rows, err := d.db.Query(
+		fmt.Sprintf(
+			"SELECT project_id, webhook_id, status_code, response_time, error_message, created FROM %s WHERE project_id=$1 AND webhook_id=$2 ORDER BY created DESC",
+			tableProjectWebhookResults,
+		),
+		projectID,
+		hookID,
+	)
+	if err != nil {
+		return nil, errors.New(errors.UnknownError, err)
+	}
+	defer rows.Close()
+
+	results := make([]*models.HookResult, 0)
+	for rows.Next() {
+		result := models.HookResult{}
+		err = rows.Scan(
+			&result.ProjectID,
+			&result.WebHookID,
+			&result.StatusCode,
+			&result.ResponseTime,
+			&result.ErrorMessage,
+			&result.Created,
+		)
+		if err != nil {
+			return nil, errors.New(errors.UnknownError, err)
+		}
+
+		results = append(results, &result)
+	}
+
+	return results, nil
+}
 
 // AddHook saves a new WebHook to the datastore
 func (d *Database) AddHook(projectID string, hook *models.WebHook) *errors.DatastoreError {

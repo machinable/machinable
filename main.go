@@ -69,7 +69,13 @@ func main() {
 	}
 
 	// create event processor
-	processor := events.NewProcessor(cache)
+	processor := events.NewProcessor(cache, datastore)
+	// process web hook results
+	go func() {
+		err := processor.ProcessResults()
+		// fail out
+		log.Fatal(err)
+	}()
 
 	// switch routers based on subdomain
 	hostSwitch := make(HostSwitch)
