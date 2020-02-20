@@ -79,7 +79,10 @@ func loggingMiddleware(store interfaces.Datastore, emitter *events.Processor, en
 			InitiatorID:    authID,
 		}
 
-		if verb != "GET" && (statusCode == 200 || statusCode == 201) {
+		// hooks are disabled with this request header set to false
+		xTriggerHooks := c.Request.Header.Get("X-Trigger-Hooks")
+
+		if verb != "GET" && (statusCode == 200 || statusCode == 201) && xTriggerHooks != "false" {
 			projecti, exists := c.Get("projectObject")
 			if !exists {
 				respondWithError(http.StatusBadRequest, "malformed request - invalid project", c)
