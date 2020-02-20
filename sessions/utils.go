@@ -13,8 +13,8 @@ import (
 )
 
 // GetGeoIP retrieves location information of the client ip from IP Stack
-func GetGeoIP(ip string) (string, error) {
-	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s", ip, config.IPStackKey)
+func GetGeoIP(ip, apiKey string) (string, error) {
+	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s", ip, apiKey)
 
 	ipStackData := struct {
 		City       string `json:"city"`
@@ -49,8 +49,9 @@ func GetGeoIP(ip string) (string, error) {
 	return location, nil
 }
 
-func CreateSession(userID, ip, userAgent string) *models.Session {
-	location, _ := GetGeoIP(ip)
+// CreateSession creates a new session object after looking up geoip
+func CreateSession(userID, ip, userAgent string, config *config.AppConfig) *models.Session {
+	location, _ := GetGeoIP(ip, config.IPStackKey)
 
 	ua := user_agent.New(userAgent)
 

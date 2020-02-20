@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-redis/redis"
 
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/management/projects"
 	"github.com/anothrnick/machinable/management/users"
@@ -21,7 +22,7 @@ func version(c *gin.Context) {
 }
 
 // CreateRoutes creates a gin.Engine with routes to the application management resources
-func CreateRoutes(datastore interfaces.Datastore, cache redis.UniversalClient) *gin.Engine {
+func CreateRoutes(datastore interfaces.Datastore, cache redis.UniversalClient, config *config.AppConfig) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(middleware.OpenCORSMiddleware())
@@ -32,8 +33,8 @@ func CreateRoutes(datastore interfaces.Datastore, cache redis.UniversalClient) *
 	meta.GET("/version", version)
 
 	// user endpoints
-	users.SetRoutes(router, datastore, cache)
-	projects.SetRoutes(router, datastore)
+	users.SetRoutes(router, datastore, cache, config)
+	projects.SetRoutes(router, datastore, config)
 
 	return router
 }

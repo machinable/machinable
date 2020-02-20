@@ -7,14 +7,12 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/anothrnick/machinable/config"
 )
 
 // RecaptchaSiteVerify verifies the client response with recaptcha
-func RecaptchaSiteVerify(clientResponse string) error {
+func RecaptchaSiteVerify(clientResponse, reCaptchaSecret string) error {
 
-	resp, err := http.Post(fmt.Sprintf("https://www.google.com/recaptcha/api/siteverify?secret=%s&response=%s", config.ReCaptchaSecret, clientResponse), "application/json", nil)
+	resp, err := http.Post(fmt.Sprintf("https://www.google.com/recaptcha/api/siteverify?secret=%s&response=%s", reCaptchaSecret, clientResponse), "application/json", nil)
 	if err != nil {
 		log.Fatalln(err)
 	}

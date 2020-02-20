@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
@@ -24,7 +25,7 @@ func TestMain(m *testing.M) {
 
 func TestUpdateKey(t *testing.T) {
 	ds := &interfaces.MockProjectAPIKeysDatastore{}
-	handler := New(ds)
+	handler := New(ds, &config.AppConfig{})
 
 	tables := []struct {
 		name       string
@@ -79,7 +80,7 @@ func TestUpdateKey(t *testing.T) {
 
 func TestAddKey(t *testing.T) {
 	ds := &interfaces.MockProjectAPIKeysDatastore{}
-	handler := New(ds)
+	handler := New(ds, &config.AppConfig{})
 
 	tables := []struct {
 		name       string
@@ -134,7 +135,7 @@ func TestAddKey(t *testing.T) {
 
 func TestListKeys(t *testing.T) {
 	ds := &interfaces.MockProjectAPIKeysDatastore{}
-	handler := New(ds)
+	handler := New(ds, &config.AppConfig{})
 
 	tables := []struct {
 		name       string
@@ -188,7 +189,7 @@ func TestListKeys(t *testing.T) {
 func TestGenerate(t *testing.T) {
 	router := gin.Default()
 	ds := &interfaces.MockProjectAPIKeysDatastore{}
-	handler := New(ds)
+	handler := New(ds, &config.AppConfig{})
 
 	setRoutes(router, handler, ds)
 	w := httptest.NewRecorder()
@@ -216,7 +217,7 @@ func TestGenerate(t *testing.T) {
 
 func TestDeleteKey(t *testing.T) {
 	ds := &interfaces.MockProjectAPIKeysDatastore{}
-	handler := New(ds)
+	handler := New(ds, &config.AppConfig{})
 
 	tables := []struct {
 		name       string

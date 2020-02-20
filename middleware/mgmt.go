@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -45,12 +46,13 @@ func ProjectIDAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 }
 
 // AppUserProjectAuthzMiddleware validates this app user has access to the project
-func AppUserProjectAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
+func AppUserProjectAuthzMiddleware(store interfaces.Datastore, config *config.AppConfig) gin.HandlerFunc {
+	jwtAuth := auth.NewJWT(config)
 	return func(c *gin.Context) {
 		if values, _ := c.Request.Header["Authorization"]; len(values) > 0 {
 
 			tokenString := strings.Split(values[0], " ")[1]
-			token, err := jwt.Parse(tokenString, auth.TokenLookup)
+			token, err := jwt.Parse(tokenString, jwtAuth.TokenLookup)
 
 			if err == nil {
 				// get project from context, inserted into context from subdomain
@@ -114,13 +116,14 @@ func AppUserProjectAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 }
 
 // AppUserJwtAuthzMiddleware authorizes the JWT in the Authorization header for application users
-func AppUserJwtAuthzMiddleware() gin.HandlerFunc {
+func AppUserJwtAuthzMiddleware(config *config.AppConfig) gin.HandlerFunc {
+	jwtAuth := auth.NewJWT(config)
 	return func(c *gin.Context) {
 
 		if values, _ := c.Request.Header["Authorization"]; len(values) > 0 {
 
 			tokenString := strings.Split(values[0], " ")[1]
-			token, err := jwt.Parse(tokenString, auth.TokenLookup)
+			token, err := jwt.Parse(tokenString, jwtAuth.TokenLookup)
 
 			if err == nil {
 				// token is valid, get claims and perform authorization
@@ -174,13 +177,14 @@ func AppUserJwtAuthzMiddleware() gin.HandlerFunc {
 }
 
 // ValidateRefreshToken validates the refresh token
-func ValidateRefreshToken() gin.HandlerFunc {
+func ValidateRefreshToken(config *config.AppConfig) gin.HandlerFunc {
+	jwtAuth := auth.NewJWT(config)
 	return func(c *gin.Context) {
 
 		if values, _ := c.Request.Header["Authorization"]; len(values) > 0 {
 
 			tokenString := strings.Split(values[0], " ")[1]
-			token, err := jwt.Parse(tokenString, auth.TokenLookup)
+			token, err := jwt.Parse(tokenString, jwtAuth.TokenLookup)
 
 			if err == nil {
 				// token is valid, validate it's a refresh token

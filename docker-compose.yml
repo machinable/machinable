@@ -30,11 +30,18 @@ services:
       - 'redis'
     ports:
     - "127.0.0.1:5001:5001"
+    volumes:
+    - ./config/sample-config.json:/usr/config.json
     environment:
       - POSTGRES_USER=testuser
       - POSTGRES_PW=1234
       - POSTGRES_HOST=database
       - POSTGRES_DB=testdb
+      - MACHINABLE_CONFIG_PATH=/usr/config.json
+      - APP_SECRET
+      - RECAPTCHA_SECRET
+      - IPSTACK_KEY
+
 
 volumes:
   db-data:

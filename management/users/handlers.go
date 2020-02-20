@@ -12,6 +12,7 @@ import (
 	"github.com/go-redis/redis"
 
 	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
 	as "github.com/anothrnick/machinable/sessions"
@@ -20,17 +21,22 @@ import (
 )
 
 // New returns a pointer to a new `Users`
-func New(db interfaces.Datastore, cache redis.UniversalClient) *Users {
+func New(db interfaces.Datastore, cache redis.UniversalClient, config *config.AppConfig) *Users {
+	jwt := auth.NewJWT(config)
 	return &Users{
-		store: db,
-		cache: cache,
+		store:  db,
+		cache:  cache,
+		config: config,
+		jwt:    jwt,
 	}
 }
 
 // Users contains the datastore and any HTTP handlers needed for application users
 type Users struct {
-	store interfaces.Datastore
-	cache redis.UniversalClient
+	store  interfaces.Datastore
+	cache  redis.UniversalClient
+	config *config.AppConfig
+	jwt    *auth.JWT
 }
 
 func (u *Users) createAccessToken(user *models.User) (string, error) {
@@ -45,7 +51,7 @@ func (u *Users) createAccessToken(user *models.User) (string, error) {
 		},
 	}
 
-	accessToken, err := auth.CreateAccessToken(claims)
+	accessToken, err := u.jwt.CreateAccessToken(claims)
 	if err != nil {
 		return "", errors.New("failed to create the access token")
 	}
@@ -62,13 +68,13 @@ func (u *Users) createTokensAndSession(user *models.User, c *gin.Context) (strin
 	}
 
 	// create session in database (refresh token)
-	session := as.CreateSession(user.ID, c.ClientIP(), c.Request.UserAgent())
+	session := as.CreateSession(user.ID, c.ClientIP(), c.Request.UserAgent(), u.config)
 	err = u.store.CreateAppSession(session)
 	if err != nil {
 		return "", "", nil, errors.New("failed to create session")
 	}
 
-	refreshToken, err := auth.CreateRefreshToken(session.ID, user.ID)
+	refreshToken, err := u.jwt.CreateRefreshToken(session.ID, user.ID)
 	if err != nil {
 		return "", "", nil, errors.New("failed to create refresh token")
 	}
@@ -84,7 +90,7 @@ func (u *Users) RegisterUser(c *gin.Context) {
 	c.BindJSON(&newUser)
 
 	// validate user
-	err := newUser.Validate()
+	err := newUser.Validate(u.config.ReCaptchaSecret)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

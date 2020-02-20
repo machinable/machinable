@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/postgres"
 	"github.com/anothrnick/machinable/events"
 	"github.com/anothrnick/machinable/management"
@@ -41,6 +44,16 @@ func (hs HostSwitch) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// load config
+	configPath := os.Getenv("MACHINABLE_CONFIG_PATH")
+	file, _ := ioutil.ReadFile(configPath)
+
+	config := &config.AppConfig{}
+	json.Unmarshal([]byte(file), &config)
+
+	// secrets come from environment
+	config.LoadSecrets()
+
 	// use postgres client
 	datastore, err := postgres.New(
 		os.Getenv("POSTGRES_USER"),
@@ -70,6 +83,7 @@ func main() {
 
 	// create event processor
 	processor := events.NewProcessor(cache, datastore)
+
 	// process web hook results
 	go func() {
 		err := processor.ProcessResults()
@@ -81,9 +95,9 @@ func main() {
 	hostSwitch := make(HostSwitch)
 
 	// manage is for the management application api, i.e. project/team management
-	hostSwitch["manage"] = management.CreateRoutes(datastore, cache)
+	hostSwitch["manage"] = management.CreateRoutes(datastore, cache, config)
 	// all other subdomains will be treated as project names, and use the project routes
-	hostSwitch["*"] = projects.CreateRoutes(datastore, cache, processor)
+	hostSwitch["*"] = projects.CreateRoutes(datastore, cache, processor, config)
 
 	log.Fatal(http.ListenAndServe(":5001", hostSwitch))
 }

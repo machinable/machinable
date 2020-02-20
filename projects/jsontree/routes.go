@@ -1,6 +1,7 @@
 package jsontree
 
 import (
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/events"
 	"github.com/anothrnick/machinable/middleware"
@@ -24,19 +25,19 @@ type Handler interface {
 }
 
 // SetRoutes sets all of the appropriate routes to handlers for the application
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor, config *config.AppConfig) error {
 	handler := NewHandlers(datastore)
 
-	return setRoutes(engine, handler, datastore, cache, processor)
+	return setRoutes(engine, handler, datastore, cache, processor, config)
 }
 
 // abstraction for dependency injection
-func setRoutes(engine *gin.Engine, h Handler, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor) error {
+func setRoutes(engine *gin.Engine, h Handler, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor, config *config.AppConfig) error {
 	jsonKeys := engine.Group("/json")
 
 	// set middleware on json key resources
 	jsonKeys.Use(middleware.JSONStatsMiddleware(datastore, processor))
-	jsonKeys.Use(middleware.ProjectUserAuthzMiddleware(datastore))
+	jsonKeys.Use(middleware.ProjectUserAuthzMiddleware(datastore, config))
 	jsonKeys.Use(middleware.RequestRateLimit(datastore, cache))
 
 	// initialize routes
@@ -47,8 +48,8 @@ func setRoutes(engine *gin.Engine, h Handler, datastore interfaces.Datastore, ca
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
-	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+	mgmt.Use(middleware.AppUserJwtAuthzMiddleware(config))
+	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore, config))
 
 	// stats
 	mgmtStats := mgmt.Group("/jsonUsage")

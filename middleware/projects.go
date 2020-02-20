@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -140,7 +141,8 @@ func ProjectAuthzBuildFiltersMiddleware(store interfaces.Datastore) gin.HandlerF
 
 // ProjectUserAuthzMiddleware authenticates the JWT and verifies the requesting user has access to this project. This middleware
 // requires that the `project` has been injected into the context.
-func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
+func ProjectUserAuthzMiddleware(store interfaces.Datastore, config *config.AppConfig) gin.HandlerFunc {
+	jwtAuth := auth.NewJWT(config)
 	return func(c *gin.Context) {
 		// get request method
 		verb := c.Request.Method
@@ -230,7 +232,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 
 			if authType == BEARER {
 				tokenString := vals[1]
-				token, err := jwt.Parse(tokenString, auth.TokenLookup)
+				token, err := jwt.Parse(tokenString, jwtAuth.TokenLookup)
 
 				if err == nil {
 
@@ -301,7 +303,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 					return
 				}
 				apiKey := vals[1]
-				hashedKey := auth.SHA1(apiKey)
+				hashedKey := auth.SHA1(apiKey, config.AppSecret)
 
 				key, err := store.GetAPIKeyByKey(project.ID, hashedKey)
 				if err != nil {

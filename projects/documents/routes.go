@@ -1,6 +1,7 @@
 package documents
 
 import (
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/events"
 	"github.com/anothrnick/machinable/middleware"
@@ -9,14 +10,14 @@ import (
 )
 
 // SetRoutes sets all of the appropriate routes to handlers for project collections
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor, config *config.AppConfig) error {
 	// create new Resources handler with datastore
 	handler := New(datastore)
 
 	// project/user routes
 	api := engine.Group("/api")
 	api.Use(middleware.ResourceStatsMiddleware(datastore, processor))
-	api.Use(middleware.ProjectUserAuthzMiddleware(datastore))
+	api.Use(middleware.ProjectUserAuthzMiddleware(datastore, config))
 	api.Use(middleware.RequestRateLimit(datastore, cache))
 	api.Use(middleware.ProjectAuthzBuildFiltersMiddleware(datastore))
 
@@ -28,8 +29,8 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.U
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
-	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+	mgmt.Use(middleware.AppUserJwtAuthzMiddleware(config))
+	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore, config))
 
 	// mgmt resource usage
 	mgmtStats := mgmt.Group("/resourceUsage")
