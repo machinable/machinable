@@ -168,6 +168,7 @@ CREATE TABLE project_webhooks_real(
   hook_url VARCHAR NOT NULL
 );
 
+-- DELETE FROM project_webhook_results WHERE created < now()-'2 hours'::interval;
 CREATE TABLE project_webhook_results_real(
   id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   project_id uuid NOT NULL REFERENCES app_projects(id),
