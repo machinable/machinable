@@ -27,6 +27,7 @@ CREATE TABLE app_users (
     admin BOOLEAN DEFAULT false
 );
 
+-- DELETE FROM app_sessions WHERE last_accessed < now()-'36 hours'::interval;
 CREATE TABLE app_sessions (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id uuid NOT NULL REFERENCES app_users(id), 
@@ -55,6 +56,8 @@ CREATE view app_project_limits AS
   INNER JOIN app_projects as p ON p.user_id = u.id 
   INNER JOIN app_tiers as t ON u.tier_id = t.id;
 
+  --json_agg(w) from app_projects as p INNER JOIN project_webhooks as w ON w.project_id = p.id group by p.slug;
+
 CREATE TABLE project_users_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
@@ -67,6 +70,7 @@ CREATE TABLE project_users_real (
     created TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+-- DELETE FROM project_sessions WHERE last_accessed < now()-'36 hours'::interval;
 CREATE TABLE project_sessions_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id uuid NOT NULL REFERENCES project_users_real(id),
@@ -79,6 +83,7 @@ CREATE TABLE project_sessions_real (
     os VARCHAR
 );
 
+-- DELETE FROM project_logs WHERE created < now()-'24 hours'::interval;
 CREATE TABLE project_logs_real (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES app_projects(id),
@@ -143,12 +148,36 @@ CREATE TABLE project_json_real(
   "read" BOOLEAN DEFAULT false,
   "update" BOOLEAN DEFAULT false,
   "delete" BOOLEAN DEFAULT false,
-  data jsonb,
+  data JSONB,
 
   UNIQUE(project_id, root_key)
 );
 CREATE INDEX project_json_idx ON project_json_real (project_id, root_key);
 
+CREATE TYPE hook_type AS ENUM ('create', 'edit', 'delete');
+CREATE TYPE entity_type AS ENUM ('resource', 'json');
+CREATE TABLE project_webhooks_real(
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id uuid NOT NULL REFERENCES app_projects(id),
+  label VARCHAR,
+  isenabled BOOLEAN DEFAULT false,
+  entity entity_type,
+  entity_id uuid NOT NULL,
+  hook_event hook_type,
+  headers JSONB,
+  hook_url VARCHAR NOT NULL
+);
+
+-- DELETE FROM project_webhook_results WHERE created < now()-'2 hours'::interval;
+CREATE TABLE project_webhook_results_real(
+  id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  project_id uuid NOT NULL REFERENCES app_projects(id),
+  webhook_id uuid NOT NULL REFERENCES project_webhooks_real(id),
+  status_code INT NOT NULL DEFAULT -1,
+  response_time INT NOT NULL DEFAULT -1,
+  error_message VARCHAR,
+  created TIMESTAMP NOT NULL DEFAULT NOW()
+);
 
 /* PARTITIONING */
 
@@ -220,4 +249,19 @@ CREATE view project_users as select * from project_users_real;
 ALTER view project_users ALTER column id set DEFAULT uuid_generate_v4();
 CREATE TRIGGER project_users_insert_trigger
 INSTEAD OF INSERT ON project_users
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_webhooks */
+CREATE view project_webhooks as select * from project_webhooks_real;
+ALTER view project_webhooks ALTER column id set DEFAULT uuid_generate_v4();
+ALTER view project_webhooks ALTER column isenabled set DEFAULT false;
+CREATE TRIGGER project_webhooks_insert_trigger
+INSTEAD OF INSERT ON project_webhooks
+FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();
+
+/* project_webhook_results */
+CREATE view project_webhook_results as select * from project_webhook_results_real;
+ALTER view project_webhook_results ALTER column id set DEFAULT uuid_generate_v4();
+CREATE TRIGGER project_webhook_results_insert_trigger
+INSTEAD OF INSERT ON project_webhook_results
 FOR EACH ROW EXECUTE PROCEDURE create_partition_and_insert();

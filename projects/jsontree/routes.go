@@ -2,6 +2,7 @@ package jsontree
 
 import (
 	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/events"
 	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -23,18 +24,18 @@ type Handler interface {
 }
 
 // SetRoutes sets all of the appropriate routes to handlers for the application
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor) error {
 	handler := NewHandlers(datastore)
 
-	return setRoutes(engine, handler, datastore, cache)
+	return setRoutes(engine, handler, datastore, cache, processor)
 }
 
 // abstraction for dependency injection
-func setRoutes(engine *gin.Engine, h Handler, datastore interfaces.Datastore, cache redis.UniversalClient) error {
+func setRoutes(engine *gin.Engine, h Handler, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor) error {
 	jsonKeys := engine.Group("/json")
 
 	// set middleware on json key resources
-	jsonKeys.Use(middleware.JSONStatsMiddleware(datastore))
+	jsonKeys.Use(middleware.JSONStatsMiddleware(datastore, processor))
 	jsonKeys.Use(middleware.ProjectUserAuthzMiddleware(datastore))
 	jsonKeys.Use(middleware.RequestRateLimit(datastore, cache))
 

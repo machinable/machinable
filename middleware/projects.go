@@ -159,6 +159,15 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 			return
 		}
 
+		// TODO: query hooks as part of project detail view
+		hooks, lErr := store.ListHooks(project.ID)
+		if lErr != nil {
+			respondWithError(http.StatusNotFound, fmt.Sprintf("error loading project details: %s", lErr.Error()), c)
+			return
+		}
+		project.Hooks = hooks
+
+		c.Set("projectObject", project)
 		c.Set("projectId", project.ID)
 		c.Set("accountRequestLimit", project.Requests)
 		c.Set("accountId", project.UserID)
@@ -183,6 +192,8 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				respondWithError(http.StatusNotFound, "error retrieving resource - does not exist", c)
 				return
 			}
+			c.Set("entityID", def.ID)
+			c.Set("entityKey", resourceName)
 			storeConfig.Create = def.Create
 			storeConfig.Read = def.Read
 			storeConfig.Update = def.Update
@@ -196,6 +207,8 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore) gin.HandlerFunc {
 				respondWithError(http.StatusNotFound, "error retrieving root key - does not exist", c)
 				return
 			}
+			c.Set("entityID", rootKey.ID)
+			c.Set("entityKey", rootKeyStr)
 			storeConfig.Create = rootKey.Create
 			storeConfig.Read = rootKey.Read
 			storeConfig.Update = rootKey.Update

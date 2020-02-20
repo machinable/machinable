@@ -284,22 +284,22 @@ func (d *Database) AddDefDocument(projectID, pathName string, fields models.Reso
 }
 
 // UpdateDefDocument updates an existing document if it exists
-func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) *dsiErrors.DatastoreError {
+func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, updatedFields models.ResourceObject, filter map[string]interface{}) (*models.ResourceObject, *dsiErrors.DatastoreError) {
 	// Get field definitions for this resource
 	resourceDefinition, defErr := d.GetDefinitionByPathName(projectID, pathName)
 	if defErr != nil {
-		return dsiErrors.New(dsiErrors.NotFound, fmt.Errorf("resource does not exist"))
+		return nil, dsiErrors.New(dsiErrors.NotFound, fmt.Errorf("resource does not exist"))
 	}
 
 	// validate schema
 	schemaErr := updatedFields.Validate(resourceDefinition)
 	if schemaErr != nil {
-		return dsiErrors.New(dsiErrors.BadParameter, schemaErr)
+		return nil, dsiErrors.New(dsiErrors.BadParameter, schemaErr)
 	}
 
 	data, der := json.Marshal(updatedFields)
 	if der != nil {
-		return dsiErrors.New(dsiErrors.UnknownError, der)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, der)
 	}
 
 	// translate filters
@@ -338,21 +338,34 @@ func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, upd
 	// filters
 	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
 	if filterErr != nil {
-		return dsiErrors.New(dsiErrors.UnknownError, filterErr)
+		return nil, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}
 
 	query := fmt.Sprintf(
-		"UPDATE %s SET data=$1 WHERE %s",
+		"UPDATE %s SET data=$1 WHERE %s RETURNING creator_type, creator, created",
 		tableProjectResourceObjects,
 		strings.Join(filterString, " AND "),
 	)
 
-	_, err := d.db.Exec(
+	var creatorID sql.NullString
+	var created time.Time
+
+	meta := &models.MetaData{}
+	err := d.db.QueryRow(
 		query,
 		args...,
+	).Scan(
+		&meta.CreatorType,
+		&creatorID,
+		&created,
 	)
+	meta.Creator = creatorID.String
+	meta.Created = created.Unix()
 
-	return dsiErrors.New(dsiErrors.UnknownError, err)
+	updatedFields["id"] = documentID
+	updatedFields["_meta"] = meta
+
+	return &updatedFields, dsiErrors.New(dsiErrors.UnknownError, err)
 }
 
 // ListDefDocuments retrieves all definition documents for the give project and path

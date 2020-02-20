@@ -49,6 +49,7 @@ func (h *Documents) AddObject(c *gin.Context) {
 
 	// Set the inserted ID for the response
 	fieldValues["id"] = newID
+	fieldValues["_metadata"] = meta
 
 	c.JSON(http.StatusCreated, fieldValues)
 }
@@ -58,8 +59,6 @@ func (h *Documents) PutObject(c *gin.Context) {
 	resourcePathName := c.Param("resourcePathName")
 	resourceID := c.Param("resourceID")
 	projectID := c.MustGet("projectId").(string)
-	// creator := c.MustGet("authID").(string)
-	// creatorType := c.MustGet("authType").(string)
 	authFilters := c.MustGet("filters").(map[string]interface{})
 
 	fieldValues := models.ResourceObject{}
@@ -70,13 +69,13 @@ func (h *Documents) PutObject(c *gin.Context) {
 		return
 	}
 
-	dsiErr := h.store.UpdateDefDocument(projectID, resourcePathName, resourceID, fieldValues, authFilters)
+	object, dsiErr := h.store.UpdateDefDocument(projectID, resourcePathName, resourceID, fieldValues, authFilters)
 	if dsiErr != nil {
 		c.JSON(dsiErr.Code(), gin.H{"error": "failed to save " + resourcePathName, "errors": strings.Split(dsiErr.Error(), ",")})
 		return
 	}
 
-	c.JSON(http.StatusOK, fieldValues)
+	c.JSON(http.StatusOK, object)
 }
 
 // ListObjects returns the list of objects for a resource

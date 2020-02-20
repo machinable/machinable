@@ -2,19 +2,20 @@ package documents
 
 import (
 	"github.com/anothrnick/machinable/dsi/interfaces"
+	"github.com/anothrnick/machinable/events"
 	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 )
 
 // SetRoutes sets all of the appropriate routes to handlers for project collections
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.UniversalClient, processor *events.Processor) error {
 	// create new Resources handler with datastore
 	handler := New(datastore)
 
 	// project/user routes
 	api := engine.Group("/api")
-	api.Use(middleware.ResourceStatsMiddleware(datastore))
+	api.Use(middleware.ResourceStatsMiddleware(datastore, processor))
 	api.Use(middleware.ProjectUserAuthzMiddleware(datastore))
 	api.Use(middleware.RequestRateLimit(datastore, cache))
 	api.Use(middleware.ProjectAuthzBuildFiltersMiddleware(datastore))
