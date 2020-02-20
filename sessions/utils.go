@@ -14,36 +14,37 @@ import (
 
 // GetGeoIP retrieves location information of the client ip from IP Stack
 func GetGeoIP(ip, apiKey string) (string, error) {
-	url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s", ip, apiKey)
-
-	ipStackData := struct {
-		City       string `json:"city"`
-		RegionCode string `json:"region_code"`
-	}{}
-
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", errors.New("error creating request")
-	}
-
-	// set client with 10 second timeout
-	client := &http.Client{Timeout: time.Second * 10}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", errors.New("error making request")
-	}
-
-	defer resp.Body.Close()
-
-	if err := json.NewDecoder(resp.Body).Decode(&ipStackData); err != nil {
-		return "", errors.New("error decoding response")
-	}
-
 	location := ""
+	if apiKey != "" {
+		url := fmt.Sprintf("http://api.ipstack.com/%s?access_key=%s", ip, apiKey)
 
-	if ipStackData.City != "" && ipStackData.RegionCode != "" {
-		location = ipStackData.City + ", " + ipStackData.RegionCode
+		ipStackData := struct {
+			City       string `json:"city"`
+			RegionCode string `json:"region_code"`
+		}{}
+
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return "", errors.New("error creating request")
+		}
+
+		// set client with 10 second timeout
+		client := &http.Client{Timeout: time.Second * 10}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return "", errors.New("error making request")
+		}
+
+		defer resp.Body.Close()
+
+		if err := json.NewDecoder(resp.Body).Decode(&ipStackData); err != nil {
+			return "", errors.New("error decoding response")
+		}
+
+		if ipStackData.City != "" && ipStackData.RegionCode != "" {
+			location = ipStackData.City + ", " + ipStackData.RegionCode
+		}
 	}
 
 	return location, nil

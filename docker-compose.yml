@@ -14,12 +14,16 @@ services:
       - POSTGRES_USER=testuser
       - POSTGRES_DB=testdb
 
-  redis:
-    image: redis
-    container_name: cache
-    ports:
-      - '127.0.0.1:6379:6379'
- 
+  events:
+    image: 'docker.pkg.github.com/machinable/event-processor/event-processor:0.5.3'
+    container_name: events
+    restart: always
+    depends_on:
+      - 'redis'
+    environment:
+      - REDIS_ADDR=
+      - REDIS_PW=
+
   api:
     build: 
       context: .
