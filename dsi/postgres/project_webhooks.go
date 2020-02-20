@@ -33,7 +33,7 @@ func (d *Database) AddResult(result *models.HookResult) *errors.DatastoreError {
 func (d *Database) ListResults(projectID, hookID string) ([]*models.HookResult, *errors.DatastoreError) {
 	rows, err := d.db.Query(
 		fmt.Sprintf(
-			"SELECT project_id, webhook_id, status_code, response_time, error_message, created FROM %s WHERE project_id=$1 AND webhook_id=$2 ORDER BY created DESC",
+			"SELECT project_id, webhook_id, status_code, response_time, error_message, created FROM %s WHERE project_id=$1 AND webhook_id=$2 AND created >= now()-'1 hour'::interval ORDER BY created DESC",
 			tableProjectWebhookResults,
 		),
 		projectID,
