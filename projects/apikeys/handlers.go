@@ -4,21 +4,24 @@ import (
 	"net/http"
 
 	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/gin-gonic/gin"
 	uuid "github.com/satori/go.uuid"
 )
 
 // New returns a pointer to a new `APIKeys` struct
-func New(db interfaces.ProjectAPIKeysDatastore) *APIKeys {
+func New(db interfaces.ProjectAPIKeysDatastore, config *config.AppConfig) *APIKeys {
 	return &APIKeys{
-		store: db,
+		store:  db,
+		config: config,
 	}
 }
 
 // APIKeys wraps the datastore and any HTTP handlers for project api keys
 type APIKeys struct {
-	store interfaces.ProjectAPIKeysDatastore
+	store  interfaces.ProjectAPIKeysDatastore
+	config *config.AppConfig
 }
 
 // UpdateKey updates api key role and access
@@ -65,7 +68,7 @@ func (k *APIKeys) AddKey(c *gin.Context) {
 	}
 
 	// generate sha1 key
-	keyHash := auth.SHA1(newKey.Key)
+	keyHash := auth.SHA1(newKey.Key, k.config.AppSecret)
 	newKey.Key = ""
 
 	key, err := k.store.CreateAPIKey(

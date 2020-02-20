@@ -30,7 +30,7 @@ type newUserBody struct {
 }
 
 // Validate checks that the new user has a username and password.
-func (u *newUserBody) Validate() error {
+func (u *newUserBody) Validate(reCaptchaSecret string) error {
 	if u.Username == "" || u.Password == "" {
 		return errors.New("invalid username or password")
 	}
@@ -39,7 +39,7 @@ func (u *newUserBody) Validate() error {
 		return errors.New("recaptcha must be submitted")
 	}
 
-	if err := auth.RecaptchaSiteVerify(u.ReCaptcha); err != nil {
+	if err := auth.RecaptchaSiteVerify(u.ReCaptcha, reCaptchaSecret); err != nil {
 		return err
 	}
 

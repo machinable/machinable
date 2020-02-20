@@ -1,13 +1,14 @@
 package users
 
 import (
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 // SetRoutes sets all of the appropriate routes to handlers for project users
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, config *config.AppConfig) error {
 	// create new Resources handler with datastore
 	handler := New(datastore)
 
@@ -17,8 +18,8 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
 
 	// Only app users have access to user management
 	mgmt := engine.Group("/mgmt/users")
-	mgmt.Use(middleware.AppUserJwtAuthzMiddleware())
-	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore))
+	mgmt.Use(middleware.AppUserJwtAuthzMiddleware(config))
+	mgmt.Use(middleware.AppUserProjectAuthzMiddleware(datastore, config))
 
 	mgmt.GET("/", handler.ListUsers)            // get list of users for this project
 	mgmt.POST("/", handler.AddUser)             // create a new user of this project

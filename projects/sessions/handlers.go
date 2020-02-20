@@ -11,6 +11,7 @@ import (
 	"github.com/mssola/user_agent"
 
 	"github.com/anothrnick/machinable/auth"
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
 	as "github.com/anothrnick/machinable/sessions"
@@ -18,19 +19,23 @@ import (
 )
 
 // New returns a pointer to a new `Users` struct
-func New(db interfaces.Datastore) *Sessions {
+func New(db interfaces.Datastore, config *config.AppConfig) *Sessions {
 	return &Sessions{
-		store: db,
+		store:  db,
+		config: config,
+		jwt:    auth.NewJWT(config),
 	}
 }
 
 // Sessions wraps the datastore and any HTTP handlers for project user sessions
 type Sessions struct {
-	store interfaces.Datastore
+	store  interfaces.Datastore
+	config *config.AppConfig
+	jwt    *auth.JWT
 }
 
 func (s *Sessions) generateSession(userID, ip, userAgent string) *models.Session {
-	location, _ := as.GetGeoIP(ip)
+	location, _ := as.GetGeoIP(ip, s.config.IPStackKey)
 
 	ua := user_agent.New(userAgent)
 
@@ -120,7 +125,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 		},
 	}
 
-	accessToken, err := auth.CreateAccessToken(claims)
+	accessToken, err := s.jwt.CreateAccessToken(claims)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create the access token"})
 		return
@@ -134,7 +139,7 @@ func (s *Sessions) CreateSession(c *gin.Context) {
 		return
 	}
 
-	refreshToken, err := auth.CreateRefreshToken(session.ID, user.ID)
+	refreshToken, err := s.jwt.CreateRefreshToken(session.ID, user.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create refresh token"})
 		return
@@ -229,7 +234,7 @@ func (s *Sessions) RefreshSession(c *gin.Context) {
 		},
 	}
 
-	accessToken, err := auth.CreateAccessToken(claims)
+	accessToken, err := s.jwt.CreateAccessToken(claims)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create the access token"})
 		return

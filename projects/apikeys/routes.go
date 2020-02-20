@@ -1,6 +1,7 @@
 package apikeys
 
 import (
+	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
@@ -16,17 +17,17 @@ type Handler interface {
 }
 
 // SetRoutes sets all of the appropriate routes to handlers for project users
-func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore) error {
+func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, config *config.AppConfig) error {
 	// create new Resources handler with datastore
-	handler := New(datastore)
+	handler := New(datastore, config)
 
 	// di for testing
 	return setRoutes(
 		engine,
 		handler,
 		datastore,
-		middleware.AppUserJwtAuthzMiddleware(),
-		middleware.AppUserProjectAuthzMiddleware(datastore),
+		middleware.AppUserJwtAuthzMiddleware(config),
+		middleware.AppUserProjectAuthzMiddleware(datastore, config),
 	)
 }
 

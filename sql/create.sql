@@ -19,7 +19,7 @@ INSERT INTO app_tiers (id, name, cost, requests, projects, storage) VALUES
 
 CREATE TABLE app_users (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-    email VARCHAR NOT NULL UNIQUE,
+    email VARCHAR NOT NULL UNIQUE DEFAULT uuid_generate_v4(),
     username VARCHAR NOT NULL UNIQUE,
     password_hash VARCHAR NOT NULL,
     created TIMESTAMP NOT NULL DEFAULT NOW(),
