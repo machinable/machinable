@@ -41,6 +41,8 @@ func (h *Documents) AddObject(c *gin.Context) {
 
 	meta := models.NewMetaData(creator, creatorType)
 
+	// TODO: Validate against schema here
+
 	newID, dsiErr := h.store.AddDefDocument(projectID, resourcePathName, fieldValues, meta)
 	if dsiErr != nil {
 		c.JSON(dsiErr.Code(), gin.H{"error": "failed to save " + resourcePathName, "errors": strings.Split(dsiErr.Error(), ",")})
@@ -68,6 +70,8 @@ func (h *Documents) PutObject(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// TODO: Validate against schema here
 
 	object, dsiErr := h.store.UpdateDefDocument(projectID, resourcePathName, resourceID, fieldValues, authFilters)
 	if dsiErr != nil {

@@ -251,6 +251,7 @@ func (d *Database) AddDefDocument(projectID, pathName string, fields models.Reso
 	}
 
 	// Get field definitions for this resource
+	// TODO: we already have the definition which is loaded earlier... do the schema validation at the HTTP layer
 	resourceDefinition, defErr := d.GetDefinitionByPathName(projectID, pathName)
 	if defErr != nil {
 		return "", dsiErrors.New(dsiErrors.NotFound, fmt.Errorf("resource does not exist"))
