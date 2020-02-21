@@ -189,6 +189,7 @@ func ProjectUserAuthzMiddleware(store interfaces.Datastore, config *config.AppCo
 		if storeType == Resources {
 			resourceName := params[2]
 			// TODO: Perhaps move this to a view with the project so we only make one DB query?
+			// TODO: put this into the context to be used to validate object later (for PUT and POST)
 			def, err := store.GetDefinitionByPathName(project.ID, resourceName)
 			if err != nil {
 				respondWithError(http.StatusNotFound, "error retrieving resource - does not exist", c)

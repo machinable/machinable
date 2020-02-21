@@ -89,7 +89,29 @@ Docker Image: [machinable](https://github.com/anothrNick/machinable/packages/543
 
 _NOTE: `docker-compose.yml` should only be used for your local development environment, as it uses clear text credentials for the database_
 
-### Web UI
+### Architecture
+
+![Machinable Architecture](images/machinable.png)
+
+#### API
+
+The Machinable HTTP API is used for all resources of the application (this repo). The API is written in Golang. 
+
+#### Redis
+
+Redis is used as a caching layer for API request counts, as well as a queue for [web hook] event processing.
+
+#### Postgres
+
+Postgres is the database used to store all data. The JSONB column type is particularly important, as it is how API Resource and Key/Value objects are stored.
+
+See [./sql/create.sql](./sql/create.sql) for the full application schema.
+
+#### Event Processor
+
+The [event processor](https://github.com/machinable/event-processor) is used to read Web Hook events off of the redis queue and send them to the configured URL.
+
+#### Web UI
 
 _NOTE: See the [UI repository](https://github.com/anothrNick/machinable-ui) for information on how to run the UI._
 
