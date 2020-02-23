@@ -51,7 +51,7 @@ func (d *Database) GetAppUserByID(userID string) (*models.User, error) {
 	return user, err
 }
 
-// CreateAppUser saves a new application user
+// CreateAppUser saves a new application user, updates user ID
 func (d *Database) CreateAppUser(user *models.User) error {
 	err := d.db.QueryRow(
 		fmt.Sprintf(

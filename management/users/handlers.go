@@ -125,6 +125,11 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		return
 	}
 
+	// create verification code (UUID)
+	// create redis key with 5 minute timeout
+	// queue verification email
+	// return success
+
 	// TODO: refactor sessions
 	accessToken, refreshToken, session, err := u.createTokensAndSession(user, c)
 
@@ -141,6 +146,14 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		"refresh_token": refreshToken,
 		"session_id":    session.ID,
 	})
+}
+
+// VerifyEmail looks up the verification code in redis and activates the associated user
+func (u *Users) VerifyEmail(c *gin.Context) {
+	// get verification code
+	// lookup key in redis
+	// update user in db, set active
+	// create session and return api tokens
 }
 
 // LoginUser creates a session for an existing management application user.
@@ -184,6 +197,12 @@ func (u *Users) LoginUser(c *gin.Context) {
 	// compare passwords
 	if !auth.CompareHashAndPassword(user.PasswordHash, userPassword) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "invalid password"})
+		return
+	}
+
+	if !user.Active {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user account is not active, check email for verification"})
+		// TODO: set verification code
 		return
 	}
 
