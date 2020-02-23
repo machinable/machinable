@@ -9,31 +9,6 @@ import (
 	"github.com/go-redis/redis"
 )
 
-const (
-	// QueueHooks is the redis queue for web hooks
-	QueueHooks = "hook_queue"
-	// QueueHookResults is the redis queue for web hook result messages
-	QueueHookResults = "hook_result_queue"
-)
-
-// Event defines the event(s) to be processed
-type Event struct {
-	Project   *models.ProjectDetail `json:"project"`
-	Entity    string                `json:"entity"` // resource, json
-	EntityKey string                `json:"entity_key"`
-	EntityID  string                `json:"entity_id"`
-	Action    string                `json:"action"` // create, edit, delete
-	Keys      []string              `json:"keys"`
-	Payload   []byte                `json:"payload"`
-}
-
-// HookEvent describes a single web hook event
-type HookEvent struct {
-	Hook      *models.WebHook `json:"hook"`
-	EntityKey string          `json:"entity_key"`
-	Payload   interface{}     `json:"payload"`
-}
-
 // Processor process and emits events for web hooks and websockets
 type Processor struct {
 	cache redis.UniversalClient

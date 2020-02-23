@@ -24,15 +24,15 @@ func (u *updatePasswordBody) Validate() error {
 }
 
 type newUserBody struct {
-	Username  string `json:"username"`
+	Email     string `json:"email"`
 	Password  string `json:"password"`
 	ReCaptcha string `json:"recaptcha"`
 }
 
 // Validate checks that the new user has a username and password.
 func (u *newUserBody) Validate(reCaptchaSecret string) error {
-	if u.Username == "" || u.Password == "" {
-		return errors.New("invalid username or password")
+	if u.Email == "" || u.Password == "" {
+		return errors.New("invalid email or password")
 	}
 
 	if u.ReCaptcha == "" {

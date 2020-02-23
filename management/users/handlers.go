@@ -104,9 +104,9 @@ func (u *Users) RegisterUser(c *gin.Context) {
 	}
 	newUser.Password = ""
 
-	// check for duplicate username
-	if _, err := u.store.GetAppUserByUsername(newUser.Username); err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username already exists"})
+	// check for duplicate email
+	if _, err := u.store.GetAppUserByUsername(newUser.Email); err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "email is already in use"})
 		return
 	}
 
@@ -114,7 +114,8 @@ func (u *Users) RegisterUser(c *gin.Context) {
 	user := &models.User{
 		Created:      time.Now(),
 		PasswordHash: passwordHash,
-		Username:     newUser.Username,
+		Email:        newUser.Email,
+		Username:     newUser.Email,
 	}
 
 	// save the user
@@ -131,6 +132,8 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// queue email verification
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message":       "Successfully registered",
