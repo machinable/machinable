@@ -34,7 +34,19 @@ The Machinable API requires a valid hostname (with subdomain) to process request
 
 `127.0.0.1   manage.machinable.test` is required, the other lines are for any project slugs you need to test locally.
 
-##### configuration
+##### Environment
+
+Set local environment variables
+
+```sh
+echo "export SENDGRID_API_KEY='YOUR_API_KEY'" > dev.env
+source ./dev.env
+```
+
+`SENDGRID_API_KEY` is used for the [email-notifications](https://github.com/anothrNick/email-notifications), which is used to send emails to users (email verification, misc. notifications).
+
+
+##### Configuration
 
 The application config has the following structure:
 
@@ -43,7 +55,13 @@ The application config has the following structure:
     "Version": "0.0.0",
     "AppSecret": "",
     "ReCaptchaSecret": "",
-    "IPStackKey": ""
+    "IPStackKey": "",
+
+    "TemplateMap": {
+        "default": "/templates/default.html"
+    },
+	"SenderName": "Machinable",
+	"SenderEmail": "noreply@machinable.test"
 }
 ```
 
@@ -52,6 +70,9 @@ The application config has the following structure:
 |**AppSecret**|The secret string used to salt passwords|`True`|
 |**ReCaptchaSecret**|The Google reCaptcha secret used for user registration|`True`|
 |**IPStackKey**|The API Key for IP Stack|`False`|
+|**TemplateMap**|A map of template names to HTML template file paths. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_|
+|**SenderName**|The name of the email sender. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_|
+|**SenderEmail**|The email of the sender. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_|
 
 The secret config values can also be provided as environment variables in `docker-compose.yml`:
 
@@ -110,6 +131,10 @@ See [./sql/create.sql](./sql/create.sql) for the full application schema.
 #### Event Processor
 
 The [event processor](https://github.com/machinable/event-processor) is used to read Web Hook events off of the redis queue and send them to the configured URL.
+
+#### Email Notifications
+
+The [email-notifications](https://github.com/anothrNick/email-notifications) container reads notifications from Redis and sends them to the email in the notification body.
 
 #### Web UI
 
