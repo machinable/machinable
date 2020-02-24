@@ -392,14 +392,6 @@ func (u *Users) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	// generate hashed password
-	// passwordHash, err := auth.HashPassword(passwordUpdate.OldPW)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
-	// passwordUpdate.OldPW = ""
-
 	// look up the user
 	user, err := u.store.GetAppUserByID(userID)
 	if err != nil {
