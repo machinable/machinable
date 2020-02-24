@@ -30,6 +30,19 @@ services:
       - REDIS_ADDR=
       - REDIS_PW=
 
+  notifications:
+    image: 'docker.pkg.github.com/anothrnick/email-notifications/email-notifications:1.0.2'
+    container_name: notifications
+    restart: always
+    depends_on:
+      - 'redis'
+    volumes:
+    - ./config/sample-config.json:/usr/config.json
+    - ./templates/:/templates/
+    environment:
+      - EMAIL_CONFIG_PATH=/usr/config.json
+      - SENDGRID_API_KEY
+
   api:
     build: 
       context: .

@@ -20,6 +20,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.U
 	users.GET("/usage", appUserMiddleware, handler.GetUsage)
 	users.POST("/register", handler.RegisterUser)
 	users.POST("/sessions", handler.LoginUser)
+	users.POST("/verify/:verificationCode", handler.EmailVerification)
 	users.GET("/sessions", appUserMiddleware, handler.ListUserSessions)
 	users.GET("/sessions/:sessionID", appUserMiddleware, handler.GetSession)
 	users.DELETE("/sessions/:sessionID", appUserMiddleware, handler.RevokeSession)

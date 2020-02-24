@@ -14,7 +14,7 @@ func (d *Database) GetAppUserByUsername(userName string) (*models.User, error) {
 
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT id, email, username, password_hash, created from %s WHERE username=$1",
+			"SELECT id, email, username, password_hash, created, active from %s WHERE username=$1",
 			tableAppUsers,
 		),
 		userName,
@@ -24,6 +24,7 @@ func (d *Database) GetAppUserByUsername(userName string) (*models.User, error) {
 		&user.Username,
 		&user.PasswordHash,
 		&user.Created,
+		&user.Active,
 	)
 
 	return user, err
@@ -35,7 +36,7 @@ func (d *Database) GetAppUserByID(userID string) (*models.User, error) {
 
 	err := d.db.QueryRow(
 		fmt.Sprintf(
-			"SELECT id, email, username, password_hash, created, tier_id from %s WHERE id=$1",
+			"SELECT id, email, username, password_hash, created, tier_id, active from %s WHERE id=$1",
 			tableAppUsers,
 		),
 		userID,
@@ -46,12 +47,13 @@ func (d *Database) GetAppUserByID(userID string) (*models.User, error) {
 		&user.PasswordHash,
 		&user.Created,
 		&user.Tier,
+		&user.Active,
 	)
 
 	return user, err
 }
 
-// CreateAppUser saves a new application user
+// CreateAppUser saves a new application user, updates user ID
 func (d *Database) CreateAppUser(user *models.User) error {
 	err := d.db.QueryRow(
 		fmt.Sprintf(
@@ -75,6 +77,20 @@ func (d *Database) UpdateUserPassword(userID, passwordHash string) error {
 			tableAppUsers,
 		),
 		passwordHash,
+		userID,
+	)
+
+	return err
+}
+
+// ActivateUser updates the user active field
+func (d *Database) ActivateUser(userID string, active bool) error {
+	_, err := d.db.Exec(
+		fmt.Sprintf(
+			"UPDATE %s SET active=$1 WHERE id=$2",
+			tableAppUsers,
+		),
+		active,
 		userID,
 	)
 

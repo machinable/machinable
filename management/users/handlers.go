@@ -2,6 +2,7 @@ package users
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -10,11 +11,13 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/anothrnick/machinable/auth"
 	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/anothrnick/machinable/events"
 	as "github.com/anothrnick/machinable/sessions"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -82,6 +85,51 @@ func (u *Users) createTokensAndSession(user *models.User, c *gin.Context) (strin
 	return accessToken, refreshToken, session, nil
 }
 
+// verifyEmail creates the verification code, saves it to redis with a timeout, and queues the email
+func (u *Users) verifyEmail(user *models.User) error {
+	// create verification code (UUID)
+	verificationCode := uuid.NewV4()
+
+	// create redis key with 5 minute timeout
+	vKey := fmt.Sprintf("verificationCode:%s", verificationCode)
+	if err := u.cache.Set(vKey, user.ID, time.Minute*5).Err(); err != nil {
+		log.Println(err)
+		return errors.New("failed creating verification code")
+	}
+
+	// queue verification email
+	vURL := fmt.Sprintf("%s/%s/%s", u.config.AppHost, "verify", verificationCode)
+	plainText := fmt.Sprintf("Verify your Machinable email address by following this link: %s", vURL)
+	n := &events.Notification{
+		Template:         "default",
+		Subject:          "Email Verification",
+		ReceiverName:     user.Username,
+		ReceiverEmail:    user.Email,
+		PlainTextContent: plainText,
+		Data: map[string]string{
+			"Name":    user.Username,
+			"Site":    "Machinable",
+			"URL":     vURL,
+			"Company": "Machinable",
+		},
+		Meta: map[string]string{
+			"user_id": user.ID,
+		},
+	}
+
+	b, err := json.Marshal(n)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed creating verification code")
+	}
+	if err := u.cache.RPush(events.QueueEmailNotifications, b).Err(); err != nil {
+		log.Println(err)
+		return errors.New("failed creating verification code")
+	}
+
+	return nil
+}
+
 // RegisterUser creates a new valid user in the database. The user will receive an access and refresh
 // token on register. The user can then login next time.
 func (u *Users) RegisterUser(c *gin.Context) {
@@ -104,9 +152,9 @@ func (u *Users) RegisterUser(c *gin.Context) {
 	}
 	newUser.Password = ""
 
-	// check for duplicate username
-	if _, err := u.store.GetAppUserByUsername(newUser.Username); err == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username already exists"})
+	// check for duplicate email
+	if _, err := u.store.GetAppUserByUsername(newUser.Email); err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "email is already in use"})
 		return
 	}
 
@@ -114,7 +162,8 @@ func (u *Users) RegisterUser(c *gin.Context) {
 	user := &models.User{
 		Created:      time.Now(),
 		PasswordHash: passwordHash,
-		Username:     newUser.Username,
+		Email:        newUser.Email,
+		Username:     newUser.Email,
 	}
 
 	// save the user
@@ -124,6 +173,51 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		return
 	}
 
+	// return success
+	if err := u.verifyEmail(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Success! Check your email to verify your account",
+	})
+}
+
+// EmailVerification looks up the verification code in redis and activates the associated user
+func (u *Users) EmailVerification(c *gin.Context) {
+	// get verification code
+	verificationCode := c.Param("verificationCode")
+
+	// lookup key in redis
+	vKey := fmt.Sprintf("verificationCode:%s", verificationCode)
+
+	// get the request count key for the current window
+	userID, rerr := u.cache.Get(vKey).Result()
+	if rerr == redis.Nil {
+		// key doesn't exist
+		c.JSON(http.StatusNotFound, gin.H{"error": "failed to verify email for user"})
+		return
+	} else if rerr != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "failed to verify email for user"})
+		return
+	}
+
+	// find user
+	user, err := u.store.GetAppUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "user does not exist"})
+		return
+	}
+
+	// update user in db, set active
+	if err := u.store.ActivateUser(userID, true); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "failed to activate user"})
+		return
+	}
+
+	// create session and return api tokens
 	// TODO: refactor sessions
 	accessToken, refreshToken, session, err := u.createTokensAndSession(user, c)
 
@@ -132,8 +226,12 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message":       "Successfully registered",
+	// delete key from redis
+	u.cache.Del(vKey)
+
+	// return session tokens
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Successfully activated user",
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 		"session_id":    session.ID,
@@ -174,13 +272,19 @@ func (u *Users) LoginUser(c *gin.Context) {
 	// look up the user
 	user, err := u.store.GetAppUserByUsername(userName)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "username not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
 		return
 	}
 
 	// compare passwords
 	if !auth.CompareHashAndPassword(user.PasswordHash, userPassword) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "invalid password"})
+		return
+	}
+
+	if !user.Active {
+		c.JSON(http.StatusNotFound, gin.H{"error": "user account is not active, check email for verification"})
+		u.verifyEmail(user)
 		return
 	}
 
@@ -287,14 +391,6 @@ func (u *Users) ResetPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	// generate hashed password
-	// passwordHash, err := auth.HashPassword(passwordUpdate.OldPW)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
-	// passwordUpdate.OldPW = ""
 
 	// look up the user
 	user, err := u.store.GetAppUserByID(userID)

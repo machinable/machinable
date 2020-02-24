@@ -8,8 +8,10 @@ import (
 type User struct {
 	ID           string    `json:"id"`
 	Username     string    `json:"username"`
-	Email        string    `json:"-"`
+	Email        string    `json:"email"`
 	PasswordHash string    `json:"-"`
 	Created      time.Time `json:"created"`
 	Tier         string    `json:"app_tier"`
+	Active       bool      `json:"active"`
+	Admin        bool      `json:"-"`
 }
