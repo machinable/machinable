@@ -8,4 +8,5 @@ type UsersDatastore interface {
 	GetAppUserByID(id string) (*models.User, error)
 	CreateAppUser(user *models.User) error
 	UpdateUserPassword(userID, passwordHash string) error
+	ActivateUser(userID string, active bool) error
 }

@@ -8,6 +8,7 @@ type AppConfig struct {
 	ReCaptchaSecret string
 	IPStackKey      string
 	Version         string
+	AppHost         string
 }
 
 // LoadSecrets loads secret config values from env vars

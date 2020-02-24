@@ -2,6 +2,7 @@ package users
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -10,11 +11,13 @@ import (
 	"time"
 
 	"github.com/go-redis/redis"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/anothrnick/machinable/auth"
 	"github.com/anothrnick/machinable/config"
 	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/anothrnick/machinable/events"
 	as "github.com/anothrnick/machinable/sessions"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -82,6 +85,51 @@ func (u *Users) createTokensAndSession(user *models.User, c *gin.Context) (strin
 	return accessToken, refreshToken, session, nil
 }
 
+// verifyEmail creates the verification code, saves it to redis with a timeout, and queues the email
+func (u *Users) verifyEmail(user *models.User) error {
+	// create verification code (UUID)
+	verificationCode := uuid.NewV4()
+
+	// create redis key with 5 minute timeout
+	vKey := fmt.Sprintf("verificationCode:%s", verificationCode)
+	if err := u.cache.Set(vKey, user.ID, time.Minute*5).Err(); err != nil {
+		log.Println(err)
+		return errors.New("failed creating verification code")
+	}
+
+	// queue verification email
+	vURL := fmt.Sprintf("%s/%s/%s", u.config.AppHost, "verify", verificationCode)
+	plainText := fmt.Sprintf("Verify your Machinable email address by following this link: %s", vURL)
+	n := &events.Notification{
+		Template:         "default",
+		Subject:          "Email Verification",
+		ReceiverName:     user.Username,
+		ReceiverEmail:    user.Email,
+		PlainTextContent: plainText,
+		Data: map[string]string{
+			"Name":    user.Username,
+			"Site":    "Machinable",
+			"URL":     vURL,
+			"Company": "Machinable",
+		},
+		Meta: map[string]string{
+			"user_id": user.ID,
+		},
+	}
+
+	b, err := json.Marshal(n)
+	if err != nil {
+		log.Println(err)
+		return errors.New("failed creating verification code")
+	}
+	if err := u.cache.RPush(events.QueueEmailNotifications, b).Err(); err != nil {
+		log.Println(err)
+		return errors.New("failed creating verification code")
+	}
+
+	return nil
+}
+
 // RegisterUser creates a new valid user in the database. The user will receive an access and refresh
 // token on register. The user can then login next time.
 func (u *Users) RegisterUser(c *gin.Context) {
@@ -125,11 +173,51 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// create verification code (UUID)
-	// create redis key with 5 minute timeout
-	// queue verification email
 	// return success
+	if err := u.verifyEmail(user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "Success! Check your email to verify your account",
+	})
+}
+
+// EmailVerification looks up the verification code in redis and activates the associated user
+func (u *Users) EmailVerification(c *gin.Context) {
+	// get verification code
+	verificationCode := c.Param("verificationCode")
+
+	// lookup key in redis
+	vKey := fmt.Sprintf("verificationCode:%s", verificationCode)
+
+	// get the request count key for the current window
+	userID, rerr := u.cache.Get(vKey).Result()
+	if rerr == redis.Nil {
+		// key doesn't exist
+		c.JSON(http.StatusNotFound, gin.H{"error": "failed to verify email for user"})
+		return
+	} else if rerr != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "failed to verify email for user"})
+		return
+	}
+
+	// find user
+	user, err := u.store.GetAppUserByID(userID)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusNotFound, gin.H{"error": "user does not exist"})
+		return
+	}
+
+	// update user in db, set active
+	if err := u.store.ActivateUser(userID, true); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "failed to activate user"})
+		return
+	}
+
+	// create session and return api tokens
 	// TODO: refactor sessions
 	accessToken, refreshToken, session, err := u.createTokensAndSession(user, c)
 
@@ -138,22 +226,16 @@ func (u *Users) RegisterUser(c *gin.Context) {
 		return
 	}
 
-	// queue email verification
+	// delete key from redis
+	u.cache.Del(vKey)
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message":       "Successfully registered",
+	// return session tokens
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "Successfully activated user",
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 		"session_id":    session.ID,
 	})
-}
-
-// VerifyEmail looks up the verification code in redis and activates the associated user
-func (u *Users) VerifyEmail(c *gin.Context) {
-	// get verification code
-	// lookup key in redis
-	// update user in db, set active
-	// create session and return api tokens
 }
 
 // LoginUser creates a session for an existing management application user.
@@ -190,7 +272,7 @@ func (u *Users) LoginUser(c *gin.Context) {
 	// look up the user
 	user, err := u.store.GetAppUserByUsername(userName)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "username not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "email not found"})
 		return
 	}
 
@@ -202,7 +284,7 @@ func (u *Users) LoginUser(c *gin.Context) {
 
 	if !user.Active {
 		c.JSON(http.StatusNotFound, gin.H{"error": "user account is not active, check email for verification"})
-		// TODO: set verification code
+		u.verifyEmail(user)
 		return
 	}
 
