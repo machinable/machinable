@@ -18,6 +18,11 @@ func (c *AppConfig) LoadSecrets() {
 	c.IPStackKey = getEnv("IPSTACK_KEY", c.IPStackKey)
 }
 
+// LoadEnv loads config values from env vars
+func (c *AppConfig) LoadEnv() {
+	c.Version = getEnv("VERSION", c.Version)
+}
+
 func getEnv(key, fallback string) string {
 	value := os.Getenv(key)
 	if len(value) == 0 {

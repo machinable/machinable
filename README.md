@@ -5,7 +5,7 @@ Machinable gives developers the ability to store and manage their application's 
 
 See the [User Documentation](https://www.machinable.io/documentation/) for more information.
 
-[![Stable Version](https://img.shields.io/github/v/tag/anothrNick/machinable)](https://img.shields.io/github/v/tag/anothrNick/machinable)
+[![Stable Version](https://img.shields.io/github/v/tag/machinable/machinable)](https://img.shields.io/github/v/tag/machinable/machinable)
 
 #### Build
 
@@ -102,7 +102,7 @@ See [./github/workflows/main.yml](./github/workflow/main.yml) for the full Githu
 
 #### Packages
 
-Docker Image: [machinable](https://github.com/anothrNick/machinable/packages/54301)
+Docker Image: [machinable](https://github.com/machinable/machinable/packages/54301)
 
 ### Local Development
 
@@ -138,6 +138,6 @@ The [email-notifications](https://github.com/anothrNick/email-notifications) con
 
 #### Web UI
 
-_NOTE: See the [UI repository](https://github.com/anothrNick/machinable-ui) for information on how to run the UI._
+_NOTE: See the [UI repository](https://github.com/machinable/machinable-ui) for information on how to run the UI._
 
 ![Image of Machinable UI](images/ui_1.png)

@@ -8,12 +8,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/postgres"
-	"github.com/anothrnick/machinable/events"
-	"github.com/anothrnick/machinable/management"
-	"github.com/anothrnick/machinable/projects"
 	"github.com/go-redis/redis"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/postgres"
+	"github.com/machinable/machinable/events"
+	"github.com/machinable/machinable/management"
+	"github.com/machinable/machinable/projects"
 )
 
 // HostSwitch is used to switch routers based on sub domain
@@ -53,6 +53,8 @@ func main() {
 
 	// secrets come from environment
 	config.LoadSecrets()
+	// some values from environment
+	config.LoadEnv()
 
 	// use postgres client
 	datastore, err := postgres.New(

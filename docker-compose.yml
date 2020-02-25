@@ -47,6 +47,8 @@ services:
     build: 
       context: .
       dockerfile: Dockerfile
+      args:                                                                      
+        VERSION: $VERSION
     container_name: machinable_api
     depends_on:
       - 'database'
