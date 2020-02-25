@@ -5,7 +5,6 @@ go 1.12
 require (
 	github.com/PuerkitoBio/purell v1.1.0
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
-	github.com/anothrnick/machinable v0.0.0-20200225141927-d5d53e90673b
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf
 	github.com/campoy/embedmd v0.0.0-20181127031020-97c13d6e4160
 	github.com/client9/misspell v0.3.4
