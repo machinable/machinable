@@ -3,7 +3,7 @@ package apikeys
 import (
 	"errors"
 
-	"github.com/anothrnick/machinable/auth"
+	"github.com/machinable/machinable/auth"
 	uuid "github.com/satori/go.uuid"
 )
 

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/models"
 	"github.com/mssola/user_agent"
 )
 

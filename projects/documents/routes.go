@@ -1,12 +1,12 @@
 package documents
 
 import (
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/events"
-	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/events"
+	"github.com/machinable/machinable/middleware"
 )
 
 // SetRoutes sets all of the appropriate routes to handlers for project collections

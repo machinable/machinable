@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/anothrnick/machinable/dsi/models"
+import "github.com/machinable/machinable/dsi/models"
 
 // UsersDatastore exposes functions to manage application users
 type UsersDatastore interface {

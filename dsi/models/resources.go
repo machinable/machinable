@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi"
 	"github.com/go-openapi/spec"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/validate"
+	"github.com/machinable/machinable/dsi"
 )
 
 // ResourceObject is a custom type which wraps a map[string]interface

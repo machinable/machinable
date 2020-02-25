@@ -1,22 +1,22 @@
 package projects
 
 import (
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/events"
 	"github.com/go-redis/redis"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/events"
 
-	"github.com/anothrnick/machinable/middleware"
-	"github.com/anothrnick/machinable/projects/apikeys"
-	"github.com/anothrnick/machinable/projects/documents"
-	"github.com/anothrnick/machinable/projects/hooks"
-	"github.com/anothrnick/machinable/projects/jsontree"
-	"github.com/anothrnick/machinable/projects/logs"
-	"github.com/anothrnick/machinable/projects/resources"
-	"github.com/anothrnick/machinable/projects/sessions"
-	"github.com/anothrnick/machinable/projects/spec"
-	"github.com/anothrnick/machinable/projects/users"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/middleware"
+	"github.com/machinable/machinable/projects/apikeys"
+	"github.com/machinable/machinable/projects/documents"
+	"github.com/machinable/machinable/projects/hooks"
+	"github.com/machinable/machinable/projects/jsontree"
+	"github.com/machinable/machinable/projects/logs"
+	"github.com/machinable/machinable/projects/resources"
+	"github.com/machinable/machinable/projects/sessions"
+	"github.com/machinable/machinable/projects/spec"
+	"github.com/machinable/machinable/projects/users"
 )
 
 // CreateRoutes creates a gin.Engine for the project routes

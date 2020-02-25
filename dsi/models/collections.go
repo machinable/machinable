@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi"
+	"github.com/machinable/machinable/dsi"
 )
 
 // Collection is a mongo collection containing whatever data a user

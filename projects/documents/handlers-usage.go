@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 type Usage struct {

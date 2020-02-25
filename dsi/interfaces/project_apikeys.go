@@ -3,7 +3,7 @@ package interfaces
 import (
 	"errors"
 
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 // ProjectAPIKeysDatastore exposes functions to manage project api keys

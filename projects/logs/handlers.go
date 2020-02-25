@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi"
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
-	"github.com/anothrnick/machinable/query"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/dsi"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/dsi/models"
+	"github.com/machinable/machinable/query"
 )
 
 // New returns a pointer to a new instance of the Logs handler

@@ -13,14 +13,14 @@ import (
 	"github.com/go-redis/redis"
 	uuid "github.com/satori/go.uuid"
 
-	"github.com/anothrnick/machinable/auth"
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
-	"github.com/anothrnick/machinable/events"
-	as "github.com/anothrnick/machinable/sessions"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/auth"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/dsi/models"
+	"github.com/machinable/machinable/events"
+	as "github.com/machinable/machinable/sessions"
 )
 
 // New returns a pointer to a new `Users`

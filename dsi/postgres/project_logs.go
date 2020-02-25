@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 const tableProjectLogs = "project_logs"
