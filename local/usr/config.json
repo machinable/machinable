@@ -1,0 +1,13 @@
+{
+    "Version": "0.0.0",
+    "AppSecret": "",
+    "ReCaptchaSecret": "",
+    "IPStackKey": "",
+    "AppHost": "http://localhost:3000",
+
+    "TemplateMap": {
+        "default": "/templates/default.html"
+    },
+	"SenderName": "Machinable",
+	"SenderEmail": "noreply@machinable.test"
+}
