@@ -5,6 +5,8 @@ Machinable gives developers the ability to store and manage their application's 
 
 See the [User Documentation](https://www.machinable.io/documentation/) for more information.
 
+[![Stable Version](https://img.shields.io/github/v/tag/anothrNick/machinable)](https://img.shields.io/github/v/tag/anothrNick/machinable)
+
 #### Build
 
 Install and build the API docker image.
@@ -50,7 +52,7 @@ source ./dev.env
 
 The application config has the following structure:
 
-```config.json
+```json
 {
     "Version": "0.0.0",
     "AppSecret": "",
@@ -60,12 +62,13 @@ The application config has the following structure:
     "TemplateMap": {
         "default": "/templates/default.html"
     },
-	"SenderName": "Machinable",
-	"SenderEmail": "noreply@machinable.test"
+    "SenderName": "Machinable",
+    "SenderEmail": "noreply@machinable.test"
 }
 ```
 
 |Key|Description|Required|
+|---|-----------|--------|
 |**Version**|The version of the API|`False`|
 |**AppSecret**|The secret string used to salt passwords|`True`|
 |**ReCaptchaSecret**|The Google reCaptcha secret used for user registration|`True`|
