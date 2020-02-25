@@ -38,7 +38,7 @@ services:
       - 'redis'
     volumes:
     - ./config/sample-config.json:/usr/config.json
-    - ./templates/:/templates/
+    - ./local/templates/:/templates/
     environment:
       - EMAIL_CONFIG_PATH=/usr/config.json
       - SENDGRID_API_KEY

@@ -7,21 +7,28 @@ See the [User Documentation](https://www.machinable.io/documentation/) for more 
 
 [![Stable Version](https://img.shields.io/github/v/tag/machinable/machinable)](https://img.shields.io/github/v/tag/machinable/machinable)
 
-#### Build
 
-Install and build the API docker image.
+### Dev Environment
+
+`make build up` will install dependencies, build images, and run the necessary containers for a local environment. This includes the posgres, redis, and api containers. The containers are defined in `docker-compose.yml`.
+
+_NOTE: `docker-compose.yml` should only be used for your local development environment, as it uses clear text credentials for the database_
+
+You can also refer to the environment in [./local](./local) if you need to run all containers (API, Events, Email Notifications, Postgres, Redis, UI).
+
+##### Build
+
+Build the API docker image.
 
 ```
 # install dependencies and build the docker image
 $ make build
 
-# run container
+# run container(s)
 $ make up
 ```
 
-#### Dev Environment
-
-##### hosts
+##### Hosts
 
 The Machinable API requires a valid hostname (with subdomain) to process requests, so you'll need to update your hosts file to include the following
 
@@ -82,7 +89,7 @@ The secret config values can also be provided as environment variables in `docke
     - IPSTACK_KEY
 ```
 
-#### Testing
+### Testing
 
 Run unit tests with the following command:
 
@@ -94,7 +101,7 @@ $ make test
 $ go test ../... -v
 ```
 
-#### CI
+### CI
 
 Github Tag Action - [https://github.com/anothrNick/github-tag-action](https://github.com/anothrNick/github-tag-action)
 
@@ -103,12 +110,6 @@ See [./github/workflows/main.yml](./github/workflow/main.yml) for the full Githu
 #### Packages
 
 Docker Image: [machinable](https://github.com/machinable/machinable/packages/54301)
-
-### Local Development
-
-`make install build up` will install dependencies, build images, and run the necessary containers for a local environment. This includes the posgres, redis, and api containers. The containers are defined in `docker-compose.yml`.
-
-_NOTE: `docker-compose.yml` should only be used for your local development environment, as it uses clear text credentials for the database_
 
 ### Architecture
 
