@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anothrnick/machinable/config"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/machinable/machinable/config"
 )
 
 const (

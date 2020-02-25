@@ -1,6 +1,8 @@
 # golang:alpine is the alpine image with the go tools added.. manually add git
 FROM golang:alpine as builder
 
+ENV GO111MODULE=on
+
 # install gcc for compilation
 RUN apk add --update gcc musl-dev
 # Set an env var that matches github repo name

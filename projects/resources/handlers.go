@@ -3,9 +3,9 @@ package resources
 import (
 	"net/http"
 
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 // New returns a pointer to a new `Resources` struct

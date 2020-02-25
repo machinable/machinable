@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anothrnick/machinable/auth"
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/interfaces"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
+	"github.com/machinable/machinable/auth"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/interfaces"
 )
 
 // Resources is the constant value for the URL parameter

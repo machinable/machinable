@@ -10,12 +10,12 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/mssola/user_agent"
 
-	"github.com/anothrnick/machinable/auth"
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
-	as "github.com/anothrnick/machinable/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/auth"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/dsi/models"
+	as "github.com/machinable/machinable/sessions"
 )
 
 // New returns a pointer to a new `Users` struct

@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/anothrnick/machinable/auth"
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/interfaces"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/auth"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/interfaces"
 )
 
 func respondWithError(code int, message string, c *gin.Context) {

@@ -3,7 +3,7 @@ package spec
 import (
 	"fmt"
 
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 func injectProjectSchema(spec *ProjectSpec, resources []*models.ResourceDefinition) {

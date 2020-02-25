@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/lib/pq"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 // TranslateError attempts to translate the database specific error to a simple `error` to return to the user.

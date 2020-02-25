@@ -9,10 +9,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/dsi/models"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )

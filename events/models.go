@@ -1,6 +1,6 @@
 package events
 
-import "github.com/anothrnick/machinable/dsi/models"
+import "github.com/machinable/machinable/dsi/models"
 
 const (
 	// QueueHooks is the redis queue for web hooks

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	dsiErrors "github.com/anothrnick/machinable/dsi/errors"
-	"github.com/anothrnick/machinable/dsi/models"
+	dsiErrors "github.com/machinable/machinable/dsi/errors"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 const (

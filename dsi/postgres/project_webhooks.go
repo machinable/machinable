@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi/errors"
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/dsi/errors"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 const tableProjectWebhookResults = "project_webhook_results"

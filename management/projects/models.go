@@ -3,7 +3,7 @@ package projects
 import (
 	"errors"
 
-	"github.com/anothrnick/machinable/dsi"
+	"github.com/machinable/machinable/dsi"
 )
 
 // reservedProjectSlugs is a list of project slugs that are not allowed to be used, partially so

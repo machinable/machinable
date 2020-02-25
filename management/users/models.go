@@ -3,7 +3,7 @@ package users
 import (
 	"errors"
 
-	"github.com/anothrnick/machinable/auth"
+	"github.com/machinable/machinable/auth"
 )
 
 type updatePasswordBody struct {

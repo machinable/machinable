@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 const tableAppSessions = "app_sessions"

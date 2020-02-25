@@ -3,10 +3,10 @@ package apikeys
 import (
 	"net/http"
 
-	"github.com/anothrnick/machinable/auth"
-	"github.com/anothrnick/machinable/config"
-	"github.com/anothrnick/machinable/dsi/interfaces"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/auth"
+	"github.com/machinable/machinable/config"
+	"github.com/machinable/machinable/dsi/interfaces"
 	uuid "github.com/satori/go.uuid"
 )
 

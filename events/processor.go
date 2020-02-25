@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/go-redis/redis"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 // Processor process and emits events for web hooks and websockets

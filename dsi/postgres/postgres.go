@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	// db dependency should be transparent to the application
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/dsi/models"
 
 	// postgres driver
 	_ "github.com/lib/pq"

@@ -1,9 +1,9 @@
 package spec
 
 import (
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/middleware"
 )
 
 // Handler is an interface to the API Key HTTP handler functions.

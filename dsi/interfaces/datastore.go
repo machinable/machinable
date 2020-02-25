@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/anothrnick/machinable/dsi/models"
+import "github.com/machinable/machinable/dsi/models"
 
 // Datastore exposes the necessary functions to interact with the Machinable datastore.
 // Functions are grouped logically based on their purpose and the collections they interact with.

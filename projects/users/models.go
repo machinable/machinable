@@ -3,7 +3,7 @@ package users
 import (
 	"errors"
 
-	"github.com/anothrnick/machinable/auth"
+	"github.com/machinable/machinable/auth"
 )
 
 // NewProjectUser is the JSON structure of a new user request

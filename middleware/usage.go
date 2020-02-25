@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
-	"github.com/anothrnick/machinable/events"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/dsi/models"
+	"github.com/machinable/machinable/events"
 )
 
 type logWriter struct {

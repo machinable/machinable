@@ -1,21 +1,66 @@
 version: '3'
 
 services:
-  mongo:
-    image: 'mongo'
-    ports:
-      - '127.0.0.1:27017:27017'
+  database:
+    image: postgres:12
+    container_name: postgres
     volumes:
-      - 'mongo:/data/db'
+      - mdb-data:/var/lib/postgresql/data
+      - ./sql/create.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '127.0.0.1:5432:5432'
+    environment:
+      - POSTGRES_PASSWORD=1234
+      - POSTGRES_USER=testuser
+      - POSTGRES_DB=machinable
 
-  machinable:
-    image: 'anothernick/machinable:0.5.0'
+  redis:
+    image: redis
+    container_name: cache
+    expose:
+      - 6379
+
+  events:
+    image: 'docker.pkg.github.com/machinable/event-processor/event-processor:0.5.3'
+    container_name: events
+    restart: always
     depends_on:
-      - 'mongo'
+      - 'redis'
+    environment:
+      - REDIS_ADDR=
+      - REDIS_PW=
+
+  notifications:
+    image: 'docker.pkg.github.com/anothrnick/email-notifications/email-notifications:1.0.2'
+    container_name: notifications
+    restart: always
+    depends_on:
+      - 'redis'
+    volumes:
+    - /usr/config.json:/usr/config.json
+    - /templates/:/templates/
+    environment:
+      - EMAIL_CONFIG_PATH=/usr/config.json
+      - SENDGRID_API_KEY
+
+  api:
+    container_name: machinable
+    image: 'docker.pkg.github.com/anothrnick/machinable/machinable:1.0.0'
+    restart: always
+    depends_on:
+      - 'database'
+      - 'redis'
     ports:
       - '127.0.0.1:5002:5001'
+    volumes:
+      - /usr/config.json:/usr/config.json
     environment:
-      - MONGO_HOST=mongo
+      - POSTGRES_USER=testuser
+      - POSTGRES_PW=1234
+      - POSTGRES_HOST=database
+      - POSTGRES_DB=machinable
       - SCHEME=https
+      - MACHINABLE_CONFIG_PATH=/usr/config.json
+
 volumes:
-  mongo:
+  mdb-data:

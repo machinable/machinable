@@ -1,6 +1,6 @@
 package interfaces
 
-import "github.com/anothrnick/machinable/dsi/models"
+import "github.com/machinable/machinable/dsi/models"
 
 // ProjectJSONDatastore exposes functions to the project json trees
 type ProjectJSONDatastore interface {

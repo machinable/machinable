@@ -3,7 +3,7 @@ package postgres
 import (
 	"fmt"
 
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 const tableAppUsers = "app_users"

@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anothrnick/machinable/auth"
-	"github.com/anothrnick/machinable/dsi/interfaces"
-	"github.com/anothrnick/machinable/dsi/models"
 	"github.com/gin-gonic/gin"
+	"github.com/machinable/machinable/auth"
+	"github.com/machinable/machinable/dsi/interfaces"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 // New returns a pointer to a new `Users` struct

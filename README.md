@@ -12,10 +12,7 @@ See the [User Documentation](https://www.machinable.io/documentation/) for more 
 Install and build the API docker image.
 
 ```
-# run glide
-$ make install
-
-# build the docker image
+# install dependencies and build the docker image
 $ make build
 
 # run container

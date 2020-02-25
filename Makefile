@@ -1,7 +1,3 @@
-install:
-	docker run --rm -it -v $(shell pwd):/go/src/github.com/anothrnick/machinable -w /go/src/github.com/anothrnick/machinable \
-    instrumentisto/glide install
-
 rebuild: install
 	docker-compose build --no-cache
 

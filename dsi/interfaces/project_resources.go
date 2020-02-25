@@ -1,8 +1,8 @@
 package interfaces
 
 import (
-	"github.com/anothrnick/machinable/dsi/errors"
-	"github.com/anothrnick/machinable/dsi/models"
+	"github.com/machinable/machinable/dsi/errors"
+	"github.com/machinable/machinable/dsi/models"
 )
 
 // ResourcesDatastore exposes functions to the resources and definitions
