@@ -45,7 +45,7 @@ services:
 
   api:
     container_name: machinable
-    image: 'docker.pkg.github.com/machinable/machinable/machinable:1.0.0'
+    image: 'docker.pkg.github.com/machinable/machinable/machinable:1.2.0'
     restart: always
     depends_on:
       - 'database'
@@ -61,6 +61,13 @@ services:
       - POSTGRES_DB=machinable
       - SCHEME=https
       - MACHINABLE_CONFIG_PATH=/usr/config.json
+
+  ui:
+    container_name: ui
+    image: 'docker.pkg.github.com/machinable/machinable-ui/ui:1.0.3'
+    restart: always
+    ports:
+      - '127.0.0.1:5003:80'
 
 volumes:
   mdb-data:
