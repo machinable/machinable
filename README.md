@@ -10,7 +10,7 @@ See the [User Documentation](https://www.machinable.io/documentation/) for more 
 
 ### Dev Environment
 
-`make build up` will install dependencies, build images, and run the necessary containers for a local environment. This includes the posgres, redis, and api containers. The containers are defined in `docker-compose.yml`.
+`make build up` will install dependencies, build images, and run the necessary containers for a local environment. This includes the postgres, redis, and api containers. The containers are defined in `docker-compose.yml`.
 
 _NOTE: `docker-compose.yml` should only be used for your local development environment, as it uses clear text credentials for the database_
 
