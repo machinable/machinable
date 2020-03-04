@@ -1,6 +1,19 @@
 version: '2'
 services:
 
+  stats:
+    image: docker.pkg.github.com/anothrnick/send-query-result/app:0.6.0
+    container_name: query_stats
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PW=1234
+      - POSTGRES_HOST=database
+      - POSTGRES_DB=testdb
+      - POSTGRES_SSL=disable
+      - STAT_QUERY
+      - STAT_INTERVAL
+      - STAT_URL
+
   database:
     image: postgres:12
     container_name: postgres
