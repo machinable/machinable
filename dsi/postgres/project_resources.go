@@ -542,6 +542,11 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 	// query builders
 	filterString := make([]string, 0)
 
+	// projectID
+	args = append(args, projectID)
+	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	index++
+
 	// document id
 	args = append(args, documentID)
 	filterString = append(filterString, fmt.Sprintf("id=$%d", index))
