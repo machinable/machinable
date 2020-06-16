@@ -173,6 +173,19 @@ func (d *Database) UpdateHook(projectID, hookID string, hook *models.WebHook) *e
 func (d *Database) DeleteHook(projectID, hookID string) *errors.DatastoreError {
 	_, err := d.db.Exec(
 		fmt.Sprintf(
+			"DELETE FROM %s WHERE webhook_id=$1 and project_id=$2",
+			tableProjectWebhookResults,
+		),
+		hookID,
+		projectID,
+	)
+
+	if err != nil {
+		return errors.New(errors.UnknownError, err)
+	}
+
+	_, err = d.db.Exec(
+		fmt.Sprintf(
 			"DELETE FROM %s WHERE id=$1 and project_id=$2",
 			tableProjectWebHooks,
 		),
