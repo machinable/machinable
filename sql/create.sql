@@ -23,7 +23,7 @@ CREATE TABLE app_users (
     username VARCHAR NOT NULL UNIQUE,
     password_hash VARCHAR NOT NULL,
     created TIMESTAMP NOT NULL DEFAULT NOW(),
-    tier_id uuid NOT NULL REFERENCES app_tiers(id) DEFAULT '9473a732-dd95-4b98-b776-e2d77e1966fe', , 
+    tier_id uuid NOT NULL REFERENCES app_tiers(id) DEFAULT '9473a732-dd95-4b98-b776-e2d77e1966fe',
     active BOOLEAN DEFAULT false,
     admin BOOLEAN DEFAULT false
 );
