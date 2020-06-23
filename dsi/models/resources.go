@@ -30,8 +30,17 @@ func (obj *ResourceObject) Validate(definition *ResourceDefinition) error {
 	}
 
 	data := map[string]interface{}{}
+	missingKeys := []string{}
 	for key, val := range *obj {
-		data[key] = val
+		if _, ok := schema.Properties[key]; ok == false {
+			missingKeys = append(missingKeys, fmt.Sprintf("%s field is not defined in the schema", key))
+		} else {
+			data[key] = val
+		}
+	}
+
+	if len(missingKeys) > 0 {
+		return errors.New(strings.Join(missingKeys, ","))
 	}
 
 	// validate data against schema
