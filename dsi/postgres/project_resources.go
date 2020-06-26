@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -337,7 +338,7 @@ func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, upd
 	validFields := map[string]bool{"*": true}
 
 	// filters
-	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index, "")
 	if filterErr != nil {
 		return nil, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}
@@ -370,7 +371,7 @@ func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, upd
 }
 
 // ListDefDocuments retrieves all definition documents for the give project and path
-func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset int64, filter map[string]interface{}, sort map[string]int) ([]map[string]interface{}, *dsiErrors.DatastoreError) {
+func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset int64, filter map[string]interface{}, sort map[string]int, relations map[string]string) ([]map[string]interface{}, *dsiErrors.DatastoreError) {
 	// translate filters
 	translatedFilters := make(map[string]interface{})
 	for key, value := range filter {
@@ -396,19 +397,19 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 
 	// projectID
 	args = append(args, projectID)
-	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	filterString = append(filterString, fmt.Sprintf("o.project_id=$%d", index))
 	index++
 
 	// path name
 	args = append(args, pathName)
-	filterString = append(filterString, fmt.Sprintf("resource_path=$%d", index))
+	filterString = append(filterString, fmt.Sprintf("o.resource_path=$%d", index))
 	index++
 
 	// valid sort/filter
 	validFields := map[string]bool{"*": true}
 
 	// filters
-	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index, "o")
 	if filterErr != nil {
 		return nil, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}
@@ -456,15 +457,23 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 		index++
 	}
 
-	queryFields := "id, creator, creator_type, created, data"
+	queryFields := "o.id, o.creator, o.creator_type, o.created, o.data"
+	joins := ""
 	orderBy := ""
+
+	for k, r := range relations {
+		queryFields = fmt.Sprintf("%s || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, r, r, r)
+		joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id", joins, r, k, r)
+	}
+
 	if len(sortString) > 0 {
 		orderBy = fmt.Sprintf(" ORDER BY %s", strings.Join(sortString, ", "))
 	}
 	query := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE %s%s%s",
+		"SELECT %s as data FROM %s o %s WHERE %s%s%s",
 		queryFields,
 		tableProjectResourceObjects,
+		joins,
 		strings.Join(filterString, " AND "),
 		orderBy,
 		pageString,
@@ -520,7 +529,7 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 }
 
 // GetDefDocument retrieves a single document
-func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}) (map[string]interface{}, *dsiErrors.DatastoreError) {
+func (d *Database) GetDefDocument(projectID, path, documentID string, filter map[string]interface{}, relations map[string]string) (map[string]interface{}, *dsiErrors.DatastoreError) {
 	// translate filters
 	translatedFilters := make(map[string]interface{})
 	for key, value := range filter {
@@ -536,6 +545,7 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 		}
 	}
 
+	//GetDefinitionByPathName
 	args := make([]interface{}, 0)
 	index := 1
 
@@ -544,29 +554,39 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 
 	// projectID
 	args = append(args, projectID)
-	filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+	filterString = append(filterString, fmt.Sprintf("o.project_id=$%d", index))
 	index++
 
 	// document id
 	args = append(args, documentID)
-	filterString = append(filterString, fmt.Sprintf("id=$%d", index))
+	filterString = append(filterString, fmt.Sprintf("o.id=$%d", index))
 	index++
 
 	// valid sort/filter
 	validFields := map[string]bool{"*": true}
 
 	// filters
-	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index, "o")
 	if filterErr != nil {
 		return nil, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}
 
-	queryFields := "id, creator, creator_type, created, data"
+	queryFields := "o.id, o.creator, o.creator_type, o.created, o.data"
+	joins := ""
+
+	relationIndex := 0
+	for key, r := range relations {
+		alias := r + strconv.Itoa(relationIndex)
+		queryFields = fmt.Sprintf("%s - '%s' || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, key, r, alias, alias)
+		joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id", joins, alias, key, alias)
+		relationIndex++
+	}
 
 	query := fmt.Sprintf(
-		"SELECT %s FROM %s WHERE %s",
+		"SELECT %s as data FROM %s o %s WHERE %s",
 		queryFields,
 		tableProjectResourceObjects,
+		joins,
 		strings.Join(filterString, " AND "),
 	)
 
@@ -644,7 +664,7 @@ func (d *Database) CountDefDocuments(projectID, pathName string, filter map[stri
 	validFields := map[string]bool{"*": true}
 
 	// filters
-	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index, "")
 	if filterErr != nil {
 		return 0, dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}
@@ -706,7 +726,7 @@ func (d *Database) DeleteDefDocument(projectID, path, documentID string, filter 
 	validFields := map[string]bool{"*": true}
 
 	// filters
-	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index)
+	filterErr := d.mapToQuery(translatedFilters, validFields, &filterString, &args, &index, "")
 	if filterErr != nil {
 		return dsiErrors.New(dsiErrors.UnknownError, filterErr)
 	}

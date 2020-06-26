@@ -30,7 +30,7 @@ func New(user, password, host, database string) (*Database, error) {
 	}, nil
 }
 
-func (d *Database) mapToQuery(filter map[string]interface{}, validFields map[string]bool, filterString *[]string, args *[]interface{}, index *int) error {
+func (d *Database) mapToQuery(filter map[string]interface{}, validFields map[string]bool, filterString *[]string, args *[]interface{}, index *int, tableAlias string) error {
 	for key, value := range filter {
 		if _, acceptsAny := validFields["*"]; !acceptsAny {
 			if _, ok := validFields[key]; !ok {
@@ -40,7 +40,12 @@ func (d *Database) mapToQuery(filter map[string]interface{}, validFields map[str
 		}
 
 		*args = append(*args, value)
-		*filterString = append(*filterString, fmt.Sprintf("%s=$%d", key, *index))
+		if tableAlias != "" {
+			*filterString = append(*filterString, fmt.Sprintf("%s.%s=$%d", tableAlias, key, *index))
+		} else {
+			*filterString = append(*filterString, fmt.Sprintf("%s=$%d", key, *index))
+		}
+
 		*index++
 	}
 

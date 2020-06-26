@@ -18,6 +18,8 @@ const (
 	OffsetKey = "_offset"
 	// SortKey is used for sorting the query by a field
 	SortKey = "_sort"
+	// RelationKey is used for relations
+	RelationKey = "_relation"
 	// MetadataKey is the key used to store internal metadata for an object
 	MetadataKey         = "_metadata"
 	MetadataCreated     = "_metadata.created"
