@@ -84,7 +84,6 @@ func (h *Documents) PutObject(c *gin.Context) {
 
 // ListObjects returns the list of objects for a resource
 func (h *Documents) ListObjects(c *gin.Context) {
-	queryRelations := c.QueryArray("_relation")
 	resourcePathName := c.Param("resourcePathName")
 	projectID := c.MustGet("projectId").(string)
 	authFilters := c.MustGet("filters").(map[string]interface{})
