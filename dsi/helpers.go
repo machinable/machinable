@@ -18,6 +18,8 @@ const (
 	OffsetKey = "_offset"
 	// SortKey is used for sorting the query by a field
 	SortKey = "_sort"
+	// RelationKey is used for relations
+	RelationKey = "_relation"
 	// MetadataKey is the key used to store internal metadata for an object
 	MetadataKey         = "_metadata"
 	MetadataCreated     = "_metadata.created"
@@ -35,7 +37,7 @@ var MaxLengthOfCollectionInfo = 12
 var ValidPathFormat = regexp.MustCompile(`^[a-zA-Z0-9_-]*$`)
 
 // reservedFieldKeys is the list of keys that cannot be used, as they are reserved for machinable use
-var reservedFieldKeys = []string{JSONIDKey, DocumentIDKey, LimitKey, OffsetKey, SortKey, MetadataKey, MetadataCreated, MetadataCreator, MetadataCreatorType}
+var reservedFieldKeys = []string{JSONIDKey, DocumentIDKey, LimitKey, OffsetKey, SortKey, MetadataKey, MetadataCreated, MetadataCreator, MetadataCreatorType, RelationKey}
 
 // ReservedField returns true if the string is a reserved field key
 func ReservedField(a string) bool {

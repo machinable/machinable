@@ -110,6 +110,7 @@ func (h *Documents) ListObjects(c *gin.Context) {
 	// Format query parameters
 	filter := make(map[string]interface{})
 	sort := make(map[string]int)
+	relations := make(map[string]string)
 
 	var resourceDefinition *models.ResourceDefinition
 	validSchema := &models.JSONSchemaObject{}
@@ -147,6 +148,15 @@ func (h *Documents) ListObjects(c *gin.Context) {
 			}
 		}
 
+		if k == dsi.RelationKey {
+			for key, value := range validSchema.Properties {
+				if val, ok := value["relation"]; ok && stringInSlice(key, v) {
+					relations[key] = val.(string)
+				}
+			}
+			continue
+		}
+
 		_, ok := validSchema.Properties[k]
 		if !ok {
 			c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("unable to filter on '%s'", k)})
@@ -176,7 +186,7 @@ func (h *Documents) ListObjects(c *gin.Context) {
 		return
 	}
 
-	documents, dsiErr := h.store.ListDefDocuments(projectID, resourcePathName, iLimit, iOffset, filter, sort)
+	documents, dsiErr := h.store.ListDefDocuments(projectID, resourcePathName, iLimit, iOffset, filter, sort, relations)
 
 	if dsiErr != nil {
 		c.JSON(dsiErr.Code(), gin.H{"error": dsiErr.Error()})
@@ -190,12 +200,41 @@ func (h *Documents) ListObjects(c *gin.Context) {
 
 // GetObject returns a single object with the resourceID for this resource
 func (h *Documents) GetObject(c *gin.Context) {
+	queryRelations := c.QueryArray("_relation")
 	resourcePathName := c.Param("resourcePathName")
 	resourceID := c.Param("resourceID")
 	projectID := c.MustGet("projectId").(string)
 	authFilters := c.MustGet("filters").(map[string]interface{})
 
-	document, err := h.store.GetDefDocument(projectID, resourcePathName, resourceID, authFilters)
+	relations := make(map[string]string)
+	var resourceDefinition *models.ResourceDefinition
+	validSchema := &models.JSONSchemaObject{}
+	for _, v := range queryRelations {
+		if resourceDefinition == nil || validSchema == nil {
+			// get resource definition if we do not already have it
+			resourceDefinition, err := h.store.GetDefinitionByPathName(projectID, resourcePathName)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "could not retrieve resource definition to validate query parameters"})
+				return
+			}
+
+			// get property types
+			var pErr error
+			validSchema, pErr = resourceDefinition.GetSchema()
+			if pErr != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "error getting schema property types"})
+				return
+			}
+		}
+
+		for key, value := range validSchema.Properties {
+			if val, ok := value["relation"]; ok && key == v {
+				relations[key] = val.(string)
+			}
+		}
+	}
+
+	document, err := h.store.GetDefDocument(projectID, resourcePathName, resourceID, authFilters, relations)
 
 	if err != nil {
 		c.JSON(err.Code(), gin.H{"error": err.Error()})
@@ -220,4 +259,14 @@ func (h *Documents) DeleteObject(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusNoContent, gin.H{})
+}
+
+// probably need to move to a better place
+func stringInSlice(a string, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
