@@ -37,7 +37,7 @@ var MaxLengthOfCollectionInfo = 12
 var ValidPathFormat = regexp.MustCompile(`^[a-zA-Z0-9_-]*$`)
 
 // reservedFieldKeys is the list of keys that cannot be used, as they are reserved for machinable use
-var reservedFieldKeys = []string{JSONIDKey, DocumentIDKey, LimitKey, OffsetKey, SortKey, MetadataKey, MetadataCreated, MetadataCreator, MetadataCreatorType}
+var reservedFieldKeys = []string{JSONIDKey, DocumentIDKey, LimitKey, OffsetKey, SortKey, MetadataKey, MetadataCreated, MetadataCreator, MetadataCreatorType, RelationKey}
 
 // ReservedField returns true if the string is a reserved field key
 func ReservedField(a string) bool {
