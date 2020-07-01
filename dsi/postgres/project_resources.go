@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -238,6 +237,44 @@ func (d *Database) DropProjectResources(projectID string) *dsiErrors.DatastoreEr
 	return dErr
 }
 
+func (d *Database) CheckIfRelationsExistBeforeInsert(projectID string, fields models.ResourceObject, resourceDefinition *models.ResourceDefinition) *dsiErrors.DatastoreError {
+	schema, pErr := resourceDefinition.GetSchema()
+	if pErr != nil {
+		return dsiErrors.New(dsiErrors.UnknownError, pErr)
+	}
+	relationErrors := []string{}
+	for key, value := range schema.Properties {
+
+		if val, ok := value["relation"]; ok {
+			if valField, okf := fields[key]; okf && valField.(string) != "" {
+				queryFields := "count(id)"
+
+				query := fmt.Sprintf(
+					"SELECT %s FROM %s WHERE %s",
+					queryFields,
+					tableProjectResourceObjects,
+					"project_id=$1 AND resource_path=$2 AND id=$3",
+				)
+
+				var count int64
+				_ = d.db.QueryRow(
+					query, projectID, val, valField.(string),
+				).Scan(
+					&count,
+				)
+				if count < 1 {
+					relationErrors = append(relationErrors, fmt.Sprintf("relation %s could not be made with id %s", key, valField.(string)))
+				}
+			}
+		}
+	}
+	if len(relationErrors) > 0 {
+		return dsiErrors.New(dsiErrors.BadParameter, errors.New(strings.Join(relationErrors, ", ")))
+	}
+
+	return nil
+}
+
 /******************************/
 /* PROJECT RESOURCE DOCUMENTS */
 /******************************/
@@ -267,6 +304,11 @@ func (d *Database) AddDefDocument(projectID, pathName string, fields models.Reso
 	data, der := json.Marshal(fields)
 	if der != nil {
 		return "", dsiErrors.New(dsiErrors.UnknownError, der)
+	}
+
+	checkErr := d.CheckIfRelationsExistBeforeInsert(projectID, fields, resourceDefinition)
+	if checkErr != nil {
+		return "", checkErr
 	}
 
 	err := d.db.QueryRow(
@@ -302,6 +344,11 @@ func (d *Database) UpdateDefDocument(projectID, pathName, documentID string, upd
 	data, der := json.Marshal(updatedFields)
 	if der != nil {
 		return nil, dsiErrors.New(dsiErrors.UnknownError, der)
+	}
+
+	checkErr := d.CheckIfRelationsExistBeforeInsert(projectID, updatedFields, resourceDefinition)
+	if checkErr != nil {
+		return nil, checkErr
 	}
 
 	// translate filters
@@ -461,9 +508,12 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 	joins := ""
 	orderBy := ""
 
-	for k, r := range relations {
-		queryFields = fmt.Sprintf("%s || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, r, r, r)
-		joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id", joins, r, k, r)
+	relationIndex := 0
+	for key, r := range relations {
+		alias := r + strconv.Itoa(relationIndex)
+		queryFields = fmt.Sprintf("%s - '%s' || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, key, key, alias, alias)
+		joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id and %s.resource_path = '%s'", joins, alias, key, alias, alias, r)
+		relationIndex++
 	}
 
 	if len(sortString) > 0 {
@@ -479,7 +529,6 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 		pageString,
 	)
 
-	log.Println(query)
 	rows, err := d.db.Query(
 		query,
 		args...,
@@ -557,6 +606,11 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 	filterString = append(filterString, fmt.Sprintf("o.project_id=$%d", index))
 	index++
 
+	// path_name
+	args = append(args, path)
+	filterString = append(filterString, fmt.Sprintf("o.resource_path=$%d", index))
+	index++
+
 	// document id
 	args = append(args, documentID)
 	filterString = append(filterString, fmt.Sprintf("o.id=$%d", index))
@@ -577,8 +631,8 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 	relationIndex := 0
 	for key, r := range relations {
 		alias := r + strconv.Itoa(relationIndex)
-		queryFields = fmt.Sprintf("%s - '%s' || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, key, r, alias, alias)
-		joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id", joins, alias, key, alias)
+		queryFields = fmt.Sprintf("%s - '%s' || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, key, key, alias, alias)
+		joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id and %s.resource_path = '%s'", joins, alias, key, alias, alias, r)
 		relationIndex++
 	}
 

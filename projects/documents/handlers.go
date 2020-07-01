@@ -150,7 +150,7 @@ func (h *Documents) ListObjects(c *gin.Context) {
 
 		if k == dsi.RelationKey {
 			for key, value := range validSchema.Properties {
-				if val, ok := value["relation"]; ok && stringInSlice(val.(string), v) {
+				if val, ok := value["relation"]; ok && stringInSlice(key, v) {
 					relations[key] = val.(string)
 				}
 			}
@@ -228,7 +228,7 @@ func (h *Documents) GetObject(c *gin.Context) {
 		}
 
 		for key, value := range validSchema.Properties {
-			if val, ok := value["relation"]; ok && val.(string) == v {
+			if val, ok := value["relation"]; ok && key == v {
 				relations[key] = val.(string)
 			}
 		}
