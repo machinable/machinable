@@ -24,7 +24,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, cache redis.U
 	users.GET("/sessions", appUserMiddleware, handler.ListUserSessions)
 	users.GET("/sessions/:sessionID", appUserMiddleware, handler.GetSession)
 	users.DELETE("/sessions/:sessionID", appUserMiddleware, handler.RevokeSession)
-	users.POST("/refresh", middleware.ValidateRefreshToken(config), handler.RefreshToken)
+	users.POST("/refresh", middleware.ValidateRefreshToken(datastore, config), handler.RefreshToken)
 	users.POST("/password", appUserMiddleware, handler.ResetPassword)
 
 	return nil

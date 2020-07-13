@@ -177,7 +177,7 @@ func AppUserJwtAuthzMiddleware(config *config.AppConfig) gin.HandlerFunc {
 }
 
 // ValidateRefreshToken validates the refresh token
-func ValidateRefreshToken(config *config.AppConfig) gin.HandlerFunc {
+func ValidateRefreshToken(store interfaces.Datastore, config *config.AppConfig) gin.HandlerFunc {
 	jwtAuth := auth.NewJWT(config)
 	return func(c *gin.Context) {
 
@@ -201,8 +201,21 @@ func ValidateRefreshToken(config *config.AppConfig) gin.HandlerFunc {
 					respondWithError(http.StatusUnauthorized, "invalid refresh token", c)
 					return
 				}
+				projectSlug := c.GetString("project")
+				if projectSlug == "" {
+					respondWithError(http.StatusUnauthorized, "invalid project", c)
+					return
+				}
 
+				// // load the project and check the authn policy
+				project, err := store.GetProjectBySlug(projectSlug)
+				if err != nil {
+					respondWithError(http.StatusNotFound, "project not found", c)
+					return
+				}
 				// inject claims into context
+				c.Set("projectId", project.ID)
+				c.Set("project", project.Name)
 				c.Set("session_id", sessionID)
 				c.Set("user_id", userID)
 
