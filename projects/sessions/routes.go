@@ -16,7 +16,7 @@ func SetRoutes(engine *gin.Engine, datastore interfaces.Datastore, config *confi
 	sessions := engine.Group("/sessions")
 	sessions.POST("/", handler.CreateSession)             // create a new session
 	sessions.DELETE("/:sessionID", handler.RevokeSession) // delete this user's session TODO: AUTH
-	sessions.POST("/refresh", middleware.ValidateRefreshToken(config), handler.RefreshSession)
+	sessions.POST("/refresh", middleware.ValidateRefreshToken(datastore, config), handler.RefreshSession)
 
 	// App mgmt routes with different authz policy
 	mgmt := engine.Group("/mgmt")
