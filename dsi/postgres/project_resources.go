@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -246,24 +245,55 @@ func (d *Database) CheckIfRelationsExistBeforeInsert(projectID string, fields mo
 	for key, value := range schema.Properties {
 
 		if val, ok := value["relation"]; ok {
-			if valField, okf := fields[key]; okf && valField.(string) != "" {
+			if valField, okf := fields[key]; okf {
+
+				filterString := make([]string, 0)
+				inString := make([]string, 0)
+				args := make([]interface{}, 0)
+				index := 1
+
+				// projectID
+				args = append(args, projectID)
+				filterString = append(filterString, fmt.Sprintf("project_id=$%d", index))
+				index++
+				args = append(args, val)
+				filterString = append(filterString, fmt.Sprintf("resource_path=$%d", index))
+				index++
+
+				switch valField.(type) {
+				case []interface{}:
+					if len(valField.([]interface{})) == 0 {
+						continue
+					}
+					for _, v := range valField.([]interface{}) {
+						args = append(args, fmt.Sprint(v))
+						inString = append(inString, fmt.Sprintf("$%d", index))
+						index++
+					}
+					filterString = append(filterString, fmt.Sprintf("id IN (%s)", strings.Join(inString, ", ")))
+				default:
+					args = append(args, valField.(string))
+					filterString = append(filterString, fmt.Sprintf("id=$%d", index))
+					index++
+				}
+				// valField.(string) != "" {
 				queryFields := "count(id)"
 
 				query := fmt.Sprintf(
 					"SELECT %s FROM %s WHERE %s",
 					queryFields,
 					tableProjectResourceObjects,
-					"project_id=$1 AND resource_path=$2 AND id=$3",
+					strings.Join(filterString, " AND "),
 				)
 
 				var count int64
 				_ = d.db.QueryRow(
-					query, projectID, val, valField.(string),
+					query, args...,
 				).Scan(
 					&count,
 				)
 				if count < 1 {
-					relationErrors = append(relationErrors, fmt.Sprintf("relation %s could not be made with id %s", key, valField.(string)))
+					relationErrors = append(relationErrors, fmt.Sprintf("relation %s could not be made", key))
 				}
 			}
 		}
@@ -508,13 +538,13 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 	joins := ""
 	orderBy := ""
 
-	relationIndex := 0
-	for key, r := range relations {
-		alias := r + strconv.Itoa(relationIndex)
-		queryFields = fmt.Sprintf("%s - '%s' || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, key, key, alias, alias)
-		joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id and %s.resource_path = '%s'", joins, alias, key, alias, alias, r)
-		relationIndex++
-	}
+	// relationIndex := 0
+	// for key, r := range relations {
+	// 	alias := r + strconv.Itoa(relationIndex)
+	// 	queryFields = fmt.Sprintf("%s - '%s' || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, key, key, alias, alias)
+	// 	joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id and %s.resource_path = '%s'", joins, alias, key, alias, alias, r)
+	// 	relationIndex++
+	// }
 
 	if len(sortString) > 0 {
 		orderBy = fmt.Sprintf(" ORDER BY %s", strings.Join(sortString, ", "))
@@ -574,6 +604,12 @@ func (d *Database) ListDefDocuments(projectID, pathName string, limit, offset in
 		objects = append(objects, obj)
 	}
 
+	if len(relations) > 0 {
+		erro := d.prepareRelationsMultiple(projectID, objects, relations)
+		if erro != nil {
+			return nil, dsiErrors.New(dsiErrors.UnknownError, erro)
+		}
+	}
 	return objects, dsiErrors.New(dsiErrors.UnknownError, rows.Err())
 }
 
@@ -628,13 +664,13 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 	queryFields := "o.id, o.creator, o.creator_type, o.created, o.data"
 	joins := ""
 
-	relationIndex := 0
-	for key, r := range relations {
-		alias := r + strconv.Itoa(relationIndex)
-		queryFields = fmt.Sprintf("%s - '%s' || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, key, key, alias, alias)
-		joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id and %s.resource_path = '%s'", joins, alias, key, alias, alias, r)
-		relationIndex++
-	}
+	// relationIndex := 0
+	// for key, r := range relations {
+	// 	alias := r + strconv.Itoa(relationIndex)
+	// 	queryFields = fmt.Sprintf("%s - '%s' || jsonb_build_object('%s', (%s.data || jsonb_build_object('id', %s.id)))", queryFields, key, key, alias, alias)
+	// 	joins = fmt.Sprintf("%s LEFT JOIN project_resource_objects %s on (o.data->>'%s')::uuid = %s.id and %s.resource_path = '%s'", joins, alias, key, alias, alias, r)
+	// 	relationIndex++
+	// }
 
 	query := fmt.Sprintf(
 		"SELECT %s as data FROM %s o %s WHERE %s",
@@ -671,6 +707,13 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
 	}
 
+	if len(relations) > 0 {
+		erro := d.prepareRelationsSingle(projectID, relations, obj)
+		if erro != nil {
+			return nil, dsiErrors.New(dsiErrors.UnknownError, erro)
+		}
+	}
+
 	obj["_metadata"] = models.MetaData{
 		Created:     created.Unix(),
 		Creator:     creatorID.String,
@@ -679,6 +722,172 @@ func (d *Database) GetDefDocument(projectID, path, documentID string, filter map
 	obj["id"] = id
 
 	return obj, nil
+}
+
+func (d *Database) prepareRelationsMultiple(projectID string, objects []map[string]interface{}, relations map[string]string) *dsiErrors.DatastoreError {
+	documentIDs := make([]string, 0)
+	for _, o := range objects {
+		for key := range relations {
+			if value, ok := o[key]; ok {
+				switch value.(type) {
+				case []interface{}:
+					ss := make([]string, len(value.([]interface{})))
+					for i, v := range value.([]interface{}) {
+						ss[i] = fmt.Sprint(v)
+					}
+					documentIDs = append(documentIDs, ss...)
+				default:
+					documentIDs = append(documentIDs, value.(string))
+				}
+			}
+		}
+	}
+
+	relationObjs, err := d.getDocumentsInIDs(projectID, documentIDs)
+	if err != nil {
+		return dsiErrors.New(dsiErrors.UnknownError, err)
+	}
+	for _, o := range objects {
+		for key := range relations {
+			if value, ok := o[key]; ok {
+				switch value.(type) {
+				case []interface{}:
+					arrayV := make([]interface{}, 0)
+					for _, s := range value.([]interface{}) {
+						if relationValue, ok := relationObjs[s.(string)]; ok {
+							arrayV = append(arrayV, relationValue)
+						}
+					}
+					o[key] = arrayV
+				default:
+					if relationValue, ok := relationObjs[value.(string)]; ok {
+						o[key] = relationValue
+					}
+
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (d *Database) prepareRelationsSingle(projectID string, relations map[string]string, obj map[string]interface{}) *dsiErrors.DatastoreError {
+	documentIDs := make([]string, 0)
+	for key := range relations {
+		if value, ok := obj[key]; ok {
+			switch value.(type) {
+			case []interface{}:
+				ss := make([]string, len(value.([]interface{})))
+				for i, v := range value.([]interface{}) {
+					ss[i] = fmt.Sprint(v)
+				}
+				documentIDs = append(documentIDs, ss...)
+			default:
+				documentIDs = append(documentIDs, value.(string))
+			}
+		}
+	}
+
+	relationObjs, err := d.getDocumentsInIDs(projectID, documentIDs)
+	if err != nil {
+		return dsiErrors.New(dsiErrors.UnknownError, err)
+	}
+
+	for key := range relations {
+		if value, ok := obj[key]; ok {
+			switch value.(type) {
+			case []interface{}:
+				arrayV := make([]interface{}, 0)
+				for _, s := range value.([]interface{}) {
+					if relationValue, ok := relationObjs[s.(string)]; ok {
+						arrayV = append(arrayV, relationValue)
+					}
+				}
+				obj[key] = arrayV
+			default:
+				if relationValue, ok := relationObjs[value.(string)]; ok {
+					obj[key] = relationValue
+				}
+
+			}
+		}
+	}
+	return nil
+}
+
+func (d *Database) getDocumentsInIDs(projectID string, documentIDs []string) (map[string]interface{}, *dsiErrors.DatastoreError) {
+	filterString := make([]string, 0)
+	inString := make([]string, 0)
+	args := make([]interface{}, 0)
+	index := 1
+
+	// projectID
+	args = append(args, projectID)
+	filterString = append(filterString, fmt.Sprintf("o.project_id=$%d", index))
+	index++
+
+	for _, id := range documentIDs {
+		args = append(args, id)
+		inString = append(inString, fmt.Sprintf("$%d", index))
+		index++
+	}
+	filterString = append(filterString, fmt.Sprintf("o.id IN (%s)", strings.Join(inString, ", ")))
+
+	queryFields := "o.id, o.creator, o.creator_type, o.created, o.data"
+
+	query := fmt.Sprintf(
+		"SELECT %s as data FROM %s o WHERE %s",
+		queryFields,
+		tableProjectResourceObjects,
+		strings.Join(filterString, " AND "),
+	)
+
+	rows, err := d.db.Query(
+		query,
+		args...,
+	)
+
+	if err != nil {
+		return nil, dsiErrors.New(dsiErrors.UnknownError, err)
+	}
+	defer rows.Close()
+
+	objects := make(map[string]interface{}, 0)
+	for rows.Next() {
+		var id, creatorType string
+		var creatorID sql.NullString
+		var created time.Time
+		obj := make(map[string]interface{})
+		byt := make([]byte, 0)
+
+		err = rows.Scan(
+			&id,
+			&creatorID,
+			&creatorType,
+			&created,
+			&byt,
+		)
+
+		if err != nil {
+			return nil, dsiErrors.New(dsiErrors.UnknownError, err)
+		}
+
+		err = json.Unmarshal(byt, &obj)
+		if err != nil {
+			return nil, dsiErrors.New(dsiErrors.UnknownError, err)
+		}
+
+		obj["_metadata"] = models.MetaData{
+			Created:     created.Unix(),
+			Creator:     creatorID.String,
+			CreatorType: creatorType,
+		}
+		obj["id"] = id
+
+		objects[id] = obj
+	}
+
+	return objects, nil
 }
 
 // CountDefDocuments returns the count of all documents for a project resource
