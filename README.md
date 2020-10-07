@@ -1,4 +1,3 @@
-
 ![Image of Machinable UI](images/logo.png)
 
 Machinable gives developers the ability to store and manage their application's data in a structured, validated, RESTful way without having to write any backend code.
@@ -6,7 +5,6 @@ Machinable gives developers the ability to store and manage their application's 
 See the [User Documentation](https://www.machinable.io/documentation/) for more information.
 
 [![Stable Version](https://img.shields.io/github/v/tag/machinable/machinable)](https://img.shields.io/github/v/tag/machinable/machinable)
-
 
 ### Dev Environment
 
@@ -38,7 +36,7 @@ The Machinable API requires a valid hostname (with subdomain) to process request
 127.0.0.1   another-project.machinable.test
 ```
 
-`127.0.0.1   manage.machinable.test` is required, the other lines are for any project slugs you need to test locally.
+`127.0.0.1 manage.machinable.test` is required, the other lines are for any project slugs you need to test locally.
 
 ##### Environment
 
@@ -51,42 +49,41 @@ source ./dev.env
 
 `SENDGRID_API_KEY` is used for the [email-notifications](https://github.com/anothrNick/email-notifications), which is used to send emails to users (email verification, misc. notifications).
 
-
 ##### Configuration
 
 The application config has the following structure:
 
 ```json
 {
-    "Version": "0.0.0",
-    "AppSecret": "",
-    "ReCaptchaSecret": "",
-    "IPStackKey": "",
+  "Version": "0.0.0",
+  "AppSecret": "",
+  "ReCaptchaSecret": "",
+  "IPStackKey": "",
 
-    "TemplateMap": {
-        "default": "/templates/default.html"
-    },
-    "SenderName": "Machinable",
-    "SenderEmail": "noreply@machinable.test"
+  "TemplateMap": {
+    "default": "/templates/default.html"
+  },
+  "SenderName": "Machinable",
+  "SenderEmail": "noreply@machinable.test"
 }
 ```
 
-|Key|Description|Required|
-|---|-----------|--------|
-|**Version**|The version of the API|`False`|
-|**AppSecret**|The secret string used to salt passwords|`True`|
-|**ReCaptchaSecret**|The Google reCaptcha secret used for user registration|`True`|
-|**IPStackKey**|The API Key for IP Stack|`False`|
-|**TemplateMap**|A map of template names to HTML template file paths. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_|
-|**SenderName**|The name of the email sender. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_|
-|**SenderEmail**|The email of the sender. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_|
+| Key                 | Description                                                                                                                                    | Required |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| **Version**         | The version of the API                                                                                                                         | `False`  |
+| **AppSecret**       | The secret string used to salt passwords                                                                                                       | `True`   |
+| **ReCaptchaSecret** | The Google reCaptcha secret used for user registration                                                                                         | `True`   |
+| **IPStackKey**      | The API Key for IP Stack                                                                                                                       | `False`  |
+| **TemplateMap**     | A map of template names to HTML template file paths. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_ |
+| **SenderName**      | The name of the email sender. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_                        |
+| **SenderEmail**     | The email of the sender. _inherited from [email-notifications](https://github.com/anothrNick/email-notifications)_                             |
 
 The secret config values can also be provided as environment variables in `docker-compose.yml`:
 
 ```yml
-    - APP_SECRET
-    - RECAPTCHA_SECRET
-    - IPSTACK_KEY
+- APP_SECRET
+- RECAPTCHA_SECRET
+- IPSTACK_KEY
 ```
 
 ### Testing
@@ -117,7 +114,7 @@ Docker Image: [machinable](https://github.com/machinable/machinable/packages/543
 
 #### API
 
-The Machinable HTTP API is used for all resources of the application (this repo). The API is written in Golang. 
+The Machinable HTTP API is used for all resources of the application (this repo). The API is written in Golang.
 
 #### Redis
 
